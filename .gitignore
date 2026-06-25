@@ -1,0 +1,22 @@
+# Binaries
+slop-chop
+*.exe
+*.out
+bin/
+dist/
+
+# Test and coverage
+*.test
+*.prof
+coverage.out
+
+# Editor
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Go
+go.work
+go.work.sum
+vendor/
