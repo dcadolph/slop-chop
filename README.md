@@ -26,6 +26,8 @@ Two passes. Use one or both.
 2. Rewrite (optional). A model handles the stuff rules can't, like reworking a
    sentence to lose a semicolon or bending text toward a voice you picked.
 
+For the full engine logic, see [ENGINE.md](ENGINE.md).
+
 ## Usage
 
 ```sh
