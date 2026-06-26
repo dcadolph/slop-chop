@@ -46,7 +46,18 @@ slop-chop check notes.md
 
 # Use your own profile
 slop-chop fix -profile myprofile.json notes.md
+
+# Get findings as JSON for other tools to read
+slop-chop check -json notes.md
+slop-chop check -json -pretty notes.md
+
+# Get the cleaned text and the findings together
+slop-chop fix -json notes.md
 ```
+
+`check -json` prints a `{"findings": [...]}` object to stdout, and `fix -json` adds the
+cleaned text as `{"cleaned": "...", "findings": [...]}`. Each finding carries the rule,
+the matched text, the suggested replacement, and a line and column.
 
 ## Modes
 
