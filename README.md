@@ -4,30 +4,33 @@
 
 # slop-chop
 
-Chop the slop. Paste in text, get back text that sounds like a person wrote it.
+Chop the slop. Paste in text and get back something that reads like a person wrote it.
 
-You know the tells. Em-dashes splattered everywhere. A semicolon in every other
-sentence. Buzzwords like "comprehensive" and "blast radius" and "substrate." Openers
-like "In summary" and "Giving it to you honestly." slop-chop strips all that out in one
-pass. You can also teach it your own style, so your docs come out sounding like you and
-not like a chatbot.
+AI writing leaves fingerprints. It runs on em-dashes, drops a semicolon into every other
+sentence, reaches for words like "comprehensive" and "substrate," and clears its throat
+with openers like "In summary" or "Giving it to you honestly." slop-chop pulls all of
+that out in a single pass. You can also hand it your own list of things to cut, so the
+result reads like you instead of a chatbot.
 
 ## Why
 
-Cleaning up AI text by hand gets old fast, and re-prompting the model to "stop using
-em-dashes" never quite sticks. slop-chop just does it. Run your text through once and
-the slop is gone.
+Cleaning this up by hand is tedious, and asking the model to "stop using em-dashes" holds
+for about three sentences before it forgets. slop-chop just takes the text and cleans it,
+the same way every time.
 
 ## How it works
 
-Two passes. Use one or both.
+There are two passes, and you can run either one on its own.
 
-1. Rules. A fast pass that swaps characters, drops banned words, rewrites stock
-   phrases, and tidies punctuation. No model, no cost, same result every time.
-2. Rewrite (optional). A model handles the stuff rules can't, like reworking a
-   sentence to lose a semicolon or bending text toward a voice you picked.
+The first is a rules pass. It is fast and deterministic. It swaps characters, drops words
+you have flagged, rewrites stock phrases, and tidies the punctuation, with no model, no
+cost, and the same output on every run.
 
-For the full engine logic, see [ENGINE.md](ENGINE.md).
+The second is an optional rewrite pass that hands the text to a model for the things
+rules cannot manage, like reworking a sentence so it no longer needs a semicolon, or
+nudging the writing toward a voice you picked.
+
+[ENGINE.md](ENGINE.md) has the details if you want them.
 
 ## Usage
 
@@ -64,19 +67,21 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dcadolph/slop-chop@v0.2.0
         with:
-          files: README.md ENGINE.md
+          files: docs/intro.md docs/guide.md
           # profile: myprofile.json   # optional
 ```
 
 ## Style profiles
 
-A profile is a small config file. It says what to ban and what to swap in: characters,
-words, phrases, and a few notes on tone. Everyone keeps their own.
+A profile is a small config file that lists what to cut and what to put in its place:
+characters, words, phrases, and a couple of notes on tone. Keep your own and point the
+tool at it.
 
 ## Status
 
-Early days. Rules pass first. The rewrite pass comes later, behind a flag, once the
-core earns it.
+Still early. The rules pass is built and working. The rewrite pass is not done yet. It
+will come later and sit behind a flag, because it needs an API key and costs money, and
+the free, predictable path should stay the default.
 
 ## License
 

@@ -1,99 +1,96 @@
-# How slop-chop chops the slop
+# How slop-chop works
 
-This explains the engine. It covers how a profile becomes a set of rules, the order
-those rules run in, and how check and fix differ.
+A walk through the engine. How a profile turns into rules, what order those rules run in,
+and how check and fix differ.
 
-## The shape of it
+## The pieces
 
-There are three pieces. A profile, a set of rules, and a sanitizer.
+Three things do the work: a profile, the rules, and a sanitizer. The profile is plain
+config that lists what to swap and what to flag. Compiling it produces an ordered list of
+rules, and the sanitizer holds that list and runs it over your text.
 
-A profile is plain config. It lists what to swap and what to flag. A profile compiles
-into an ordered list of rules. A sanitizer holds that list and runs it against text.
+## Turning a profile into rules
 
-## From profile to rules
+A profile has five kinds of entry, and each one compiles into one or more rules. Every
+rule is a compiled regular expression paired with a note about what to do when it matches.
 
-The profile has five kinds of entry. Each kind turns into one or more rules, and every
-rule is a compiled regular expression plus a note on what to do when it matches.
+Character swaps compile to literal matches. The text gets quoted first so nothing inside
+it behaves like a regex, and this is where the em-dash, en-dash, smart quotes, and
+ellipsis live.
 
-Character swaps become literal-match rules. The text to match is quoted so nothing in it
-acts as a regex. The em-dash, en-dash, smart quotes, and ellipsis live here.
+Phrase swaps compile to case-insensitive matches, so they catch the phrase however it is
+capitalized. The key keeps the trailing comma and space, which means deleting the phrase
+leaves a clean sentence rather than a dangling comma.
 
-Phrase swaps become case-insensitive rules. They match the same phrase in any casing.
-The stored key includes the trailing comma and space, so removing the phrase leaves a
-clean sentence behind.
+Block words compile to word-boundary matches, so "robust" matches the standalone word and
+not the middle of a longer one. Multi-word entries such as "blast radius" work the same
+way, with the space kept as part of what gets matched.
 
-Block words become word-boundary rules. The pattern wraps the word in boundary markers
-so "robust" matches the word and not the inside of another word. Multi-word entries like
-"blast radius" work the same way, with the space kept as part of the match.
+The semicolon split and the space collapse are each a single fixed rule. One matches a
+semicolon followed by a space and a letter. The other matches any run of two or more
+spaces.
 
-The semicolon split is one fixed rule. It matches a semicolon followed by space and a
-letter.
+## The order rules run in
 
-The space collapse is one fixed rule. It matches any run of two or more spaces.
+The order matters, so it is fixed:
 
-## Rule order
+1. Character swaps
+2. Phrase removal
+3. Block-word flags
+4. Semicolon split
+5. Space collapse
 
-Order matters, so the engine fixes it. Rules run in this sequence.
+Space collapse comes last for a reason. Some of the earlier swaps leave a double space
+behind. Take the input "word — word". The em-dash becomes a comma and a space, which
+leaves two spaces sitting around the comma, and the final pass cleans that up. Phrase
+removal can leave a stray space at the start of a line, and the same pass handles that too.
 
-1. Character swaps.
-2. Phrase removal.
-3. Block-word flags.
-4. Semicolon split.
-5. Space collapse.
+Within a single kind, the entries get sorted before they compile. Map order in Go is not
+stable, and sorting keeps the rule list and the output identical from one run to the next.
 
-Space collapse runs last on purpose. Earlier swaps can leave a double space. Take "word
-— word". The em-dash becomes a comma and a space, which leaves two spaces around the
-comma. The final collapse pass tidies that up. Phrase removal can leave a stray space at
-the start of a line too, and the same final pass cleans it.
+## check and fix
 
-Map entries inside a kind are sorted before they compile. Map order in the language is
-not stable, so sorting keeps the rule list and the output the same on every run.
+Both run the same rules but do different things with them.
 
-## Two ways to run
+check reads the original text and reports every match without touching it, so the line
+and column it gives you for each match are exact. A finding carries the rule name, the
+text that matched, the suggested replacement when there is one, and a position. When
+check finds anything it exits non-zero, which is what lets it gate a CI step.
 
-The sanitizer does two things with the same rules.
+fix returns the cleaned text. It runs check first to gather the findings against the
+original, then applies the rewriting rules in order. Rules that only flag, like block
+words, show up in the findings but leave the text alone.
 
-check scans the original text and reports every match. It does not change anything, so
-the position it reports for each match is exact. Each finding carries the rule name, the
-matched text, the suggested replacement when there is one, and a line and column. check
-exits non-zero when it finds anything, which is what makes it useful in a CI step.
+## Why some rules rewrite and some only flag
 
-fix returns the cleaned text. It runs check first to collect the findings against the
-original, then applies the rewrite rules in order. A rule that only flags, such as a
-block word, is reported but never changes the text.
-
-## Flag versus rewrite
-
-Some rules rewrite and some only flag.
-
-Character swaps, phrase removal, the semicolon split, and space collapse all rewrite.
-The replacement is safe without knowing the surrounding text.
+Character swaps, phrase removal, the semicolon split, and space collapse all rewrite,
+because the replacement is safe without knowing anything about the surrounding sentence.
 
 Block words only flag. There is no safe automatic swap for "comprehensive" or "blast
-radius". The right replacement depends on the sentence, so the engine points at the word
-and lets the writer decide.
+radius", since the right replacement depends on the sentence, so the tool marks the word
+and leaves the call to you.
 
-## The semicolon split, in detail
+## A closer look at the semicolon split
 
-The rule matches a semicolon, the spaces after it, and the first letter of the next
-word. The replacement drops the semicolon, ends the clause with a period, adds a single
-space, and puts the captured letter back in uppercase. So "it works; it ships" becomes
-"it works. It ships".
+The rule matches a semicolon, the spaces after it, and the first letter of the next word.
+It drops the semicolon, ends the clause with a period, adds one space, and puts that
+captured letter back as a capital, so "it works; it ships" turns into "it works. It
+ships".
 
-This is the edge of what plain rules can do well. A semicolon that separates items in a
-list should not become a period. Telling those two cases apart needs more than a regex,
-which is the job of the optional rewrite pass.
+This is about as far as plain rules can go. A semicolon separating items in a list should
+not become a period, and telling the two cases apart takes more than a regex. That is the
+kind of thing the rewrite pass is for.
 
-## Positions
+## Line and column numbers
 
-A finding reports a line and a column. The engine gets them from the byte offset of the
-match. The line is one plus the number of newlines before the offset. The column is one
-plus the number of runes between the start of the line and the offset. Counting runes,
-not bytes, keeps the column right when the text holds characters wider than one byte.
+Each finding reports a line and a column worked out from the byte offset of the match.
+The line is one plus the number of newlines before the offset. The column is one plus the
+number of runes between the start of the line and the offset. Counting runes instead of
+bytes keeps the column honest when the text holds characters wider than a single byte.
 
-## Where the rules stop
+## Where the rules give out
 
-The engine is deterministic and cheap, and it handles the common tells well. It cannot
-reword a sentence, judge tone, or match a chosen voice. Those need a model. The plan
-keeps the rules as the default and adds the model pass behind a flag, so the cheap and
-predictable path stays the one most people run.
+The rules pass is deterministic, cheap, and good at the common tells, but it cannot reword
+a sentence, judge tone, or match a voice. That takes a model. The plan is to keep the
+rules as the default and add the model pass behind a flag, so the cheap and predictable
+path stays the one you reach for most.
