@@ -27,6 +27,9 @@ type Profile struct {
 	CollapseSpaces bool `json:"collapseSpaces"`
 	// SplitSemicolons turns "; " into ". " and capitalizes the next word.
 	SplitSemicolons bool `json:"splitSemicolons"`
+	// Tone holds optional notes on the voice to aim for. The rules pass ignores it.
+	// The rewrite pass feeds it to the model so output sounds like you.
+	Tone []string `json:"tone"`
 }
 
 // DefaultProfile returns the built-in profile that targets common AI tells.

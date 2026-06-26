@@ -53,6 +53,10 @@ slop-chop check -json -pretty notes.md
 
 # Get the cleaned text and the findings together
 slop-chop fix -json notes.md
+
+# Deeper clean: rules first, then a model rewrite (needs ANTHROPIC_API_KEY)
+slop-chop fix -rewrite notes.md
+slop-chop fix -rewrite -model claude-sonnet-4-6 notes.md
 ```
 
 `check -json` prints a `{"findings": [...]}` object to stdout, and `fix -json` adds the
@@ -81,6 +85,22 @@ jobs:
           files: docs/intro.md docs/guide.md
           # profile: myprofile.json   # optional
 ```
+
+## Rewrite pass (optional)
+
+The rules pass is deterministic and free. For the work rules cannot do, like reworking a
+sentence so it no longer needs a semicolon or bending the text toward your voice, add
+`-rewrite`. It runs the rules first, then hands the result to a model.
+
+```sh
+export ANTHROPIC_API_KEY=sk-...
+slop-chop fix -rewrite notes.md
+slop-chop fix -rewrite -model claude-sonnet-4-6 notes.md
+```
+
+It defaults to Claude Opus 4.8. Set the voice it aims for with the `tone` list in your
+profile. This pass costs money and the output varies from run to run, so the rules pass
+stays the default.
 
 ## Style profiles
 
