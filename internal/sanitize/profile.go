@@ -52,7 +52,7 @@ func DefaultProfile() Profile {
 			"to be honest, ":              "",
 		},
 		BlockWords: []string{
-			"comprehensive", "robust", "leverage", "seamless", "seamlessly",
+			"comprehensive", "robust", "seamless", "seamlessly",
 			"elegant", "powerful", "cutting-edge", "delve",
 			"blast radius", "substrate", "tapestry", "pivotal", "showcase",
 		},

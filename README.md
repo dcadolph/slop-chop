@@ -7,9 +7,10 @@
 Chop the slop. Paste in text, get back text that sounds like a person wrote it.
 
 You know the tells. Em-dashes splattered everywhere. A semicolon in every other
-sentence. Words like "comprehensive" and "leverage." Openers like "In summary."
-slop-chop strips all that out in one pass. You can also teach it your own style, so
-your docs come out sounding like you and not like a chatbot.
+sentence. Buzzwords like "comprehensive" and "blast radius" and "substrate." Openers
+like "In summary" and "Giving it to you honestly." slop-chop strips all that out in one
+pass. You can also teach it your own style, so your docs come out sounding like you and
+not like a chatbot.
 
 ## Why
 
