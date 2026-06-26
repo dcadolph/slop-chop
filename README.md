@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/banner.png" alt="slop-chop" width="420">
+</p>
+
 # slop-chop
 
 Chop the slop. A text sanitizer that strips AI tells and enforces your own style.
