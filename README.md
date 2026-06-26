@@ -4,42 +4,42 @@
 
 # slop-chop
 
-Chop the slop. A text sanitizer that strips AI tells and enforces your own style.
+Chop the slop. Paste in text, get back text that sounds like a person wrote it.
 
-slop-chop takes any block of text and cleans it. It removes the patterns that make
-writing read as machine-generated (em-dashes, hedging, padding, filler words) and lets
-each person define a style profile so docs come out in their voice, not a model's.
+You know the tells. Em-dashes splattered everywhere. A semicolon in every other
+sentence. Words like "comprehensive" and "leverage." Openers like "In summary."
+slop-chop strips all that out in one pass. You can also teach it your own style, so
+your docs come out sounding like you and not like a chatbot.
 
 ## Why
 
-LLM output has a tell: em-dashes stitching clauses, semicolons and colons everywhere,
-words like "comprehensive" and "leverage", padding like "In summary". Fixing it by hand
-or re-prompting every time is tedious. slop-chop does it in one pass.
+Cleaning up AI text by hand gets old fast, and re-prompting the model to "stop using
+em-dashes" never quite sticks. slop-chop just does it. Run your text through once and
+the slop is gone.
 
 ## How it works
 
-Two layers, used together or alone.
+Two passes. Use one or both.
 
-1. Deterministic pass. A rule engine driven by a config profile. Character
-   replacements, a word blocklist, phrase swaps, and punctuation normalization. Fast,
-   free, and predictable. No model required.
-2. Rewrite pass (optional). A model pass for the things rules cannot do well, like
-   restructuring a sentence to drop a semicolon or matching a target voice.
+1. Rules. A fast pass that swaps characters, drops banned words, rewrites stock
+   phrases, and tidies punctuation. No model, no cost, same result every time.
+2. Rewrite (optional). A model handles the stuff rules can't, like reworking a
+   sentence to lose a semicolon or bending text toward a voice you picked.
 
 ## Modes
 
-- `check` reports violations and exits non-zero. Use it in CI.
-- `fix` rewrites the text in place.
+- `check` flags what it finds and exits non-zero. Drop it in CI.
+- `fix` cleans the text in place.
 
 ## Style profiles
 
-A profile is a config file that declares what to ban and how to replace it: banned
-characters, blocked words, phrase substitutions, and tone notes. Each person keeps
-their own.
+A profile is a small config file. It says what to ban and what to swap in: characters,
+words, phrases, and a few notes on tone. Everyone keeps their own.
 
 ## Status
 
-Early. Scaffold only. Layer 1 first, layer 2 behind a flag once the core is proven.
+Early days. Rules pass first. The rewrite pass comes later, behind a flag, once the
+core earns it.
 
 ## License
 
