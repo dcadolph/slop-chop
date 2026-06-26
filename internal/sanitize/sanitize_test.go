@@ -29,6 +29,10 @@ func TestFix(t *testing.T) {
 		In: "a robust plan", WantResult: "a robust plan",
 	}, { // Test 6: Clean text is unchanged.
 		In: "a plain sentence", WantResult: "a plain sentence",
+	}, { // Test 7: Honesty filler phrase is removed.
+		In: "Giving it to you honestly, it ships", WantResult: "it ships",
+	}, { // Test 8: Multi-word block word stays in place.
+		In: "the blast radius is small", WantResult: "the blast radius is small",
 	}}
 
 	s := mustSanitizer(t)
@@ -57,6 +61,8 @@ func TestCheck(t *testing.T) {
 		In: "a plain sentence", WantRules: nil,
 	}, { // Test 3: Multiple tells are all flagged.
 		In: "robust; nice", WantRules: []string{"word:robust", "semicolon"},
+	}, { // Test 4: Multi-word buzzword is flagged.
+		In: "the blast radius", WantRules: []string{"word:blast radius"},
 	}}
 
 	s := mustSanitizer(t)

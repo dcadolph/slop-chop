@@ -11,9 +11,10 @@
   "phraseReplace": {
     "in summary, ": "",
     "overall, ": "",
-    "it's worth noting that ": ""
+    "it's worth noting that ": "",
+    "giving it to you honestly, ": ""
   },
-  "blockWords": ["comprehensive", "robust", "leverage", "seamless", "delve"],
+  "blockWords": ["comprehensive", "robust", "leverage", "seamless", "delve", "blast radius", "substrate"],
   "collapseSpaces": true,
   "splitSemicolons": true
 }

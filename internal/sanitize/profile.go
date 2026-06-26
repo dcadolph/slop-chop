@@ -33,25 +33,28 @@ type Profile struct {
 func DefaultProfile() Profile {
 	return Profile{
 		CharReplace: map[string]string{
-			"—": ", ", // em-dash
-			"–": "-",  // en-dash
-			"‘": "'",  // left single quote
-			"’": "'",  // right single quote
-			"“": `"`,  // left double quote
-			"”": `"`,  // right double quote
+			"—": ", ",  // em-dash
+			"–": "-",   // en-dash
+			"‘": "'",   // left single quote
+			"’": "'",   // right single quote
+			"“": `"`,   // left double quote
+			"”": `"`,   // right double quote
 			"…": "...", // ellipsis
 		},
 		PhraseReplace: map[string]string{
-			"in summary, ":         "",
-			"in conclusion, ":      "",
-			"to recap, ":           "",
-			"overall, ":            "",
-			"it's worth noting that ": "",
-			"it is worth noting that ": "",
+			"in summary, ":                "",
+			"in conclusion, ":             "",
+			"to recap, ":                  "",
+			"overall, ":                   "",
+			"it's worth noting that ":     "",
+			"it is worth noting that ":    "",
+			"giving it to you honestly, ": "",
+			"to be honest, ":              "",
 		},
 		BlockWords: []string{
 			"comprehensive", "robust", "leverage", "seamless", "seamlessly",
 			"elegant", "powerful", "cutting-edge", "delve",
+			"blast radius", "substrate", "tapestry", "pivotal", "showcase",
 		},
 		CollapseSpaces:  true,
 		SplitSemicolons: true,
