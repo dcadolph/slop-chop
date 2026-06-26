@@ -1,0 +1,45 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - run: go build ./...
+      - run: go test ./...
+
+  action-passes-clean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write a clean file
+        run: printf 'a plain sentence that reads just fine\n' > clean.md
+      - name: Action should pass on clean text
+        uses: ./
+        with:
+          files: clean.md
+
+  check-fails-on-slop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - run: go build -o /tmp/slop-chop .
+      - name: Check must exit non-zero on slop
+        run: |
+          printf 'In summary, a comprehensive result.\n' > dirty.md
+          if /tmp/slop-chop check dirty.md; then
+            echo "check passed but should have failed" >&2
+            exit 1
+          fi
+          echo "check failed as expected"

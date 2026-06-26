@@ -50,6 +50,24 @@ slop-chop fix -profile myprofile.json notes.md
 - `check` flags what it finds and exits non-zero. Drop it in CI.
 - `fix` cleans the text in place.
 
+## Use it in CI
+
+Add a workflow that fails a pull request when it finds slop:
+
+```yaml
+name: slop-chop
+on: pull_request
+jobs:
+  slop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dcadolph/slop-chop@v0.2.0
+        with:
+          files: README.md ENGINE.md
+          # profile: myprofile.json   # optional
+```
+
 ## Style profiles
 
 A profile is a small config file. It says what to ban and what to swap in: characters,

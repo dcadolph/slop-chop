@@ -1,0 +1,46 @@
+name: slop-chop
+description: Flag AI slop in text and fail the check when it finds any.
+branding:
+  icon: scissors
+  color: green
+
+inputs:
+  files:
+    description: Space separated list of files to check.
+    required: true
+  profile:
+    description: Path to a JSON style profile. Leave empty for the built in profile.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: stable
+
+    - name: Build slop-chop
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: go build -o "${RUNNER_TEMP}/slop-chop" .
+
+    - name: Run check
+      shell: bash
+      env:
+        FILES: ${{ inputs.files }}
+        PROFILE: ${{ inputs.profile }}
+      run: |
+        args=()
+        if [ -n "$PROFILE" ]; then args+=(-profile "$PROFILE"); fi
+        rc=0
+        for f in $FILES; do
+          echo "::group::slop-chop check $f"
+          "${RUNNER_TEMP}/slop-chop" check "${args[@]}" "$f" || rc=1
+          echo "::endgroup::"
+        done
+        if [ "$rc" -ne 0 ]; then
+          echo "slop-chop found slop. See the groups above." >&2
+        fi
+        exit "$rc"
