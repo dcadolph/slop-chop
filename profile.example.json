@@ -1,0 +1,19 @@
+{
+  "charReplace": {
+    "—": ", ",
+    "–": "-",
+    "“": "\"",
+    "”": "\"",
+    "‘": "'",
+    "’": "'",
+    "…": "..."
+  },
+  "phraseReplace": {
+    "in summary, ": "",
+    "overall, ": "",
+    "it's worth noting that ": ""
+  },
+  "blockWords": ["comprehensive", "robust", "leverage", "seamless", "delve"],
+  "collapseSpaces": true,
+  "splitSemicolons": true
+}

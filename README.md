@@ -26,6 +26,22 @@ Two passes. Use one or both.
 2. Rewrite (optional). A model handles the stuff rules can't, like reworking a
    sentence to lose a semicolon or bending text toward a voice you picked.
 
+## Usage
+
+```sh
+# Clean a file and print the result
+slop-chop fix notes.md
+
+# Pipe text through it
+echo "In summary, a robust—and seamless—result." | slop-chop fix
+
+# Flag slop without changing anything (exits non-zero if it finds any)
+slop-chop check notes.md
+
+# Use your own profile
+slop-chop fix -profile myprofile.json notes.md
+```
+
 ## Modes
 
 - `check` flags what it finds and exits non-zero. Drop it in CI.
