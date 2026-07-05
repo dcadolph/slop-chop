@@ -24,7 +24,8 @@ There are two passes, and you can run either one on its own.
 
 The first is a rules pass. It is fast and deterministic. It swaps characters, drops words
 you have flagged, rewrites stock phrases, and tidies the punctuation, with no model, no
-cost, and the same output on every run.
+cost, and the same output on every run. It knows markdown, so fenced code blocks and
+inline backtick spans come through untouched.
 
 The second is an optional rewrite pass that hands the text to a model for the things
 rules cannot manage, like reworking a sentence so it no longer needs a semicolon, or

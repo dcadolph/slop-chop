@@ -12,6 +12,7 @@ and what `check` and `fix` actually do.
 - [check vs fix](#check-vs-fix)
 - [A worked example](#a-worked-example)
 - [Which rules rewrite](#which-rules-rewrite)
+- [What the engine skips](#what-the-engine-skips)
 - [Under the hood](#under-the-hood)
 - [Where the rules stop](#where-the-rules-stop)
 
@@ -156,6 +157,17 @@ engine flags them but leaves the swap to you.
 The rewriting rules are safe without knowing the surrounding sentence. Block words are
 not, since the right replacement for a word like `comprehensive` depends on context, so
 the engine marks them and leaves the call to you.
+
+## What the engine skips
+
+Markdown code is off limits. A fenced block, opened with three or more backticks or
+tildes and running through its closing fence or to the end of the file, never matches
+any rule. The same goes for an inline span between backticks. An em-dash in a shell
+example or a semicolon in a code sample stays exactly as written, in `check` and in
+`fix` alike.
+
+A lone backtick with no closing partner before the next blank line is plain text, so
+one stray character does not hide the rest of a paragraph from the rules.
 
 ## Under the hood
 

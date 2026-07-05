@@ -27,8 +27,9 @@ func New(p Profile) (*Sanitizer, error) {
 func (s *Sanitizer) Check(text string) []Finding {
 	var findings []Finding
 	newlines := newlineOffsets(text)
+	protected := codeRanges(text)
 	for _, r := range s.rules {
-		for _, loc := range r.matches(text) {
+		for _, loc := range r.matches(text, protected) {
 			match := text[loc[0]:loc[1]]
 			var repl *string
 			if r.rewrite {
@@ -57,11 +58,18 @@ func (s *Sanitizer) Check(text string) []Finding {
 func (s *Sanitizer) Fix(text string) (string, []Finding) {
 	findings := s.Check(text)
 	out := text
+	protected := codeRanges(out)
 	for _, r := range s.rules {
 		if !r.rewrite {
 			continue
 		}
-		out = r.apply(out)
+		// Each rewrite shifts offsets, so the protected ranges are recomputed after
+		// any rule that changed the text.
+		next := r.apply(out, protected)
+		if next != out {
+			out = next
+			protected = codeRanges(out)
+		}
 	}
 	return out, findings
 }

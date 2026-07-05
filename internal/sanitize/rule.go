@@ -25,17 +25,19 @@ type Rule struct {
 	rewrite bool
 }
 
-// matches returns the byte ranges of every match the rule keeps.
-func (r Rule) matches(text string) [][]int {
+// matches returns the byte ranges of every match the rule keeps, dropping any that
+// touch a protected range, like markdown code.
+func (r Rule) matches(text string, protected [][2]int) [][]int {
 	locs := r.re.FindAllStringIndex(text, -1)
-	if r.keep == nil {
-		return locs
-	}
 	kept := locs[:0]
 	for _, loc := range locs {
-		if r.keep(text, loc[0]) {
-			kept = append(kept, loc)
+		if overlapsAny(protected, loc[0], loc[1]) {
+			continue
 		}
+		if r.keep != nil && !r.keep(text, loc[0]) {
+			continue
+		}
+		kept = append(kept, loc)
 	}
 	return kept
 }
@@ -48,10 +50,10 @@ func (r Rule) replacement(text string, loc []int) string {
 	return r.repl
 }
 
-// apply rewrites every kept match in text and returns the result. It honors keep, so a
-// rule rewrites exactly the matches it also reports.
-func (r Rule) apply(text string) string {
-	locs := r.matches(text)
+// apply rewrites every kept match in text and returns the result. It honors keep and
+// the protected ranges, so a rule rewrites exactly the matches it also reports.
+func (r Rule) apply(text string, protected [][2]int) string {
+	locs := r.matches(text, protected)
 	if len(locs) == 0 {
 		return text
 	}

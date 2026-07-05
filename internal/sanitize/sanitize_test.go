@@ -58,6 +58,13 @@ func TestFix(t *testing.T) {
 		In: "line one\nin summary, it ships", WantResult: "line one\nIt ships",
 	}, { // Test 20: A phrase followed by a digit is deleted with nothing to capitalize.
 		In: "To recap, 42 wins", WantResult: "42 wins",
+	}, { // Test 21: A fenced code block comes through untouched.
+		In:         "```\na — b; c  d\n```\n",
+		WantResult: "```\na — b; c  d\n```\n",
+	}, { // Test 22: An inline code span comes through untouched.
+		In: "run `a; b` now", WantResult: "run `a; b` now",
+	}, { // Test 23: Prose around code is still cleaned.
+		In: "fast—clean `x—y` fast—clean", WantResult: "fast, clean `x—y` fast, clean",
 	}}
 
 	s := mustSanitizer(t)
@@ -96,6 +103,12 @@ func TestCheck(t *testing.T) {
 		In: "word , word", WantRules: []string{"space-before-punct"},
 	}, { // Test 8: A semicolon at a line end is not flagged as a clause join.
 		In: "it works;\nit ships", WantRules: nil,
+	}, { // Test 9: A block word inside an inline code span is not flagged.
+		In: "the `robust` flag", WantRules: nil,
+	}, { // Test 10: Nothing inside a fenced block is flagged.
+		In: "```\nrobust — plan; done\n```", WantRules: nil,
+	}, { // Test 11: A lone backtick does not hide the rest of the line.
+		In: "a ` robust plan", WantRules: []string{"word:robust"},
 	}}
 
 	s := mustSanitizer(t)
