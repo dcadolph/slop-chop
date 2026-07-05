@@ -7,7 +7,7 @@
 Chop the slop. Paste in text and get back something that reads like a person wrote it.
 
 AI writing leaves fingerprints. It runs on em-dashes, drops a semicolon into every other
-sentence, reaches for words like "comprehensive" and "substrate," and clears its throat
+sentence, reaches for words like `comprehensive` and `substrate`, and clears its throat
 with openers like "In summary" or "Giving it to you honestly." slop-chop pulls all of
 that out in a single pass. You can also hand it your own list of things to cut, so the
 result reads like you instead of a chatbot.

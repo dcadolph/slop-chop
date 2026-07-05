@@ -48,6 +48,15 @@ jobs:
             exit 1
           fi
 
+  docs-pass-their-own-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: The docs must pass slop-chop
+        uses: ./
+        with:
+          files: README.md ENGINE.md
+
   check-fails-on-slop:
     runs-on: ubuntu-latest
     steps:
