@@ -152,9 +152,12 @@ It drops the semicolon, ends the clause with a period, adds one space, and puts 
 captured letter back as a capital. So `it works; it ships` turns into `it works. It
 ships`.
 
-This is about as far as plain rules go. A semicolon separating items in a list should not
-become a period, and telling the two cases apart takes more than a regex. That is a job
-for the rewrite pass.
+It only fires when the semicolon joins two clauses. Before splitting, it looks at the
+sentence around the semicolon. If that sentence holds more than one semicolon, or if a
+coordinating conjunction like "and" or "or" follows, the semicolon is treated as a list
+separator and left alone. So `we support Go; Python; and Rust` is not touched. This is a
+heuristic, not a parser, so a rare case can still slip through, and matching a voice or
+reworking a clause more deeply is a job for the rewrite pass.
 
 </details>
 

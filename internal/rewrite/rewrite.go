@@ -63,7 +63,7 @@ func buildSystem(tone []string) string {
 	b.WriteString("- No em-dashes. Recast the sentence or use a comma or a period.\n")
 	b.WriteString("- No semicolons joining clauses. Split them into separate sentences.\n")
 	b.WriteString("- Drop filler openers like \"In summary\" and \"To be honest\".\n")
-	b.WriteString("- Cut buzzwords like \"comprehensive\", \"robust\", and \"leverage\".\n")
+	b.WriteString("- Cut buzzwords like \"comprehensive\" and \"robust\".\n")
 	b.WriteString("- Vary sentence length. Avoid the flat, even cadence models fall into.\n")
 	b.WriteString("- Use plain words and contractions where they fit.\n\n")
 	if len(tone) > 0 {
