@@ -20,6 +20,7 @@ runs:
       uses: actions/setup-go@v5
       with:
         go-version: stable
+        cache: false
 
     - name: Build slop-chop
       shell: bash

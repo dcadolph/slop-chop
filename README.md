@@ -98,7 +98,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dcadolph/slop-chop@v0.1.0
+      - uses: dcadolph/slop-chop@v0.1.2
         with:
           files: docs/intro.md docs/guide.md
           # profile: myprofile.json   # optional

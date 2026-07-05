@@ -7,7 +7,7 @@ and what `check` and `fix` actually do.
 
 - [At a glance](#at-a-glance)
 - [The pieces](#the-pieces)
-- [The five rule kinds](#the-five-rule-kinds)
+- [The six rule kinds](#the-six-rule-kinds)
 - [The order they run in](#the-order-they-run-in)
 - [check vs fix](#check-vs-fix)
 - [A worked example](#a-worked-example)
@@ -36,8 +36,9 @@ flowchart TD
     B --> C["2. Phrase removal"]
     C --> D["3. Block-word flags"]
     D --> E["4. Semicolon split"]
-    E --> F["5. Space collapse"]
-    F --> G["Clean text"]
+    E --> F["5. Punctuation cleanup"]
+    F --> G["6. Space collapse"]
+    G --> H["Clean text"]
 ```
 
 ## The pieces
@@ -48,41 +49,50 @@ flowchart TD
 | Rules     | The compiled profile. An ordered list, each a regex plus an action.      |
 | Sanitizer | Holds the rules and runs them over your text.                            |
 
-## The five rule kinds
+## The six rule kinds
 
 Each entry in a profile compiles into one or more rules. Every rule is a compiled regular
-expression paired with an action.
+expression paired with an action. The `collapseSpaces` field compiles into the last two,
+which together tidy the debris the earlier rewrites leave behind.
 
-| Kind            | Matches                  | Action      | Example                        |
-| --------------- | ------------------------ | ----------- | ------------------------------ |
-| Character swap  | a literal character      | rewrite     | `—` becomes `, `               |
-| Phrase removal  | a phrase, any casing     | rewrite     | `In summary, ` becomes empty   |
-| Block word      | a whole word or term     | flag only   | `comprehensive`, `blast radius`|
-| Semicolon split | `;` then space, a letter | rewrite     | `; it` becomes `. It`          |
-| Space collapse  | two or more spaces       | rewrite     | two spaces become one          |
+| Kind                | Matches                     | Action      | Example                        |
+| ------------------- | --------------------------- | ----------- | ------------------------------ |
+| Character swap      | a literal character         | rewrite     | `—` becomes `, `               |
+| Phrase removal      | a phrase, any casing        | rewrite     | `In summary, ` becomes empty   |
+| Block word          | a whole word or term        | flag only   | `comprehensive`, `blast radius`|
+| Semicolon split     | `;` then space, a letter    | rewrite     | `; it` becomes `. It`          |
+| Punctuation cleanup | spaces before punctuation   | rewrite     | `word ,` becomes `word,`       |
+| Space collapse      | two or more spaces          | rewrite     | two spaces become one          |
 
 A few notes on the matching:
 
 - Character swaps match the literal text, so nothing inside it acts as a regex.
 - Phrase keys keep the trailing comma and space, so deleting one leaves a clean sentence
   rather than a dangling comma.
+- Deleting a phrase that opened a sentence restores the capital on the word after it, so
+  `In summary, it works.` becomes `It works.` and not `it works.`. A phrase deleted
+  mid-sentence leaves the next word lowercase.
 - Block words match on word boundaries, so `robust` matches the standalone word and not
   the middle of a longer one. Multi-word terms like `blast radius` work the same way.
+- The semicolon split stays within one line. A semicolon right before a line break is
+  left alone, so the split never swallows a newline and reflows a paragraph.
+- Both cleanup rules skip the start of a line, so indentation survives.
 
 ## The order they run in
 
-| Step | Stage           | Note                                                       |
-| ---- | --------------- | ---------------------------------------------------------- |
-| 1    | Character swaps |                                                            |
-| 2    | Phrase removal  |                                                            |
-| 3    | Block-word flags| Flags only, never changes the text.                        |
-| 4    | Semicolon split |                                                            |
-| 5    | Space collapse  | Runs last to mop up spaces the earlier swaps leave behind. |
+| Step | Stage               | Note                                                       |
+| ---- | ------------------- | ---------------------------------------------------------- |
+| 1    | Character swaps     |                                                            |
+| 2    | Phrase removal      |                                                            |
+| 3    | Block-word flags    | Flags only, never changes the text.                        |
+| 4    | Semicolon split     |                                                            |
+| 5    | Punctuation cleanup | Drops spaces left in front of punctuation.                 |
+| 6    | Space collapse      | Runs last to mop up spaces the earlier swaps leave behind. |
 
-Why space collapse goes last: take the input `word — word`. The em-dash becomes a comma
-and a space, which leaves two spaces around the comma, and the final pass tidies it.
-Phrase removal can also leave a stray space at the start of a line, and the same pass
-cleans that.
+Why the cleanup stages go last: take the input `word — word`. The em-dash becomes a comma
+and a space, which leaves `word ,  word`. The punctuation pass pulls the comma back
+against the word, the collapse pass folds the leftover double space, and the result is
+`word, word`.
 
 ## check vs fix
 
@@ -94,10 +104,11 @@ Both run the same rules. They differ in what they do with the matches.
 | Writes to        | findings on stderr            | clean text on stdout          |
 | Exit code        | non-zero when it finds slop   | zero                          |
 | Good for         | a CI gate                     | cleaning a file               |
-| Positions        | exact, since it scans the original | not reported             |
+| Positions        | exact, against the original   | same findings with `-json`, positions from the original |
 
 `fix` runs `check` first to gather findings against the original, then applies the
-rewriting rules in order.
+rewriting rules in order. Findings come back sorted by position in the text, so a match
+on line 1 always prints before a match on line 2, whatever rule found it.
 
 ## A worked example
 
@@ -107,22 +118,25 @@ Input:
 In summary, a comprehensive—and robust—plan; it works.
 ```
 
-`slop-chop check` reports every match and exits non-zero:
+`slop-chop check` reports every match in text order and exits non-zero:
 
 ```text
-1:28 char:—: "—" -> ", "
-1:39 char:—: "—" -> ", "
-1:1 phrase:in summary,: "In summary, "
+1:1 phrase:in summary,: "In summary, a" -> "A"
 1:15 word:comprehensive: "comprehensive"
+1:28 char:—: "—" -> ", "
 1:33 word:robust: "robust"
+1:39 char:—: "—" -> ", "
 1:44 semicolon: "; i" -> ". I"
 slop-chop: 6 finding(s)
 ```
 
+The phrase match reaches one letter past the phrase. That letter is what gets the
+capital back when the deletion leaves it opening the sentence.
+
 `slop-chop fix` returns the cleaned text:
 
 ```text
-a comprehensive, and robust, plan. It works.
+A comprehensive, and robust, plan. It works.
 ```
 
 Note that `comprehensive` and `robust` are still there. They are block words, so the
@@ -130,13 +144,14 @@ engine flags them but leaves the swap to you.
 
 ## Which rules rewrite
 
-| Rule            | What it does |
-| --------------- | ------------ |
-| Character swap  | rewrites     |
-| Phrase removal  | rewrites     |
-| Semicolon split | rewrites     |
-| Space collapse  | rewrites     |
-| Block word      | flags only   |
+| Rule                | What it does |
+| ------------------- | ------------ |
+| Character swap      | rewrites     |
+| Phrase removal      | rewrites     |
+| Semicolon split     | rewrites     |
+| Punctuation cleanup | rewrites     |
+| Space collapse      | rewrites     |
+| Block word          | flags only   |
 
 The rewriting rules are safe without knowing the surrounding sentence. Block words are
 not, since the right replacement for a word like `comprehensive` depends on context, so
@@ -155,9 +170,21 @@ ships`.
 It only fires when the semicolon joins two clauses. Before splitting, it looks at the
 sentence around the semicolon. If that sentence holds more than one semicolon, or if a
 coordinating conjunction like "and" or "or" follows, the semicolon is treated as a list
-separator and left alone. So `we support Go; Python; and Rust` is not touched. This is a
-heuristic, not a parser, so a rare case can still slip through, and matching a voice or
-reworking a clause more deeply is a job for the rewrite pass.
+separator and left alone. So `we support Go; Python; and Rust` is not touched. The match
+also stays within one line, so a semicolon at the end of a line never swallows the line
+break after it. This is a heuristic, not a parser, so a rare case can still slip
+through, and matching a voice or reworking a clause more deeply is a job for the
+rewrite pass.
+
+</details>
+
+<details>
+<summary>How the capital comes back after a phrase delete</summary>
+
+A deletion phrase matches one letter past the phrase itself. When the phrase sat at the
+start of a sentence, at the start of the text, or right after a period, an exclamation
+point, a question mark, or a line break, the kept letter is written back as a capital.
+Anywhere else it keeps its case, so `and to be honest, it works` becomes `and it works`.
 
 </details>
 
@@ -175,14 +202,15 @@ bytes keeps the column honest when the text holds characters wider than a single
 <summary>Why the output is identical on every run</summary>
 
 Within a single kind, the entries get sorted before they compile. Map order in Go is not
-stable, and sorting keeps the rule list, and the output, the same from one run to the
-next.
+stable, and sorting keeps the rule list the same from one run to the next. Findings get
+a second sort by position in the text, with the rule name as the tie break, so the
+report reads top to bottom no matter which rule matched first.
 
 </details>
 
 ## Where the rules stop
 
 The rules pass is deterministic, cheap, and good at the common tells, but it cannot reword
-a sentence, judge tone, or match a voice. That takes a model. The plan is to keep the
-rules as the default and add the model pass behind a flag, so the cheap and predictable
-path stays the one you reach for most.
+a sentence, judge tone, or match a voice. That takes a model, and that pass exists: run
+`fix -rewrite` to send the rules output through one. It needs an API key and costs money,
+so the cheap and predictable rules pass stays the default and the one you reach for most.
