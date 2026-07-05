@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -12,22 +13,27 @@ import (
 	"github.com/dcadolph/slop-chop/internal/sanitize"
 )
 
+// errFindings signals that check mode found slop. main maps it to exit code 1 so the
+// exit lifecycle stays in main and run stays testable.
+var errFindings = errors.New("findings")
+
 // usage describes the command line.
 const usage = `slop-chop - chop the slop from text
 
 Usage:
   slop-chop check [-profile p.json] [-json] [-pretty] [file]
-  slop-chop fix   [-profile p.json] [-json] [-pretty] [-rewrite [-model id]] [file]
+  slop-chop fix   [-profile p.json] [-json] [-pretty] [-w] [-rewrite [-model id]] [file]
 
 Flags:
   -profile path   use a JSON style profile instead of the built-in one
   -json           write JSON to stdout (findings for check, result for fix)
   -pretty         indent the JSON output
+  -w              write the result back to the file instead of stdout (fix only)
   -rewrite        after the rules pass, send the text to a model for a deeper clean
   -model id       model for -rewrite (default claude-opus-4-8)
 
 check flags AI tells and exits non-zero when it finds any.
-fix writes the cleaned text to stdout.
+fix writes the cleaned text to stdout. It does not touch the file unless you pass -w.
 The -rewrite pass needs the ANTHROPIC_API_KEY environment variable.
 With no file, slop-chop reads stdin.
 `
@@ -61,6 +67,7 @@ func main() {
 	pretty := fs.Bool("pretty", false, "indent the JSON output")
 	doRewrite := fs.Bool("rewrite", false, "run the model rewrite pass after the rules")
 	model := fs.String("model", rewrite.DefaultModel, "model for -rewrite")
+	write := fs.Bool("w", false, "write the result back to the file instead of stdout")
 	if err := fs.Parse(os.Args[2:]); err != nil {
 		os.Exit(2)
 	}
@@ -71,10 +78,15 @@ func main() {
 		file:        fs.Arg(0),
 		jsonOut:     *jsonOut,
 		pretty:      *pretty,
+		write:       *write,
 		rewrite:     *doRewrite,
 		model:       *model,
 	}
-	if err := run(context.Background(), opts, os.Stdin, os.Stdout, os.Stderr); err != nil {
+	switch err := run(context.Background(), opts, os.Stdin, os.Stdout, os.Stderr); {
+	case err == nil:
+	case errors.Is(err, errFindings):
+		os.Exit(1)
+	default:
 		fmt.Fprintln(os.Stderr, "slop-chop:", err)
 		os.Exit(2)
 	}
@@ -92,14 +104,16 @@ type runOptions struct {
 	jsonOut bool
 	// pretty indents the JSON output.
 	pretty bool
+	// write saves the result back to the file instead of writing to stdout.
+	write bool
 	// rewrite runs the model pass after the rules pass.
 	rewrite bool
 	// model is the model id for the rewrite pass.
 	model string
 }
 
-// run executes one invocation. It returns an error for usage or IO problems and calls
-// os.Exit(1) directly when check mode finds slop.
+// run executes one invocation. It returns an error for usage or IO problems, and
+// errFindings when check mode finds slop, leaving the exit code to main.
 func run(ctx context.Context, opts runOptions, stdin io.Reader, stdout, stderr io.Writer) error {
 	profile := sanitize.DefaultProfile()
 	if opts.profilePath != "" {
@@ -136,7 +150,7 @@ func run(ctx context.Context, opts runOptions, stdin io.Reader, stdout, stderr i
 			if !opts.jsonOut {
 				fmt.Fprintf(stderr, "slop-chop: %d finding(s)\n", len(findings))
 			}
-			os.Exit(1)
+			return errFindings
 		}
 		return nil
 	case "fix":
@@ -148,7 +162,13 @@ func run(ctx context.Context, opts runOptions, stdin io.Reader, stdout, stderr i
 			}
 		}
 		if opts.jsonOut {
+			if opts.write {
+				return fmt.Errorf("cannot use -w with -json")
+			}
 			return writeJSON(stdout, fixReport{Cleaned: out, Findings: orEmpty(findings)}, opts.pretty)
+		}
+		if opts.write {
+			return writeFile(opts.file, out)
 		}
 		_, err := io.WriteString(stdout, out)
 		return err
@@ -182,6 +202,22 @@ func orEmpty(f []sanitize.Finding) []sanitize.Finding {
 		return []sanitize.Finding{}
 	}
 	return f
+}
+
+// writeFile writes out back to path, keeping the file's existing mode. It needs a real
+// file, since there is nothing to write in place to when reading from stdin.
+func writeFile(path, out string) error {
+	if path == "" {
+		return fmt.Errorf("-w needs a file argument, not stdin")
+	}
+	mode := os.FileMode(0o644)
+	if info, err := os.Stat(path); err == nil {
+		mode = info.Mode().Perm()
+	}
+	if err := os.WriteFile(path, []byte(out), mode); err != nil {
+		return fmt.Errorf("write file: %w", err)
+	}
+	return nil
 }
 
 // readInput returns the text from file, or from stdin when file is empty.
