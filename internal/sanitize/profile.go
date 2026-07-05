@@ -80,7 +80,7 @@ func LoadFile(path string) (Profile, error) {
 	if err != nil {
 		return Profile{}, fmt.Errorf("profile open: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	return Load(f)
 }
 
