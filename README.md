@@ -105,6 +105,28 @@ jobs:
           # profile: myprofile.json   # optional
 ```
 
+Or have it fix the files and push the cleanup back to the pull request branch:
+
+```yaml
+name: slop-chop
+on: pull_request
+jobs:
+  slop:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: dcadolph/slop-chop@v0.3.0
+        with:
+          files: docs/intro.md docs/guide.md
+          mode: fix
+          commit: "true"
+          # message: Chop the slop   # optional commit message
+```
+
 ## Rewrite pass (optional)
 
 The rules pass is deterministic and free. For the work rules cannot do, like reworking a
