@@ -23,7 +23,9 @@ type Profile struct {
 	// BlockWords are words flagged wherever they appear. They are reported but never
 	// rewritten, since a safe replacement depends on context.
 	BlockWords []string `json:"blockWords"`
-	// CollapseSpaces collapses runs of two or more spaces into one.
+	// CollapseSpaces collapses runs of two or more spaces into one and removes spaces
+	// left before closing punctuation, like the debris an em-dash swap leaves behind.
+	// Runs at the start of a line are indentation and stay as they are.
 	CollapseSpaces bool `json:"collapseSpaces"`
 	// SplitSemicolons turns "; " into ". " and capitalizes the next word.
 	SplitSemicolons bool `json:"splitSemicolons"`
@@ -121,8 +123,10 @@ func (p Profile) compile() ([]Rule, error) {
 
 	if p.SplitSemicolons {
 		rules = append(rules, Rule{
+			// The pattern stays within one line, so a semicolon before a line break never
+			// swallows the newline and reflows the paragraph.
 			Name:     "semicolon",
-			re:       regexp.MustCompile(`;\s+(\p{L})`),
+			re:       regexp.MustCompile(`;[ \t]+(\p{L})`),
 			replFunc: splitSemicolon,
 			keep:     semicolonJoinsClauses,
 			rewrite:  true,
@@ -131,9 +135,17 @@ func (p Profile) compile() ([]Rule, error) {
 
 	if p.CollapseSpaces {
 		rules = append(rules, Rule{
+			Name:     "space-before-punct",
+			re:       regexp.MustCompile(`[ \t]+[,.!?;:]`),
+			replFunc: trimLeadingSpace,
+			keep:     notLineStart,
+			rewrite:  true,
+		})
+		rules = append(rules, Rule{
 			Name:    "double-space",
 			re:      regexp.MustCompile(`  +`),
 			repl:    " ",
+			keep:    notLineStart,
 			rewrite: true,
 		})
 	}
@@ -149,6 +161,19 @@ func sortedKeys(m map[string]string) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+// trimLeadingSpace returns the match without its leading spaces and tabs, leaving just
+// the punctuation.
+func trimLeadingSpace(match string) string {
+	return strings.TrimLeft(match, " \t")
+}
+
+// notLineStart reports whether the match at start has text before it on the same line.
+// It keeps indentation, like a markdown code block leading into a dot, out of reach of
+// the punctuation cleanup.
+func notLineStart(text string, start int) bool {
+	return start > 0 && text[start-1] != '\n' && text[start-1] != '\r'
 }
 
 // splitSemicolon rewrites a "; x" match into ". X", ending the clause and capitalizing

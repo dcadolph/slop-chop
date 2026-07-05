@@ -37,6 +37,18 @@ func TestFix(t *testing.T) {
 		In: "We support Go; Python; and Rust.", WantResult: "We support Go; Python; and Rust.",
 	}, { // Test 10: A semicolon before a conjunction is left alone.
 		In: "ship it; and forget it", WantResult: "ship it; and forget it",
+	}, { // Test 11: An em-dash with spaces around it leaves no space before the comma.
+		In: "word — word", WantResult: "word, word",
+	}, { // Test 12: A semicolon at the end of a line does not swallow the newline.
+		In: "it works;\nit ships", WantResult: "it works;\nit ships",
+	}, { // Test 13: A semicolon before a CRLF line break is left alone.
+		In: "it works;\r\nit ships", WantResult: "it works;\r\nit ships",
+	}, { // Test 14: A space before a semicolon is dropped after the split.
+		In: "a ; b", WantResult: "a. B",
+	}, { // Test 15: Indentation before a leading dot is not punctuation debris.
+		In: "code:\n    .hidden stays", WantResult: "code:\n    .hidden stays",
+	}, { // Test 16: A space before a period is removed mid-line.
+		In: "done .", WantResult: "done.",
 	}}
 
 	s := mustSanitizer(t)
@@ -71,6 +83,10 @@ func TestCheck(t *testing.T) {
 		In: "robustness improved and delved deeper", WantRules: nil,
 	}, { // Test 6: A semicolon separating list items is not flagged as a clause join.
 		In: "Go; Python; and Rust", WantRules: nil,
+	}, { // Test 7: A space before punctuation is flagged.
+		In: "word , word", WantRules: []string{"space-before-punct"},
+	}, { // Test 8: A semicolon at a line end is not flagged as a clause join.
+		In: "it works;\nit ships", WantRules: nil,
 	}}
 
 	s := mustSanitizer(t)
