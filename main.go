@@ -143,12 +143,12 @@ func run(ctx context.Context, opts runOptions, stdin io.Reader, stdout, stderr i
 			}
 		} else {
 			for _, f := range findings {
-				fmt.Fprintln(stderr, f)
+				_, _ = fmt.Fprintln(stderr, f)
 			}
 		}
 		if len(findings) > 0 {
 			if !opts.jsonOut {
-				fmt.Fprintf(stderr, "slop-chop: %d finding(s)\n", len(findings))
+				_, _ = fmt.Fprintf(stderr, "slop-chop: %d finding(s)\n", len(findings))
 			}
 			return errFindings
 		}
