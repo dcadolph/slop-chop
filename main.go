@@ -19,8 +19,8 @@ import (
 const usage = `slop-chop - chop the slop from text
 
 Usage:
-  slop-chop check [-profile p.json] [-json] [-pretty] [file]
-  slop-chop fix   [-profile p.json] [-json] [-pretty] [-w] [-rewrite [-model id]] [file]
+  slop-chop check [-profile p.json] [-json] [-pretty] [file ...]
+  slop-chop fix   [-profile p.json] [-json] [-pretty] [-w] [-rewrite [-model id]] [file ...]
   slop-chop help
 
 Flags:
@@ -31,8 +31,9 @@ Flags:
   -rewrite        after the rules pass, send the text to a model for a deeper clean
   -model id       model for -rewrite (default ` + rewrite.DefaultModel + `)
 
-check flags AI tells and exits non-zero when it finds any.
-fix writes the cleaned text to stdout. It does not touch the file unless you pass -w.
+check flags AI tells and exits non-zero when it finds any. It takes any number of files.
+fix writes the cleaned text to stdout and takes one file that way. Pass -w to rewrite
+files in place instead, as many as you like.
 The -rewrite pass needs the ANTHROPIC_API_KEY environment variable.
 With no file, slop-chop reads stdin.
 `
@@ -86,8 +87,8 @@ type runOptions struct {
 	mode string
 	// profilePath points at a JSON profile, or is empty for the built-in one.
 	profilePath string
-	// file is the input path, or empty to read stdin.
-	file string
+	// files are the input paths, or empty to read stdin.
+	files []string
 	// jsonOut writes JSON instead of text or findings.
 	jsonOut bool
 	// pretty indents the JSON output.
@@ -129,17 +130,13 @@ func parseArgs(args []string) (runOptions, error) {
 		return runOptions{}, err
 	}
 
-	if fs.NArg() > 1 {
-		return runOptions{}, fmt.Errorf("too many arguments: at most one file, got %d", fs.NArg())
-	}
-
 	set := map[string]bool{}
 	fs.Visit(func(f *flag.Flag) { set[f.Name] = true })
 
 	opts := runOptions{
 		mode:        mode,
 		profilePath: *profilePath,
-		file:        fs.Arg(0),
+		files:       fs.Args(),
 		jsonOut:     *jsonOut,
 		pretty:      *pretty,
 		write:       *write,
@@ -157,11 +154,17 @@ func parseArgs(args []string) (runOptions, error) {
 	if set["model"] && !opts.rewrite {
 		return runOptions{}, fmt.Errorf("-model needs -rewrite")
 	}
+	if opts.jsonOut && len(opts.files) > 1 {
+		return runOptions{}, fmt.Errorf("-json takes at most one file")
+	}
 	if opts.write && opts.jsonOut {
 		return runOptions{}, fmt.Errorf("cannot use -w with -json")
 	}
-	if opts.write && opts.file == "" {
+	if opts.write && len(opts.files) == 0 {
 		return runOptions{}, fmt.Errorf("-w needs a file argument, not stdin")
+	}
+	if mode == "fix" && !opts.write && len(opts.files) > 1 {
+		return runOptions{}, fmt.Errorf("fix writes one file to stdout: pass -w to rewrite several in place")
 	}
 	return opts, nil
 }
@@ -183,24 +186,48 @@ func run(ctx context.Context, opts runOptions, stdin io.Reader, stdout, stderr i
 		return err
 	}
 
-	text, err := readInput(opts.file, stdin)
-	if err != nil {
-		return err
-	}
-
 	switch opts.mode {
 	case "check":
-		return runCheck(s, text, opts, stdout, stderr)
+		return checkAll(s, opts, stdin, stdout, stderr)
 	case "fix":
-		return runFix(ctx, s, profile.Tone, text, opts, stdout)
+		return fixAll(ctx, s, profile.Tone, opts, stdin, stdout)
 	default:
 		return fmt.Errorf("unknown mode %q (want check or fix)", opts.mode)
 	}
 }
 
-// runCheck reports findings and returns errFindings when there are any. Findings on a
-// file are prefixed with its path, so a terminal can jump to the spot.
-func runCheck(s *sanitize.Sanitizer, text string, opts runOptions, stdout, stderr io.Writer) error {
+// checkAll runs check over stdin or over every file, and returns errFindings when any
+// input had findings.
+func checkAll(s *sanitize.Sanitizer, opts runOptions, stdin io.Reader, stdout, stderr io.Writer) error {
+	if len(opts.files) == 0 {
+		text, err := readInput("", stdin)
+		if err != nil {
+			return err
+		}
+		return checkOne(s, text, "", opts, stdout, stderr)
+	}
+	found := false
+	for _, path := range opts.files {
+		text, err := readInput(path, stdin)
+		if err != nil {
+			return err
+		}
+		switch err := checkOne(s, text, path, opts, stdout, stderr); {
+		case errors.Is(err, errFindings):
+			found = true
+		case err != nil:
+			return err
+		}
+	}
+	if found {
+		return errFindings
+	}
+	return nil
+}
+
+// checkOne reports findings for one input and returns errFindings when there are any.
+// Findings on a file are prefixed with its path, so a terminal can jump to the spot.
+func checkOne(s *sanitize.Sanitizer, text, path string, opts runOptions, stdout, stderr io.Writer) error {
 	findings := s.Check(text)
 	if opts.jsonOut {
 		if err := writeJSON(stdout, checkReport{Findings: orEmpty(findings)}, opts.pretty); err != nil {
@@ -208,8 +235,8 @@ func runCheck(s *sanitize.Sanitizer, text string, opts runOptions, stdout, stder
 		}
 	} else {
 		prefix := ""
-		if opts.file != "" {
-			prefix = opts.file + ":"
+		if path != "" {
+			prefix = path + ":"
 		}
 		for _, f := range findings {
 			_, _ = fmt.Fprintf(stderr, "%s%s\n", prefix, f)
@@ -224,9 +251,36 @@ func runCheck(s *sanitize.Sanitizer, text string, opts runOptions, stdout, stder
 	return nil
 }
 
-// runFix writes the cleaned text to stdout, back into the file with -w, or as JSON.
-// With -rewrite it runs the model pass on the rules output first.
-func runFix(ctx context.Context, s *sanitize.Sanitizer, tone []string, text string,
+// fixAll runs fix over stdin, over one file to stdout, or over every file in place
+// with -w.
+func fixAll(ctx context.Context, s *sanitize.Sanitizer, tone []string, opts runOptions,
+	stdin io.Reader, stdout io.Writer) error {
+	if opts.write {
+		for _, path := range opts.files {
+			text, err := readInput(path, stdin)
+			if err != nil {
+				return err
+			}
+			if err := fixOne(ctx, s, tone, text, path, opts, stdout); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	path := ""
+	if len(opts.files) == 1 {
+		path = opts.files[0]
+	}
+	text, err := readInput(path, stdin)
+	if err != nil {
+		return err
+	}
+	return fixOne(ctx, s, tone, text, path, opts, stdout)
+}
+
+// fixOne cleans one input and writes it to stdout, back into its file with -w, or as
+// JSON. With -rewrite it runs the model pass on the rules output first.
+func fixOne(ctx context.Context, s *sanitize.Sanitizer, tone []string, text, path string,
 	opts runOptions, stdout io.Writer) error {
 	out, findings := s.Fix(text)
 	if opts.rewrite {
@@ -244,7 +298,7 @@ func runFix(ctx context.Context, s *sanitize.Sanitizer, tone []string, text stri
 		return writeJSON(stdout, fixReport{Cleaned: out, Findings: orEmpty(findings)}, opts.pretty)
 	}
 	if opts.write {
-		return writeFile(opts.file, out)
+		return writeFile(path, out)
 	}
 	_, err := io.WriteString(stdout, out)
 	return err

@@ -62,6 +62,10 @@ echo "In summary, a robust—and seamless—result." | slop-chop fix
 # Flag slop without changing anything (exits non-zero if it finds any)
 slop-chop check notes.md
 
+# Check or fix several files at once
+slop-chop check docs/intro.md docs/guide.md README.md
+slop-chop fix -w docs/intro.md docs/guide.md
+
 # Use your own profile
 slop-chop fix -profile myprofile.json notes.md
 

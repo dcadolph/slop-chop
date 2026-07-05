@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // TestParseArgs checks mode selection, flag validation, and the help path.
@@ -45,10 +47,16 @@ func TestParseArgs(t *testing.T) {
 		In: []string{"check", "-model", "m", "notes.md"}, WantErrSub: "fix flag",
 	}, { // Test 12: -model without -rewrite is rejected.
 		In: []string{"fix", "-model", "m", "notes.md"}, WantErrSub: "-model needs -rewrite",
-	}, { // Test 13: More than one file is an error.
-		In: []string{"fix", "a.md", "b.md"}, WantErrSub: "too many arguments",
+	}, { // Test 13: fix to stdout takes one file at most.
+		In: []string{"fix", "a.md", "b.md"}, WantErrSub: "pass -w",
 	}, { // Test 14: An unknown flag is an error.
 		In: []string{"check", "-bogus"}, WantErrSub: "bogus",
+	}, { // Test 15: check takes any number of files.
+		In: []string{"check", "a.md", "b.md", "c.md"},
+	}, { // Test 16: fix -w takes any number of files.
+		In: []string{"fix", "-w", "a.md", "b.md"},
+	}, { // Test 17: JSON output takes one file at most.
+		In: []string{"check", "-json", "a.md", "b.md"}, WantErrSub: "-json takes at most one file",
 	}}
 
 	for testNum, test := range tests {
@@ -81,10 +89,11 @@ func TestParseArgsFields(t *testing.T) {
 		t.Fatalf("parseArgs: %v", err)
 	}
 	want := runOptions{
-		mode: "fix", file: "in.md", jsonOut: true, pretty: true, rewrite: true, model: "claude-x",
+		mode: "fix", files: []string{"in.md"},
+		jsonOut: true, pretty: true, rewrite: true, model: "claude-x",
 	}
-	if opts != want {
-		t.Errorf("opts = %+v, want %+v", opts, want)
+	if diff := cmp.Diff(want, opts, cmp.AllowUnexported(runOptions{})); diff != "" {
+		t.Errorf("mismatch (-want +got):\n%s", diff)
 	}
 }
 
@@ -136,7 +145,7 @@ func TestRunFixWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 	var out, errb bytes.Buffer
-	opts := runOptions{mode: "fix", file: path, write: true}
+	opts := runOptions{mode: "fix", files: []string{path}, write: true}
 	if err := run(t.Context(), opts, strings.NewReader(""), &out, &errb); err != nil {
 		t.Fatalf("run: %v", err)
 	}
@@ -158,12 +167,71 @@ func TestRunCheckFilePrefix(t *testing.T) {
 		t.Fatal(err)
 	}
 	var out, errb bytes.Buffer
-	opts := runOptions{mode: "check", file: path}
+	opts := runOptions{mode: "check", files: []string{path}}
 	if err := run(t.Context(), opts, strings.NewReader(""), &out, &errb); !errors.Is(err, errFindings) {
 		t.Fatalf("err = %v, want errFindings", err)
 	}
 	if !strings.Contains(errb.String(), path+":1:3") {
 		t.Errorf("stderr = %q, want prefix %q", errb.String(), path+":1:3")
+	}
+}
+
+// TestRunCheckMultiFile checks that every file is scanned, each finding carries its own
+// path, and one dirty file fails the whole run.
+func TestRunCheckMultiFile(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	clean := filepath.Join(dir, "clean.md")
+	dirty := filepath.Join(dir, "dirty.md")
+	if err := os.WriteFile(clean, []byte("a plain sentence"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(dirty, []byte("a robust plan"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var out, errb bytes.Buffer
+	opts := runOptions{mode: "check", files: []string{clean, dirty}}
+	if err := run(t.Context(), opts, strings.NewReader(""), &out, &errb); !errors.Is(err, errFindings) {
+		t.Fatalf("err = %v, want errFindings", err)
+	}
+	if !strings.Contains(errb.String(), dirty+":1:3") {
+		t.Errorf("stderr = %q, want a finding for %q", errb.String(), dirty)
+	}
+	if strings.Contains(errb.String(), clean+":") {
+		t.Errorf("stderr = %q, want no findings for %q", errb.String(), clean)
+	}
+}
+
+// TestRunFixWriteMultiFile checks that -w rewrites every listed file in place.
+func TestRunFixWriteMultiFile(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	one := filepath.Join(dir, "one.md")
+	two := filepath.Join(dir, "two.md")
+	if err := os.WriteFile(one, []byte("In summary, a plan."), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(two, []byte("it works; it ships"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var out, errb bytes.Buffer
+	opts := runOptions{mode: "fix", files: []string{one, two}, write: true}
+	if err := run(t.Context(), opts, strings.NewReader(""), &out, &errb); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	gotOne, err := os.ReadFile(one)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotTwo, err := os.ReadFile(two)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(gotOne) != "A plan." {
+		t.Errorf("one = %q, want %q", gotOne, "A plan.")
+	}
+	if string(gotTwo) != "it works. It ships" {
+		t.Errorf("two = %q, want %q", gotTwo, "it works. It ships")
 	}
 }
 
