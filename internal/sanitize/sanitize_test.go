@@ -33,6 +33,10 @@ func TestFix(t *testing.T) {
 		In: "Giving it to you honestly, it ships", WantResult: "it ships",
 	}, { // Test 8: Multi-word block word stays in place.
 		In: "the blast radius is small", WantResult: "the blast radius is small",
+	}, { // Test 9: A semicolon list is left alone, not split into sentences.
+		In: "We support Go; Python; and Rust.", WantResult: "We support Go; Python; and Rust.",
+	}, { // Test 10: A semicolon before a conjunction is left alone.
+		In: "ship it; and forget it", WantResult: "ship it; and forget it",
 	}}
 
 	s := mustSanitizer(t)
@@ -63,6 +67,10 @@ func TestCheck(t *testing.T) {
 		In: "robust; nice", WantRules: []string{"word:robust", "semicolon"},
 	}, { // Test 4: Multi-word buzzword is flagged.
 		In: "the blast radius", WantRules: []string{"word:blast radius"},
+	}, { // Test 5: Word boundaries hold. robust in robustness and delve in delved stay clear.
+		In: "robustness improved and delved deeper", WantRules: nil,
+	}, { // Test 6: A semicolon separating list items is not flagged as a clause join.
+		In: "Go; Python; and Rust", WantRules: nil,
 	}}
 
 	s := mustSanitizer(t)
@@ -95,6 +103,35 @@ func TestLoadPartialProfile(t *testing.T) {
 	}
 	if p.SplitSemicolons {
 		t.Error("SplitSemicolons: want false")
+	}
+}
+
+// TestRuneColumn checks that a column is a rune count, not a byte offset, when a
+// multibyte character sits before the match.
+func TestRuneColumn(t *testing.T) {
+	t.Parallel()
+	s := mustSanitizer(t)
+	var got Finding
+	found := false
+	for _, f := range s.Check("a — b robust") {
+		if f.Rule == "word:robust" {
+			got, found = f, true
+		}
+	}
+	if !found {
+		t.Fatal("robust not flagged")
+	}
+	// The em-dash is three bytes but one rune, so robust starts at rune column 7.
+	if got.Line != 1 || got.Col != 7 {
+		t.Errorf("line,col = %d,%d, want 1,7", got.Line, got.Col)
+	}
+}
+
+// TestLoadMalformed checks that invalid JSON returns an error.
+func TestLoadMalformed(t *testing.T) {
+	t.Parallel()
+	if _, err := Load(strings.NewReader("{not valid json")); err == nil {
+		t.Error("Load: want error for malformed JSON")
 	}
 }
 
