@@ -28,9 +28,10 @@ func (s *Sanitizer) Check(text string) []Finding {
 	for _, r := range s.rules {
 		for _, loc := range r.matches(text) {
 			match := text[loc[0]:loc[1]]
-			repl := ""
+			var repl *string
 			if r.rewrite {
-				repl = r.replacement(match)
+				v := r.replacement(match)
+				repl = &v
 			}
 			line, col := lineColAt(text, newlines, loc[0])
 			findings = append(findings, Finding{
@@ -55,11 +56,7 @@ func (s *Sanitizer) Fix(text string) (string, []Finding) {
 		if !r.rewrite {
 			continue
 		}
-		if r.replFunc != nil {
-			out = r.re.ReplaceAllStringFunc(out, r.replFunc)
-			continue
-		}
-		out = r.re.ReplaceAllLiteralString(out, r.repl)
+		out = r.apply(out)
 	}
 	return out, findings
 }

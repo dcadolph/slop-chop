@@ -8,9 +8,10 @@ type Finding struct {
 	Rule string `json:"rule"`
 	// Match is the exact substring that matched.
 	Match string `json:"match"`
-	// Replacement is what the match was or would be replaced with. Empty means the
-	// rule only flags and does not rewrite.
-	Replacement string `json:"replacement"`
+	// Replacement is what the match was or would be replaced with. It is nil for a
+	// rule that only flags, which keeps that case distinct from a rule that rewrites
+	// the match to an empty string.
+	Replacement *string `json:"replacement,omitempty"`
 	// Offset is the byte offset of the match in the text it was found in.
 	Offset int `json:"offset"`
 	// Line is the one-based line number of the match.
@@ -21,8 +22,8 @@ type Finding struct {
 
 // String renders the finding as a single CI-friendly line.
 func (f Finding) String() string {
-	if f.Replacement == "" {
+	if f.Replacement == nil {
 		return fmt.Sprintf("%d:%d %s: %q", f.Line, f.Col, f.Rule, f.Match)
 	}
-	return fmt.Sprintf("%d:%d %s: %q -> %q", f.Line, f.Col, f.Rule, f.Match, f.Replacement)
+	return fmt.Sprintf("%d:%d %s: %q -> %q", f.Line, f.Col, f.Rule, f.Match, *f.Replacement)
 }
