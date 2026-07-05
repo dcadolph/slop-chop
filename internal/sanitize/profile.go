@@ -92,16 +92,24 @@ func (p Profile) compile() ([]Rule, error) {
 	var rules []Rule
 
 	for _, from := range sortedKeys(p.CharReplace) {
+		re, err := regexp.Compile(regexp.QuoteMeta(from))
+		if err != nil {
+			return nil, fmt.Errorf("%w: char swap %q: %w", ErrCompile, from, err)
+		}
 		rules = append(rules, Rule{
 			Name:    "char:" + from,
-			re:      regexp.MustCompile(regexp.QuoteMeta(from)),
+			re:      re,
 			repl:    p.CharReplace[from],
 			rewrite: true,
 		})
 	}
 
 	for _, phrase := range sortedKeys(p.PhraseReplace) {
-		rules = append(rules, phraseRule(phrase, p.PhraseReplace[phrase]))
+		r, err := phraseRule(phrase, p.PhraseReplace[phrase])
+		if err != nil {
+			return nil, err
+		}
+		rules = append(rules, r)
 	}
 
 	for _, w := range p.BlockWords {
@@ -161,23 +169,20 @@ func sortedKeys(m map[string]string) []string {
 // phraseRule builds the rule for one phrase swap. A deletion also captures the letter
 // after the phrase so the rewrite can restore the capital when the phrase opened its
 // sentence.
-func phraseRule(phrase, repl string) Rule {
+func phraseRule(phrase, repl string) (Rule, error) {
 	name := "phrase:" + strings.TrimSpace(phrase)
 	if repl != "" {
-		return Rule{
-			Name:    name,
-			re:      regexp.MustCompile("(?i)" + regexp.QuoteMeta(phrase)),
-			repl:    repl,
-			rewrite: true,
+		re, err := regexp.Compile("(?i)" + regexp.QuoteMeta(phrase))
+		if err != nil {
+			return Rule{}, fmt.Errorf("%w: phrase %q: %w", ErrCompile, phrase, err)
 		}
+		return Rule{Name: name, re: re, repl: repl, rewrite: true}, nil
 	}
-	re := regexp.MustCompile("(?i)" + regexp.QuoteMeta(phrase) + `(\p{L})?`)
-	return Rule{
-		Name:     name,
-		re:       re,
-		replFunc: deleteWithRecap(re),
-		rewrite:  true,
+	re, err := regexp.Compile("(?i)" + regexp.QuoteMeta(phrase) + `(\p{L})?`)
+	if err != nil {
+		return Rule{}, fmt.Errorf("%w: phrase %q: %w", ErrCompile, phrase, err)
 	}
+	return Rule{Name: name, re: re, replFunc: deleteWithRecap(re), rewrite: true}, nil
 }
 
 // deleteWithRecap returns a replFunc that drops a phrase match, keeping the letter

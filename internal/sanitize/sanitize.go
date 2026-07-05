@@ -21,7 +21,8 @@ func New(p Profile) (*Sanitizer, error) {
 }
 
 // Check reports every rule match in text without changing it. Findings are computed
-// against the original text, so their positions are exact.
+// against the original text, so their positions are exact, and they come back in text
+// order rather than rule order.
 func (s *Sanitizer) Check(text string) []Finding {
 	var findings []Finding
 	newlines := newlineOffsets(text)
@@ -44,6 +45,12 @@ func (s *Sanitizer) Check(text string) []Finding {
 			})
 		}
 	}
+	sort.Slice(findings, func(i, j int) bool {
+		if findings[i].Offset != findings[j].Offset {
+			return findings[i].Offset < findings[j].Offset
+		}
+		return findings[i].Rule < findings[j].Rule
+	})
 	return findings
 }
 

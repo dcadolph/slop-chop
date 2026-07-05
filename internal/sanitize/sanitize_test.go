@@ -1,6 +1,7 @@
 package sanitize
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -109,6 +110,45 @@ func TestCheck(t *testing.T) {
 			if diff := cmp.Diff(test.WantRules, got,
 				cmpopts.EquateEmpty(), cmpopts.SortSlices(less)); diff != "" {
 				t.Errorf("mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+// TestCheckOrder checks that findings come back in text order, not rule order, so a
+// match on line 1 never prints below a match on line 2.
+func TestCheckOrder(t *testing.T) {
+	t.Parallel()
+	s := mustSanitizer(t)
+	var got []string
+	for _, f := range s.Check("robust\nx — y") {
+		got = append(got, f.Rule)
+	}
+	want := []string{"word:robust", "char:—"}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want +got):\n%s", diff)
+	}
+}
+
+// TestNewCompileError checks that a profile entry that cannot compile, like one holding
+// invalid UTF-8, returns ErrCompile instead of panicking.
+func TestNewCompileError(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		Profile Profile
+	}{{ // Test 0: Invalid UTF-8 in a char swap.
+		Profile: Profile{CharReplace: map[string]string{"\xff": "x"}},
+	}, { // Test 1: Invalid UTF-8 in a phrase.
+		Profile: Profile{PhraseReplace: map[string]string{"\xff": ""}},
+	}, { // Test 2: Invalid UTF-8 in a block word.
+		Profile: Profile{BlockWords: []string{"\xff"}},
+	}}
+
+	for testNum, test := range tests {
+		t.Run(fmt.Sprintf("test %d", testNum), func(t *testing.T) {
+			t.Parallel()
+			if _, err := New(test.Profile); !errors.Is(err, ErrCompile) {
+				t.Errorf("New: err = %v, want ErrCompile", err)
 			}
 		})
 	}
