@@ -69,6 +69,9 @@ func TestFix(t *testing.T) {
 		In: "It's worth\nnoting that it works", WantResult: "It works",
 	}, { // Test 25: A phrase whose trailing space is a line break still matches.
 		In: "In summary,\nit ships", WantResult: "It ships",
+	}, { // Test 26: A stock opener from the expanded defaults is deleted with the
+		// capital restored.
+		In: "Needless to say, it passes", WantResult: "It passes",
 	}}
 
 	s := mustSanitizer(t)
@@ -99,8 +102,8 @@ func TestCheck(t *testing.T) {
 		In: "robust; nice", WantRules: []string{"word:robust", "semicolon"},
 	}, { // Test 4: Multi-word buzzword is flagged.
 		In: "the blast radius", WantRules: []string{"word:blast radius"},
-	}, { // Test 5: Word boundaries hold. robust in robustness and delve in delved stay clear.
-		In: "robustness improved and delved deeper", WantRules: nil,
+	}, { // Test 5: Word boundaries hold. robust inside robustness stays clear.
+		In: "robustness improved", WantRules: nil,
 	}, { // Test 6: A semicolon separating list items is not flagged as a clause join.
 		In: "Go; Python; and Rust", WantRules: nil,
 	}, { // Test 7: A space before punctuation is flagged.
@@ -118,6 +121,12 @@ func TestCheck(t *testing.T) {
 	}, { // Test 13: A multi-word term with extra spaces between words is still flagged,
 		// along with the double space itself.
 		In: "the blast  radius", WantRules: []string{"word:blast radius", "double-space"},
+	}, { // Test 14: Inflected forms of a block word are flagged.
+		In: "it delves into the details", WantRules: []string{"word:delves"},
+	}, { // Test 15: The past tense form is flagged too.
+		In: "we delved deeper", WantRules: []string{"word:delved"},
+	}, { // Test 16: A stock buzzword phrase is flagged.
+		In: "a testament to quality", WantRules: []string{"word:testament to"},
 	}}
 
 	s := mustSanitizer(t)
