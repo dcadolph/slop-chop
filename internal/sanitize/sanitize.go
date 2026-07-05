@@ -1,7 +1,8 @@
 package sanitize
 
 import (
-	"sort"
+	"cmp"
+	"slices"
 	"unicode/utf8"
 )
 
@@ -45,11 +46,8 @@ func (s *Sanitizer) Check(text string) []Finding {
 			})
 		}
 	}
-	sort.Slice(findings, func(i, j int) bool {
-		if findings[i].Offset != findings[j].Offset {
-			return findings[i].Offset < findings[j].Offset
-		}
-		return findings[i].Rule < findings[j].Rule
+	slices.SortFunc(findings, func(a, b Finding) int {
+		return cmp.Or(cmp.Compare(a.Offset, b.Offset), cmp.Compare(a.Rule, b.Rule))
 	})
 	return findings
 }
@@ -72,7 +70,7 @@ func (s *Sanitizer) Fix(text string) (string, []Finding) {
 // this once lets lineColAt find a match's line without rescanning from the start.
 func newlineOffsets(text string) []int {
 	var offs []int
-	for i := 0; i < len(text); i++ {
+	for i := range len(text) {
 		if text[i] == '\n' {
 			offs = append(offs, i)
 		}
@@ -83,7 +81,7 @@ func newlineOffsets(text string) []int {
 // lineColAt converts a byte offset into a one-based line and rune column, using a
 // precomputed list of newline offsets.
 func lineColAt(text string, newlines []int, offset int) (line, col int) {
-	n := sort.SearchInts(newlines, offset)
+	n, _ := slices.BinarySearch(newlines, offset)
 	line = n + 1
 	lineStart := 0
 	if n > 0 {

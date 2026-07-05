@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -91,7 +92,7 @@ func LoadFile(path string) (Profile, error) {
 func (p Profile) compile() ([]Rule, error) {
 	var rules []Rule
 
-	for _, from := range sortedKeys(p.CharReplace) {
+	for _, from := range slices.Sorted(maps.Keys(p.CharReplace)) {
 		re, err := regexp.Compile(regexp.QuoteMeta(from))
 		if err != nil {
 			return nil, fmt.Errorf("%w: char swap %q: %w", ErrCompile, from, err)
@@ -104,7 +105,7 @@ func (p Profile) compile() ([]Rule, error) {
 		})
 	}
 
-	for _, phrase := range sortedKeys(p.PhraseReplace) {
+	for _, phrase := range slices.Sorted(maps.Keys(p.PhraseReplace)) {
 		r, err := phraseRule(phrase, p.PhraseReplace[phrase])
 		if err != nil {
 			return nil, err
@@ -154,16 +155,6 @@ func (p Profile) compile() ([]Rule, error) {
 	}
 
 	return rules, nil
-}
-
-// sortedKeys returns the keys of m in ascending order for deterministic rule ordering.
-func sortedKeys(m map[string]string) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
 }
 
 // phraseRule builds the rule for one phrase swap. A deletion also captures the letter

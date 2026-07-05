@@ -106,7 +106,7 @@ func TestRunCheckFindings(t *testing.T) {
 			t.Parallel()
 			var out, errb bytes.Buffer
 			opts := runOptions{mode: "check"}
-			err := run(context.Background(), opts, strings.NewReader(test.In), &out, &errb)
+			err := run(t.Context(), opts, strings.NewReader(test.In), &out, &errb)
 			if !errors.Is(err, test.Want) {
 				t.Errorf("err = %v, want %v", err, test.Want)
 			}
@@ -120,7 +120,7 @@ func TestRunFixStdout(t *testing.T) {
 	t.Parallel()
 	var out, errb bytes.Buffer
 	opts := runOptions{mode: "fix"}
-	if err := run(context.Background(), opts, strings.NewReader("a robust plan; it works"), &out, &errb); err != nil {
+	if err := run(t.Context(), opts, strings.NewReader("a robust plan; it works"), &out, &errb); err != nil {
 		t.Fatalf("run: %v", err)
 	}
 	if got := out.String(); got != "a robust plan. It works" {
@@ -137,7 +137,7 @@ func TestRunFixWrite(t *testing.T) {
 	}
 	var out, errb bytes.Buffer
 	opts := runOptions{mode: "fix", file: path, write: true}
-	if err := run(context.Background(), opts, strings.NewReader(""), &out, &errb); err != nil {
+	if err := run(t.Context(), opts, strings.NewReader(""), &out, &errb); err != nil {
 		t.Fatalf("run: %v", err)
 	}
 	got, err := os.ReadFile(path)
@@ -159,7 +159,7 @@ func TestRunCheckFilePrefix(t *testing.T) {
 	}
 	var out, errb bytes.Buffer
 	opts := runOptions{mode: "check", file: path}
-	if err := run(context.Background(), opts, strings.NewReader(""), &out, &errb); !errors.Is(err, errFindings) {
+	if err := run(t.Context(), opts, strings.NewReader(""), &out, &errb); !errors.Is(err, errFindings) {
 		t.Fatalf("err = %v, want errFindings", err)
 	}
 	if !strings.Contains(errb.String(), path+":1:3") {
@@ -172,7 +172,7 @@ func TestRunCheckJSONFindings(t *testing.T) {
 	t.Parallel()
 	var out, errb bytes.Buffer
 	opts := runOptions{mode: "check", jsonOut: true}
-	err := run(context.Background(), opts, strings.NewReader("a robust plan"), &out, &errb)
+	err := run(t.Context(), opts, strings.NewReader("a robust plan"), &out, &errb)
 	if !errors.Is(err, errFindings) {
 		t.Fatalf("err = %v, want errFindings", err)
 	}
@@ -203,7 +203,7 @@ func TestRunFixRewriteNewline(t *testing.T) {
 		t.Run(fmt.Sprintf("test %d", testNum), func(t *testing.T) {
 			var out, errb bytes.Buffer
 			opts := runOptions{mode: "fix", rewrite: true}
-			if err := run(context.Background(), opts, strings.NewReader(test.In), &out, &errb); err != nil {
+			if err := run(t.Context(), opts, strings.NewReader(test.In), &out, &errb); err != nil {
 				t.Fatalf("run: %v", err)
 			}
 			if out.String() != test.WantResult {

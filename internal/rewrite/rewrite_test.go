@@ -39,7 +39,7 @@ func TestRewrite(t *testing.T) {
 				}
 				return test.Reply, nil
 			})
-			got, err := New(c).Rewrite(context.Background(), test.In)
+			got, err := New(c).Rewrite(t.Context(), test.In)
 			if !errors.Is(err, test.Want) {
 				t.Fatalf("err = %v, want %v", err, test.Want)
 			}
@@ -113,7 +113,7 @@ func TestCompleteResponses(t *testing.T) {
 			}))
 			defer srv.Close()
 			c := &anthropicCompleter{model: "m", endpoint: srv.URL, client: srv.Client()}
-			got, err := c.Complete(context.Background(), "sys", "user")
+			got, err := c.Complete(t.Context(), "sys", "user")
 			if test.WantErrSub != "" {
 				if err == nil || !strings.Contains(err.Error(), test.WantErrSub) {
 					t.Fatalf("err = %v, want substring %q", err, test.WantErrSub)
@@ -144,7 +144,7 @@ func TestCompleteRequest(t *testing.T) {
 	defer srv.Close()
 
 	c := &anthropicCompleter{model: "model-x", endpoint: srv.URL, client: srv.Client()}
-	if _, err := c.Complete(context.Background(), "sys prompt", "user text"); err != nil {
+	if _, err := c.Complete(t.Context(), "sys prompt", "user text"); err != nil {
 		t.Fatalf("Complete: %v", err)
 	}
 	if gotKey != "test-key" {
@@ -167,7 +167,7 @@ func TestCompleteRequest(t *testing.T) {
 func TestCompleteNoKey(t *testing.T) {
 	t.Setenv("ANTHROPIC_API_KEY", "")
 	c := &anthropicCompleter{model: "m", endpoint: "http://127.0.0.1:0", client: http.DefaultClient}
-	if _, err := c.Complete(context.Background(), "s", "u"); err == nil {
+	if _, err := c.Complete(t.Context(), "s", "u"); err == nil {
 		t.Error("Complete: want error when key is missing")
 	}
 }

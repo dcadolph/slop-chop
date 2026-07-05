@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"strings"
 
 	"github.com/dcadolph/slop-chop/internal/jsonutil"
@@ -64,7 +65,12 @@ func main() {
 		os.Exit(2)
 	}
 
-	switch err := run(context.Background(), opts, os.Stdin, os.Stdout, os.Stderr); {
+	// A first interrupt cancels the context so a long rewrite call unwinds cleanly. A
+	// second one falls back to the default hard stop.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	switch err := run(ctx, opts, os.Stdin, os.Stdout, os.Stderr); {
 	case err == nil:
 	case errors.Is(err, errFindings):
 		os.Exit(1)
