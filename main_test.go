@@ -235,6 +235,42 @@ func TestRunFixWriteMultiFile(t *testing.T) {
 	}
 }
 
+// TestRunProfileDiscovery checks that a .slop-chop.json in the working directory is
+// picked up when -profile is not set, and that -profile still wins over it.
+func TestRunProfileDiscovery(t *testing.T) {
+	dir := t.TempDir()
+	discovered := `{"blockWords": ["zorp"]}`
+	if err := os.WriteFile(filepath.Join(dir, ".slop-chop.json"), []byte(discovered), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	flagged := filepath.Join(dir, "other.json")
+	if err := os.WriteFile(flagged, []byte(`{"blockWords": ["blimp"]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(dir)
+
+	// The discovered profile flags zorp and nothing else.
+	var out, errb bytes.Buffer
+	opts := runOptions{mode: "check"}
+	err := run(t.Context(), opts, strings.NewReader("a zorp plan"), &out, &errb)
+	if !errors.Is(err, errFindings) {
+		t.Fatalf("discovered profile: err = %v, want errFindings", err)
+	}
+	if err := run(t.Context(), opts, strings.NewReader("a robust plan"), &out, &errb); err != nil {
+		t.Fatalf("discovered profile dropped the defaults: err = %v, want nil", err)
+	}
+
+	// An explicit -profile wins over the discovered file.
+	opts.profilePath = flagged
+	if err := run(t.Context(), opts, strings.NewReader("a zorp plan"), &out, &errb); err != nil {
+		t.Fatalf("explicit profile: err = %v, want nil", err)
+	}
+	err = run(t.Context(), opts, strings.NewReader("a blimp plan"), &out, &errb)
+	if !errors.Is(err, errFindings) {
+		t.Fatalf("explicit profile: err = %v, want errFindings", err)
+	}
+}
+
 // TestRunCheckJSONFindings checks that check -json still exits through errFindings.
 func TestRunCheckJSONFindings(t *testing.T) {
 	t.Parallel()

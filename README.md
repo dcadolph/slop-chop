@@ -151,7 +151,8 @@ stays the default.
 
 A profile is a small config file that lists what to cut and what to put in its place:
 characters, words, phrases, and a couple of notes on tone. Keep your own and point the
-tool at it.
+tool at it with `-profile`, or name it `.slop-chop.json` in the directory you run from
+and it gets picked up on its own.
 
 ## Status
 

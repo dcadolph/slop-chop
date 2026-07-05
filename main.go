@@ -36,6 +36,8 @@ fix writes the cleaned text to stdout and takes one file that way. Pass -w to re
 files in place instead, as many as you like.
 The -rewrite pass needs the ANTHROPIC_API_KEY environment variable.
 With no file, slop-chop reads stdin.
+When -profile is not set and a .slop-chop.json file sits in the working directory,
+that profile is used instead of the built-in one.
 `
 
 // checkReport is the JSON shape returned by check mode.
@@ -169,12 +171,22 @@ func parseArgs(args []string) (runOptions, error) {
 	return opts, nil
 }
 
+// defaultProfileFile is picked up from the working directory when -profile is not set,
+// so a repo can pin its own style without every caller passing the flag.
+const defaultProfileFile = ".slop-chop.json"
+
 // run executes one invocation. It returns an error for usage or IO problems, and
 // errFindings when check mode finds slop, leaving the exit code to main.
 func run(ctx context.Context, opts runOptions, stdin io.Reader, stdout, stderr io.Writer) error {
+	profilePath := opts.profilePath
+	if profilePath == "" {
+		if _, err := os.Stat(defaultProfileFile); err == nil {
+			profilePath = defaultProfileFile
+		}
+	}
 	profile := sanitize.DefaultProfile()
-	if opts.profilePath != "" {
-		p, err := sanitize.LoadFile(opts.profilePath)
+	if profilePath != "" {
+		p, err := sanitize.LoadFile(profilePath)
 		if err != nil {
 			return err
 		}
