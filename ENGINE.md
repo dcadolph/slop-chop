@@ -82,7 +82,8 @@ A few notes on the matching:
   left alone, so the split never swallows a newline and reflows a paragraph.
 - Both cleanup rules skip the start of a line, so indentation survives. The space
   collapse also leaves markdown table rows alone, since their runs of spaces are
-  alignment padding.
+  alignment padding, and it never touches a run at the end of a line, since two
+  trailing spaces are a markdown hard break.
 
 ## The order they run in
 

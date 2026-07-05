@@ -158,8 +158,10 @@ func (p Profile) compile() ([]Rule, error) {
 			Name:     "semicolon",
 			re:       regexp.MustCompile(`;[ \t]+(\p{L})`),
 			replFunc: splitSemicolon,
-			keep:     semicolonJoinsClauses,
-			rewrite:  true,
+			keep: func(text string, start, _ int) bool {
+				return semicolonJoinsClauses(text, start)
+			},
+			rewrite: true,
 		})
 	}
 
@@ -258,15 +260,18 @@ func trimLeadingSpace(text string, loc []int) string {
 // notLineStart reports whether the match at start has text before it on the same line.
 // It keeps indentation, like a markdown code block leading into a dot, out of reach of
 // the punctuation cleanup.
-func notLineStart(text string, start int) bool {
+func notLineStart(text string, start, _ int) bool {
 	return start > 0 && text[start-1] != '\n' && text[start-1] != '\r'
 }
 
 // collapsibleRun reports whether a run of spaces should collapse. A run at the start of
-// a line is indentation, and a run on a markdown table row is alignment padding, so
-// both stay.
-func collapsibleRun(text string, start int) bool {
-	return notLineStart(text, start) && !inTableRow(text, start)
+// a line is indentation, a run that reaches the end of a line can be a markdown hard
+// break, and a run on a table row is alignment padding, so all three stay.
+func collapsibleRun(text string, start, end int) bool {
+	if !notLineStart(text, start, end) || inTableRow(text, start) {
+		return false
+	}
+	return end < len(text) && text[end] != '\n' && text[end] != '\r'
 }
 
 // inTableRow reports whether offset sits on a line whose first character is a pipe,

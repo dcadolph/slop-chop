@@ -77,6 +77,10 @@ func TestFix(t *testing.T) {
 		WantResult: "| Kind    | Action    |\n| chop    | rewrite   |",
 	}, { // Test 28: An indented table row keeps its padding too.
 		In: "  | a  b |", WantResult: "  | a  b |",
+	}, { // Test 29: Two trailing spaces are a markdown hard break and stay.
+		In: "line one  \nline two", WantResult: "line one  \nline two",
+	}, { // Test 30: A space run at the very end of the text stays.
+		In: "line one  ", WantResult: "line one  ",
 	}}
 
 	s := mustSanitizer(t)

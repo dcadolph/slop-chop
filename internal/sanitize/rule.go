@@ -17,10 +17,10 @@ type Rule struct {
 	// replFunc computes a replacement from the text and the byte range of the match, so
 	// a rewrite can depend on where the match sits. It takes priority over repl.
 	replFunc func(text string, loc []int) string
-	// keep decides whether a match at the given start offset counts. A nil keep accepts
-	// every match. It lets a rule skip matches by context, like a semicolon that
-	// separates list items instead of joining two clauses.
-	keep func(text string, start int) bool
+	// keep decides whether the match at [start, end) counts. A nil keep accepts every
+	// match. It lets a rule skip matches by context, like a semicolon that separates
+	// list items instead of joining two clauses.
+	keep func(text string, start, end int) bool
 	// rewrite reports whether the rule changes text. When false the rule only flags.
 	rewrite bool
 }
@@ -34,7 +34,7 @@ func (r Rule) matches(text string, protected [][2]int) [][]int {
 		if overlapsAny(protected, loc[0], loc[1]) {
 			continue
 		}
-		if r.keep != nil && !r.keep(text, loc[0]) {
+		if r.keep != nil && !r.keep(text, loc[0], loc[1]) {
 			continue
 		}
 		kept = append(kept, loc)
