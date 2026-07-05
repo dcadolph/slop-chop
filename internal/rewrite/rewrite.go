@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 // DefaultModel is the model used when none is set.
@@ -90,7 +91,22 @@ const (
 	anthropicVersion = "2023-06-01"
 	// maxTokens caps the length of the rewrite.
 	maxTokens = 16000
+	// requestTimeout bounds one API call. A rewrite of a large file can take minutes,
+	// so the cap is generous, but a hung connection no longer blocks forever.
+	requestTimeout = 10 * time.Minute
+	// maxReplyBytes caps how much of a reply body is read into memory.
+	maxReplyBytes = 10 << 20
 )
+
+// anthropicCompleter calls the Anthropic Messages API over HTTP.
+type anthropicCompleter struct {
+	// model is the model id sent with each request.
+	model string
+	// endpoint is the Messages API URL. Tests point it at a local server.
+	endpoint string
+	// client is the HTTP client requests go through.
+	client *http.Client
+}
 
 // NewAnthropicCompleter returns a Completer that calls the Anthropic Messages API over
 // HTTP. It reads the API key from the ANTHROPIC_API_KEY environment variable. Talking to
@@ -100,20 +116,24 @@ func NewAnthropicCompleter(model string) Completer {
 	if model == "" {
 		model = DefaultModel
 	}
-	return CompleterFunc(func(ctx context.Context, system, user string) (string, error) {
-		return callAnthropic(ctx, model, system, user)
-	})
+	return &anthropicCompleter{
+		model:    model,
+		endpoint: anthropicEndpoint,
+		client:   &http.Client{Timeout: requestTimeout},
+	}
 }
 
-// callAnthropic sends one Messages API request and returns the text of the reply.
-func callAnthropic(ctx context.Context, model, system, user string) (string, error) {
+// Complete sends one Messages API request and returns the text of the reply. A reply
+// that stopped for any reason other than finishing, like running into the token cap, is
+// an error rather than silently truncated text.
+func (c *anthropicCompleter) Complete(ctx context.Context, system, user string) (string, error) {
 	key := os.Getenv("ANTHROPIC_API_KEY")
 	if key == "" {
 		return "", fmt.Errorf("ANTHROPIC_API_KEY is not set")
 	}
 
 	body, err := json.Marshal(messagesRequest{
-		Model:     model,
+		Model:     c.model,
 		MaxTokens: maxTokens,
 		System:    system,
 		Messages:  []message{{Role: "user", Content: user}},
@@ -122,7 +142,7 @@ func callAnthropic(ctx context.Context, model, system, user string) (string, err
 		return "", err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, anthropicEndpoint, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.endpoint, bytes.NewReader(body))
 	if err != nil {
 		return "", err
 	}
@@ -130,13 +150,13 @@ func callAnthropic(ctx context.Context, model, system, user string) (string, err
 	req.Header.Set("x-api-key", key)
 	req.Header.Set("anthropic-version", anthropicVersion)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return "", err
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	reply, err := io.ReadAll(resp.Body)
+	reply, err := io.ReadAll(io.LimitReader(resp.Body, maxReplyBytes))
 	if err != nil {
 		return "", err
 	}
@@ -147,6 +167,13 @@ func callAnthropic(ctx context.Context, model, system, user string) (string, err
 	var out messagesResponse
 	if err := json.Unmarshal(reply, &out); err != nil {
 		return "", err
+	}
+	switch out.StopReason {
+	case "end_turn":
+	case "max_tokens":
+		return "", fmt.Errorf("anthropic api: reply hit the %d token cap and is truncated", maxTokens)
+	default:
+		return "", fmt.Errorf("anthropic api: unexpected stop_reason %q", out.StopReason)
 	}
 	var b strings.Builder
 	for _, block := range out.Content {
@@ -181,6 +208,9 @@ type message struct {
 type messagesResponse struct {
 	// Content is the model's reply, a list of blocks.
 	Content []contentBlock `json:"content"`
+	// StopReason says why the model stopped. Anything but end_turn means the reply is
+	// not the whole rewrite.
+	StopReason string `json:"stop_reason"`
 }
 
 // contentBlock is one block of the model's reply.

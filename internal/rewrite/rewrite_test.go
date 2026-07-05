@@ -2,8 +2,12 @@ package rewrite
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -73,6 +77,112 @@ func TestNewNilPanics(t *testing.T) {
 		}
 	}()
 	New(nil)
+}
+
+// TestCompleteResponses checks how Complete handles API replies: success, HTTP errors,
+// truncation, and multi-block content.
+func TestCompleteResponses(t *testing.T) {
+	tests := []struct {
+		Body       string
+		WantResult string
+		WantErrSub string
+		Status     int
+	}{{ // Test 0: A finished reply returns its text.
+		Status: 200, Body: `{"content":[{"type":"text","text":"clean"}],"stop_reason":"end_turn"}`,
+		WantResult: "clean",
+	}, { // Test 1: A non-200 status is an error carrying the status.
+		Status: 500, Body: `boom`, WantErrSub: "500",
+	}, { // Test 2: A reply cut off at the token cap is an error, not truncated text.
+		Status: 200, Body: `{"content":[{"type":"text","text":"half"}],"stop_reason":"max_tokens"}`,
+		WantErrSub: "truncated",
+	}, { // Test 3: An unexpected stop reason is an error.
+		Status: 200, Body: `{"content":[],"stop_reason":"refusal"}`, WantErrSub: "refusal",
+	}, { // Test 4: Text blocks concatenate and non-text blocks are skipped.
+		Status: 200,
+		Body: `{"content":[{"type":"text","text":"a"},{"type":"thinking","text":"x"},` +
+			`{"type":"text","text":"b"}],"stop_reason":"end_turn"}`,
+		WantResult: "ab",
+	}}
+
+	t.Setenv("ANTHROPIC_API_KEY", "test-key")
+	for testNum, test := range tests {
+		t.Run(fmt.Sprintf("test %d", testNum), func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(test.Status)
+				_, _ = io.WriteString(w, test.Body)
+			}))
+			defer srv.Close()
+			c := &anthropicCompleter{model: "m", endpoint: srv.URL, client: srv.Client()}
+			got, err := c.Complete(context.Background(), "sys", "user")
+			if test.WantErrSub != "" {
+				if err == nil || !strings.Contains(err.Error(), test.WantErrSub) {
+					t.Fatalf("err = %v, want substring %q", err, test.WantErrSub)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("Complete: %v", err)
+			}
+			if diff := cmp.Diff(test.WantResult, got); diff != "" {
+				t.Errorf("mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+// TestCompleteRequest checks the wire request: headers and body fields.
+func TestCompleteRequest(t *testing.T) {
+	t.Setenv("ANTHROPIC_API_KEY", "test-key")
+	var gotKey, gotVersion string
+	var gotBody []byte
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotKey = r.Header.Get("x-api-key")
+		gotVersion = r.Header.Get("anthropic-version")
+		gotBody, _ = io.ReadAll(r.Body)
+		_, _ = io.WriteString(w, `{"content":[{"type":"text","text":"ok"}],"stop_reason":"end_turn"}`)
+	}))
+	defer srv.Close()
+
+	c := &anthropicCompleter{model: "model-x", endpoint: srv.URL, client: srv.Client()}
+	if _, err := c.Complete(context.Background(), "sys prompt", "user text"); err != nil {
+		t.Fatalf("Complete: %v", err)
+	}
+	if gotKey != "test-key" {
+		t.Errorf("x-api-key = %q", gotKey)
+	}
+	if gotVersion != anthropicVersion {
+		t.Errorf("anthropic-version = %q", gotVersion)
+	}
+	var req messagesRequest
+	if err := json.Unmarshal(gotBody, &req); err != nil {
+		t.Fatalf("unmarshal body: %v", err)
+	}
+	if req.Model != "model-x" || req.System != "sys prompt" ||
+		len(req.Messages) != 1 || req.Messages[0].Content != "user text" {
+		t.Errorf("request = %+v", req)
+	}
+}
+
+// TestCompleteNoKey checks that a missing API key is an error before any request.
+func TestCompleteNoKey(t *testing.T) {
+	t.Setenv("ANTHROPIC_API_KEY", "")
+	c := &anthropicCompleter{model: "m", endpoint: "http://127.0.0.1:0", client: http.DefaultClient}
+	if _, err := c.Complete(context.Background(), "s", "u"); err == nil {
+		t.Error("Complete: want error when key is missing")
+	}
+}
+
+// TestNewAnthropicCompleterDefaults checks that an empty model falls back to
+// DefaultModel.
+func TestNewAnthropicCompleterDefaults(t *testing.T) {
+	t.Parallel()
+	c, ok := NewAnthropicCompleter("").(*anthropicCompleter)
+	if !ok {
+		t.Fatal("NewAnthropicCompleter: want *anthropicCompleter")
+	}
+	if c.model != DefaultModel {
+		t.Errorf("model = %q, want %q", c.model, DefaultModel)
+	}
 }
 
 // errBoom is a sentinel completer error for tests.
