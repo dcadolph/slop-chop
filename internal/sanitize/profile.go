@@ -124,6 +124,7 @@ func (p Profile) compile() ([]Rule, error) {
 			Name:     "semicolon",
 			re:       regexp.MustCompile(`;\s+(\p{L})`),
 			replFunc: splitSemicolon,
+			keep:     semicolonJoinsClauses,
 			rewrite:  true,
 		})
 	}
@@ -156,4 +157,45 @@ func splitSemicolon(match string) string {
 	r := []rune(match)
 	last := r[len(r)-1]
 	return ". " + string(unicode.ToUpper(last))
+}
+
+// semicolonConjunctions are the words that, right after a semicolon, mark it as a list
+// separator rather than a clause join.
+var semicolonConjunctions = []string{"and ", "or ", "but ", "nor ", "yet ", "so "}
+
+// semicolonJoinsClauses reports whether the semicolon at offset semi joins two clauses,
+// which is safe to split, rather than separating list items, which is not. It treats a
+// semicolon as a list separator when its sentence holds more than one semicolon, or when
+// a coordinating conjunction follows it, since both usually mean a deliberate list.
+func semicolonJoinsClauses(text string, semi int) bool {
+	start, end := sentenceBounds(text, semi)
+	if strings.Count(text[start:end], ";") > 1 {
+		return false
+	}
+	rest := strings.ToLower(strings.TrimLeft(text[semi+1:end], " \t"))
+	for _, conj := range semicolonConjunctions {
+		if strings.HasPrefix(rest, conj) {
+			return false
+		}
+	}
+	return true
+}
+
+// sentenceBounds returns the byte range of the sentence around offset, bounded by
+// sentence-ending punctuation or a newline.
+func sentenceBounds(text string, offset int) (start, end int) {
+	for i := offset - 1; i >= 0; i-- {
+		if c := text[i]; c == '\n' || c == '.' || c == '!' || c == '?' {
+			start = i + 1
+			break
+		}
+	}
+	end = len(text)
+	for i := offset + 1; i < len(text); i++ {
+		if c := text[i]; c == '\n' || c == '.' || c == '!' || c == '?' {
+			end = i
+			break
+		}
+	}
+	return start, end
 }
