@@ -32,11 +32,28 @@ nudging the writing toward a voice you picked.
 
 [ENGINE.md](ENGINE.md) has the details if you want them.
 
+## Install
+
+```sh
+go install github.com/dcadolph/slop-chop@latest
+```
+
+Or clone and build:
+
+```sh
+git clone git@github.com:dcadolph/slop-chop.git
+cd slop-chop
+go install .
+```
+
 ## Usage
 
 ```sh
-# Clean a file and print the result
+# Print the cleaned text to stdout. Your file is not changed.
 slop-chop fix notes.md
+
+# Clean the file in place, like gofmt -w.
+slop-chop fix -w notes.md
 
 # Pipe text through it
 echo "In summary, a robust—and seamless—result." | slop-chop fix
@@ -66,7 +83,8 @@ the matched text, the suggested replacement, and a line and column.
 ## Modes
 
 - `check` flags what it finds and exits non-zero. Drop it in CI.
-- `fix` cleans the text in place.
+- `fix` writes the cleaned text to stdout and leaves your file alone. Pass `-w` to change
+  the file in place instead.
 
 ## Use it in CI
 
