@@ -14,8 +14,9 @@ type Rule struct {
 	re *regexp.Regexp
 	// repl is the static replacement string when replFunc is nil.
 	repl string
-	// replFunc computes a replacement from a match. It takes priority over repl.
-	replFunc func(match string) string
+	// replFunc computes a replacement from the text and the byte range of the match, so
+	// a rewrite can depend on where the match sits. It takes priority over repl.
+	replFunc func(text string, loc []int) string
 	// keep decides whether a match at the given start offset counts. A nil keep accepts
 	// every match. It lets a rule skip matches by context, like a semicolon that
 	// separates list items instead of joining two clauses.
@@ -39,10 +40,10 @@ func (r Rule) matches(text string) [][]int {
 	return kept
 }
 
-// replacement returns the rewrite for a matched substring.
-func (r Rule) replacement(match string) string {
+// replacement returns the rewrite for the match at loc in text.
+func (r Rule) replacement(text string, loc []int) string {
 	if r.replFunc != nil {
-		return r.replFunc(match)
+		return r.replFunc(text, loc)
 	}
 	return r.repl
 }
@@ -58,7 +59,7 @@ func (r Rule) apply(text string) string {
 	last := 0
 	for _, loc := range locs {
 		b.WriteString(text[last:loc[0]])
-		b.WriteString(r.replacement(text[loc[0]:loc[1]]))
+		b.WriteString(r.replacement(text, loc))
 		last = loc[1]
 	}
 	b.WriteString(text[last:])

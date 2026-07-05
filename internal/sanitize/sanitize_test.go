@@ -19,8 +19,8 @@ func TestFix(t *testing.T) {
 		In: "fast—clean", WantResult: "fast, clean",
 	}, { // Test 1: Smart quotes become straight quotes.
 		In: "“hi” it’s", WantResult: `"hi" it's`,
-	}, { // Test 2: Leading padding phrase is removed.
-		In: "In summary, it works", WantResult: "it works",
+	}, { // Test 2: Leading padding phrase is removed and the capital is restored.
+		In: "In summary, it works", WantResult: "It works",
 	}, { // Test 3: Semicolon splits into a sentence with capitalized next word.
 		In: "it works; it ships", WantResult: "it works. It ships",
 	}, { // Test 4: Runs of spaces collapse to one.
@@ -29,8 +29,8 @@ func TestFix(t *testing.T) {
 		In: "a robust plan", WantResult: "a robust plan",
 	}, { // Test 6: Clean text is unchanged.
 		In: "a plain sentence", WantResult: "a plain sentence",
-	}, { // Test 7: Honesty filler phrase is removed.
-		In: "Giving it to you honestly, it ships", WantResult: "it ships",
+	}, { // Test 7: Honesty filler phrase is removed and the capital is restored.
+		In: "Giving it to you honestly, it ships", WantResult: "It ships",
 	}, { // Test 8: Multi-word block word stays in place.
 		In: "the blast radius is small", WantResult: "the blast radius is small",
 	}, { // Test 9: A semicolon list is left alone, not split into sentences.
@@ -49,6 +49,14 @@ func TestFix(t *testing.T) {
 		In: "code:\n    .hidden stays", WantResult: "code:\n    .hidden stays",
 	}, { // Test 16: A space before a period is removed mid-line.
 		In: "done .", WantResult: "done.",
+	}, { // Test 17: A phrase deleted mid-sentence leaves the next word lowercase.
+		In: "and to be honest, it works", WantResult: "and it works",
+	}, { // Test 18: A phrase deleted after a period starts the new sentence with a capital.
+		In: "It builds. In summary, it ships.", WantResult: "It builds. It ships.",
+	}, { // Test 19: A phrase deleted after a line break starts the line with a capital.
+		In: "line one\nin summary, it ships", WantResult: "line one\nIt ships",
+	}, { // Test 20: A phrase followed by a digit is deleted with nothing to capitalize.
+		In: "To recap, 42 wins", WantResult: "42 wins",
 	}}
 
 	s := mustSanitizer(t)

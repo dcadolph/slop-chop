@@ -30,7 +30,7 @@ func (s *Sanitizer) Check(text string) []Finding {
 			match := text[loc[0]:loc[1]]
 			var repl *string
 			if r.rewrite {
-				v := r.replacement(match)
+				v := r.replacement(text, loc)
 				repl = &v
 			}
 			line, col := lineColAt(text, newlines, loc[0])

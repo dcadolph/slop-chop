@@ -101,12 +101,7 @@ func (p Profile) compile() ([]Rule, error) {
 	}
 
 	for _, phrase := range sortedKeys(p.PhraseReplace) {
-		rules = append(rules, Rule{
-			Name:    "phrase:" + strings.TrimSpace(phrase),
-			re:      regexp.MustCompile("(?i)" + regexp.QuoteMeta(phrase)),
-			repl:    p.PhraseReplace[phrase],
-			rewrite: true,
-		})
+		rules = append(rules, phraseRule(phrase, p.PhraseReplace[phrase]))
 	}
 
 	for _, w := range p.BlockWords {
@@ -163,10 +158,67 @@ func sortedKeys(m map[string]string) []string {
 	return keys
 }
 
+// phraseRule builds the rule for one phrase swap. A deletion also captures the letter
+// after the phrase so the rewrite can restore the capital when the phrase opened its
+// sentence.
+func phraseRule(phrase, repl string) Rule {
+	name := "phrase:" + strings.TrimSpace(phrase)
+	if repl != "" {
+		return Rule{
+			Name:    name,
+			re:      regexp.MustCompile("(?i)" + regexp.QuoteMeta(phrase)),
+			repl:    repl,
+			rewrite: true,
+		}
+	}
+	re := regexp.MustCompile("(?i)" + regexp.QuoteMeta(phrase) + `(\p{L})?`)
+	return Rule{
+		Name:     name,
+		re:       re,
+		replFunc: deleteWithRecap(re),
+		rewrite:  true,
+	}
+}
+
+// deleteWithRecap returns a replFunc that drops a phrase match, keeping the letter
+// captured after it. The letter turns into a capital when the phrase opened a sentence,
+// so deleting "In summary, it works." leaves "It works." and not "it works.".
+func deleteWithRecap(re *regexp.Regexp) func(text string, loc []int) string {
+	return func(text string, loc []int) string {
+		sub := re.FindStringSubmatchIndex(text[loc[0]:loc[1]])
+		if sub == nil || sub[2] < 0 {
+			return ""
+		}
+		letter := text[loc[0]+sub[2] : loc[0]+sub[3]]
+		if sentenceStart(text, loc[0]) {
+			return strings.ToUpper(letter)
+		}
+		return letter
+	}
+}
+
+// sentenceStart reports whether offset sits at the start of a sentence: at the start of
+// the text, or after sentence-ending punctuation or a line break, with any spaces in
+// between ignored.
+func sentenceStart(text string, offset int) bool {
+	i := offset - 1
+	for i >= 0 && (text[i] == ' ' || text[i] == '\t') {
+		i--
+	}
+	if i < 0 {
+		return true
+	}
+	switch text[i] {
+	case '\n', '.', '!', '?':
+		return true
+	}
+	return false
+}
+
 // trimLeadingSpace returns the match without its leading spaces and tabs, leaving just
 // the punctuation.
-func trimLeadingSpace(match string) string {
-	return strings.TrimLeft(match, " \t")
+func trimLeadingSpace(text string, loc []int) string {
+	return strings.TrimLeft(text[loc[0]:loc[1]], " \t")
 }
 
 // notLineStart reports whether the match at start has text before it on the same line.
@@ -178,8 +230,8 @@ func notLineStart(text string, start int) bool {
 
 // splitSemicolon rewrites a "; x" match into ". X", ending the clause and capitalizing
 // the next word.
-func splitSemicolon(match string) string {
-	r := []rune(match)
+func splitSemicolon(text string, loc []int) string {
+	r := []rune(text[loc[0]:loc[1]])
 	last := r[len(r)-1]
 	return ". " + string(unicode.ToUpper(last))
 }

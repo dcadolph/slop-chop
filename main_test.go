@@ -67,7 +67,7 @@ func TestRunFixWrite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(got) != "a plan." {
-		t.Errorf("file = %q, want %q", got, "a plan.")
+	if string(got) != "A plan." {
+		t.Errorf("file = %q, want %q", got, "A plan.")
 	}
 }
