@@ -65,6 +65,10 @@ func TestFix(t *testing.T) {
 		In: "run `a; b` now", WantResult: "run `a; b` now",
 	}, { // Test 23: Prose around code is still cleaned.
 		In: "fast—clean `x—y` fast—clean", WantResult: "fast, clean `x—y` fast, clean",
+	}, { // Test 24: A phrase split by a line wrap is still deleted, capital restored.
+		In: "It's worth\nnoting that it works", WantResult: "It works",
+	}, { // Test 25: A phrase whose trailing space is a line break still matches.
+		In: "In summary,\nit ships", WantResult: "It ships",
 	}}
 
 	s := mustSanitizer(t)
@@ -109,6 +113,11 @@ func TestCheck(t *testing.T) {
 		In: "```\nrobust — plan; done\n```", WantRules: nil,
 	}, { // Test 11: A lone backtick does not hide the rest of the line.
 		In: "a ` robust plan", WantRules: []string{"word:robust"},
+	}, { // Test 12: A multi-word term split by a line wrap is still flagged.
+		In: "a small blast\nradius here", WantRules: []string{"word:blast radius"},
+	}, { // Test 13: A multi-word term with extra spaces between words is still flagged,
+		// along with the double space itself.
+		In: "the blast  radius", WantRules: []string{"word:blast radius", "double-space"},
 	}}
 
 	s := mustSanitizer(t)

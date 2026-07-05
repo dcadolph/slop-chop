@@ -75,6 +75,9 @@ A few notes on the matching:
   mid-sentence leaves the next word lowercase.
 - Block words match on word boundaries, so `robust` matches the standalone word and not
   the middle of a longer one. Multi-word terms like `blast radius` work the same way.
+- A phrase or a multi-word term still matches when a line wrap splits it. The gap
+  between its words can be spaces, tabs, or one line break, but never a blank line, so
+  nothing matches across a paragraph break.
 - The semicolon split stays within one line. A semicolon right before a line break is
   left alone, so the split never swallows a newline and reflows a paragraph.
 - Both cleanup rules skip the start of a line, so indentation survives.

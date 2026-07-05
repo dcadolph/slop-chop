@@ -114,7 +114,7 @@ func (p Profile) compile() ([]Rule, error) {
 	}
 
 	for _, w := range p.BlockWords {
-		re, err := regexp.Compile(`(?i)\b` + regexp.QuoteMeta(w) + `\b`)
+		re, err := regexp.Compile(`(?i)\b` + flexSpaces(regexp.QuoteMeta(w)) + `\b`)
 		if err != nil {
 			return nil, fmt.Errorf("%w: block word %q: %w", ErrCompile, w, err)
 		}
@@ -157,19 +157,31 @@ func (p Profile) compile() ([]Rule, error) {
 	return rules, nil
 }
 
+// wsGap matches the whitespace between two words: spaces and tabs crossing at most one
+// line break. It lets a phrase or a multi-word term match when a line wrap splits it,
+// without ever reaching across a paragraph break.
+const wsGap = `(?:[ \t]+(?:\n[ \t]*)?|\n[ \t]*)`
+
+// flexSpaces widens each literal space in a quoted pattern into wsGap, so the words
+// around it still match when a line wrap sits between them.
+func flexSpaces(quoted string) string {
+	return strings.ReplaceAll(quoted, " ", wsGap)
+}
+
 // phraseRule builds the rule for one phrase swap. A deletion also captures the letter
 // after the phrase so the rewrite can restore the capital when the phrase opened its
 // sentence.
 func phraseRule(phrase, repl string) (Rule, error) {
 	name := "phrase:" + strings.TrimSpace(phrase)
+	pat := "(?i)" + flexSpaces(regexp.QuoteMeta(phrase))
 	if repl != "" {
-		re, err := regexp.Compile("(?i)" + regexp.QuoteMeta(phrase))
+		re, err := regexp.Compile(pat)
 		if err != nil {
 			return Rule{}, fmt.Errorf("%w: phrase %q: %w", ErrCompile, phrase, err)
 		}
 		return Rule{Name: name, re: re, repl: repl, rewrite: true}, nil
 	}
-	re, err := regexp.Compile("(?i)" + regexp.QuoteMeta(phrase) + `(\p{L})?`)
+	re, err := regexp.Compile(pat + `(\p{L})?`)
 	if err != nil {
 		return Rule{}, fmt.Errorf("%w: phrase %q: %w", ErrCompile, phrase, err)
 	}
