@@ -128,9 +128,10 @@ tool at it.
 
 ## Status
 
-Still early. The rules pass is built and working. The rewrite pass is not done yet. It
-will come later and sit behind a flag, because it needs an API key and costs money, and
-the free, predictable path should stay the default.
+Still early, but the core is in place. The rules pass is built and working. The rewrite
+pass is built too and sits behind the `-rewrite` flag, because it needs an API key and
+costs money, so the free, predictable rules pass stays the default. The one part not yet
+exercised is a live rewrite run against the real API.
 
 ## License
 
