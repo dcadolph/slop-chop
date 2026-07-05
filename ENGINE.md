@@ -80,7 +80,9 @@ A few notes on the matching:
   nothing matches across a paragraph break.
 - The semicolon split stays within one line. A semicolon right before a line break is
   left alone, so the split never swallows a newline and reflows a paragraph.
-- Both cleanup rules skip the start of a line, so indentation survives.
+- Both cleanup rules skip the start of a line, so indentation survives. The space
+  collapse also leaves markdown table rows alone, since their runs of spaces are
+  alignment padding.
 
 ## The order they run in
 

@@ -175,7 +175,7 @@ func (p Profile) compile() ([]Rule, error) {
 			Name:    "double-space",
 			re:      regexp.MustCompile(`  +`),
 			repl:    " ",
-			keep:    notLineStart,
+			keep:    collapsibleRun,
 			rewrite: true,
 		})
 	}
@@ -260,6 +260,26 @@ func trimLeadingSpace(text string, loc []int) string {
 // the punctuation cleanup.
 func notLineStart(text string, start int) bool {
 	return start > 0 && text[start-1] != '\n' && text[start-1] != '\r'
+}
+
+// collapsibleRun reports whether a run of spaces should collapse. A run at the start of
+// a line is indentation, and a run on a markdown table row is alignment padding, so
+// both stay.
+func collapsibleRun(text string, start int) bool {
+	return notLineStart(text, start) && !inTableRow(text, start)
+}
+
+// inTableRow reports whether offset sits on a line whose first character is a pipe,
+// which marks a markdown table row.
+func inTableRow(text string, offset int) bool {
+	i := offset
+	for i > 0 && text[i-1] != '\n' {
+		i--
+	}
+	for i < len(text) && (text[i] == ' ' || text[i] == '\t') {
+		i++
+	}
+	return i < len(text) && text[i] == '|'
 }
 
 // splitSemicolon rewrites a "; x" match into ". X", ending the clause and capitalizing

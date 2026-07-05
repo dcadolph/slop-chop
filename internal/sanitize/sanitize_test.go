@@ -72,6 +72,11 @@ func TestFix(t *testing.T) {
 	}, { // Test 26: A stock opener from the expanded defaults is deleted with the
 		// capital restored.
 		In: "Needless to say, it passes", WantResult: "It passes",
+	}, { // Test 27: Alignment padding on a markdown table row stays.
+		In:         "| Kind    | Action    |\n| chop    | rewrite   |",
+		WantResult: "| Kind    | Action    |\n| chop    | rewrite   |",
+	}, { // Test 28: An indented table row keeps its padding too.
+		In: "  | a  b |", WantResult: "  | a  b |",
 	}}
 
 	s := mustSanitizer(t)
@@ -127,6 +132,8 @@ func TestCheck(t *testing.T) {
 		In: "we delved deeper", WantRules: []string{"word:delved"},
 	}, { // Test 16: A stock buzzword phrase is flagged.
 		In: "a testament to quality", WantRules: []string{"word:testament to"},
+	}, { // Test 17: Table padding is not a double space.
+		In: "| flags  only |", WantRules: nil,
 	}}
 
 	s := mustSanitizer(t)
