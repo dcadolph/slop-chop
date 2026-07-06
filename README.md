@@ -67,21 +67,21 @@ slop-chop check docs/intro.md docs/guide.md README.md
 slop-chop fix -w docs/intro.md docs/guide.md
 
 # Use your own profile
-slop-chop fix -profile myprofile.json notes.md
+slop-chop fix --profile myprofile.json notes.md
 
 # Get findings as JSON for other tools to read
-slop-chop check -json notes.md
-slop-chop check -json -pretty notes.md
+slop-chop check --json notes.md
+slop-chop check ---json --pretty notes.md
 
 # Get the cleaned text and the findings together
-slop-chop fix -json notes.md
+slop-chop fix --json notes.md
 
 # Deeper clean: rules first, then a model rewrite (needs ANTHROPIC_API_KEY)
-slop-chop fix -rewrite notes.md
-slop-chop fix -rewrite -model claude-sonnet-4-6 notes.md
+slop-chop fix --rewrite notes.md
+slop-chop fix --rewrite --model claude-sonnet-4-6 notes.md
 ```
 
-`check -json` prints a `{"findings": [...]}` object to stdout, and `fix -json` adds the
+`check --json` prints a `{"findings": [...]}` object to stdout, and `fix --json` adds the
 cleaned text as `{"cleaned": "...", "findings": [...]}`. Each finding carries the rule,
 the matched text, the suggested replacement, and a line and column.
 
@@ -135,12 +135,12 @@ jobs:
 
 The rules pass is deterministic and free. For the work rules cannot do, like reworking a
 sentence so it no longer needs a semicolon or bending the text toward your voice, add
-`-rewrite`. It runs the rules first, then hands the result to a model.
+`--rewrite`. It runs the rules first, then hands the result to a model.
 
 ```sh
 export ANTHROPIC_API_KEY=sk-...
-slop-chop fix -rewrite notes.md
-slop-chop fix -rewrite -model claude-sonnet-4-6 notes.md
+slop-chop fix --rewrite notes.md
+slop-chop fix --rewrite --model claude-sonnet-4-6 notes.md
 ```
 
 It defaults to Claude Opus 4.8. Set the voice it aims for with the `tone` list in your
@@ -151,13 +151,13 @@ stays the default.
 
 A profile is a small config file that lists what to cut and what to put in its place:
 characters, words, phrases, and a couple of notes on tone. Keep your own and point the
-tool at it with `-profile`, or name it `.slop-chop.json` in the directory you run from
+tool at it with `--profile`, or name it `.slop-chop.json` in the directory you run from
 and it gets picked up on its own.
 
 ## Status
 
 Still early, but the core is in place. The rules pass is built and working. The rewrite
-pass is built too and sits behind the `-rewrite` flag, because it needs an API key and
+pass is built too and sits behind the `--rewrite` flag, because it needs an API key and
 costs money, so the free, predictable rules pass stays the default. The one part not yet
 exercised is a live rewrite run against the real API.
 

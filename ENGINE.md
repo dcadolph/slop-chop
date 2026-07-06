@@ -111,7 +111,7 @@ Both run the same rules. They differ in what they do with the matches.
 | Writes to        | findings on stderr            | clean text on stdout          |
 | Exit code        | non-zero when it finds slop   | zero                          |
 | Good for         | a CI gate                     | cleaning a file               |
-| Positions        | exact, against the original   | same findings with `-json`, positions from the original |
+| Positions        | exact, against the original   | same findings with `--json`, positions from the original |
 
 `fix` runs `check` first to gather findings against the original, then applies the
 rewriting rules in order. Findings come back sorted by position in the text, so a match
@@ -230,5 +230,5 @@ report reads top to bottom no matter which rule matched first.
 
 The rules pass is deterministic, cheap, and good at the common tells, but it cannot reword
 a sentence, judge tone, or match a voice. That takes a model, and that pass exists: run
-`fix -rewrite` to send the rules output through one. It needs an API key and costs money,
+`fix --rewrite` to send the rules output through one. It needs an API key and costs money,
 so the cheap and predictable rules pass stays the default and the one you reach for most.

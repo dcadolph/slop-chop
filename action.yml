@@ -48,7 +48,7 @@ runs:
         MODE: ${{ inputs.mode }}
       run: |
         args=()
-        if [ -n "$PROFILE" ]; then args+=(-profile "$PROFILE"); fi
+        if [ -n "$PROFILE" ]; then args+=(--profile "$PROFILE"); fi
         case "$MODE" in
           check)
             rc=0
