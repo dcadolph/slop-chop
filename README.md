@@ -71,7 +71,7 @@ slop-chop fix --profile myprofile.json notes.md
 
 # Get findings as JSON for other tools to read
 slop-chop check --json notes.md
-slop-chop check ---json --pretty notes.md
+slop-chop check --json --pretty notes.md
 
 # Get the cleaned text and the findings together
 slop-chop fix --json notes.md
