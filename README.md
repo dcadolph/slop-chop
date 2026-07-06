@@ -1,6 +1,7 @@
-<p align="center">
-  <img src="assets/banner.png" alt="slop-chop" width="420">
-</p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg">
+  <img src="assets/banner.svg" alt="slop-chop" width="100%">
+</picture>
 
 # slop-chop
 

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 280" role="img" aria-label="slop-chop">
+  <g transform="translate(30,10)">
+    <!-- Document -->
+    <rect x="70" y="100" width="180" height="110" rx="55" fill="none" stroke="#EDEDED" stroke-width="10"/>
+    <g stroke="#EDEDED" stroke-width="8" stroke-linecap="round">
+      <line x1="136" y1="114" x2="136" y2="196"/>
+      <line x1="152" y1="114" x2="152" y2="196"/>
+      <line x1="168" y1="124" x2="228" y2="124"/>
+      <line x1="168" y1="144" x2="236" y2="144"/>
+      <line x1="168" y1="164" x2="222" y2="164"/>
+      <line x1="168" y1="184" x2="232" y2="184"/>
+    </g>
+    <!-- Cleaver -->
+    <rect x="-16" y="-10" width="60" height="20" rx="10" fill="#EDEDED" transform="translate(152 20) rotate(45)"/>
+    <path d="M154 36 C172 52 186 72 191 96 L139 124 C124 103 120 76 128 52 Z" fill="#EDEDED"/>
+    <!-- Slime -->
+    <path d="M85 80 C70 66 44 72 40 92 C22 94 14 116 26 130 C12 142 16 164 32 170 C30 186 44 198 58 194 L58 216 C58 232 76 232 76 216 L76 196 C80 198 86 198 90 197 L90 232 C90 248 108 248 108 232 L108 194 C116 192 124 188 128 182 L128 204 C128 218 144 218 144 204 L144 176 C158 168 162 150 154 138 C160 122 152 106 138 102 C136 84 118 74 104 82 C98 76 90 76 85 80 Z"
+      fill="#A3E114" stroke="#EDEDED" stroke-width="8" stroke-linejoin="round"/>
+    <g fill="none" stroke="#EDEDED" stroke-width="7" stroke-linecap="round">
+      <path d="M60 112 c8 -8 20 -8 26 0"/>
+      <path d="M97 127 c-2 10 -12 12 -16 6"/>
+      <path d="M118 118 c2 6 10 6 12 0"/>
+    </g>
+    <circle cx="70" cy="152" r="5" fill="#EDEDED"/>
+    <circle cx="106" cy="160" r="5" fill="#EDEDED"/>
+  </g>
+  <!-- Wordmark -->
+  <text x="330" y="182" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+    font-size="118" font-weight="800" fill="#EDEDED" textLength="600" lengthAdjust="spacingAndGlyphs">slop-<tspan fill="#A3E114">chop</tspan></text>
+</svg>
