@@ -103,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dcadolph/slop-chop@v0.4.0
+      - uses: dcadolph/slop-chop@v0.5.0
         with:
           files: docs/intro.md docs/guide.md
           # profile: myprofile.json   # optional
@@ -123,7 +123,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
-      - uses: dcadolph/slop-chop@v0.4.0
+      - uses: dcadolph/slop-chop@v0.5.0
         with:
           files: docs/intro.md docs/guide.md
           mode: fix
