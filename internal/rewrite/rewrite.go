@@ -4,11 +4,14 @@
 package rewrite
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
 	"strings"
-
-	"github.com/anthropics/anthropic-sdk-go"
 )
 
 // DefaultModel is the model used when none is set.
@@ -79,31 +82,111 @@ func buildSystem(tone []string) string {
 	return b.String()
 }
 
-// NewAnthropicCompleter returns a Completer backed by the Anthropic API. The client
-// reads the API key from the ANTHROPIC_API_KEY environment variable.
+// Anthropic Messages API constants.
+const (
+	// anthropicEndpoint is the Messages API URL.
+	anthropicEndpoint = "https://api.anthropic.com/v1/messages"
+	// anthropicVersion pins the API version so the wire format does not drift.
+	anthropicVersion = "2023-06-01"
+	// maxTokens caps the length of the rewrite.
+	maxTokens = 16000
+)
+
+// NewAnthropicCompleter returns a Completer that calls the Anthropic Messages API over
+// HTTP. It reads the API key from the ANTHROPIC_API_KEY environment variable. Talking to
+// the API directly keeps the deterministic core free of the Anthropic SDK and its
+// dependency tree, so the default binary stays small.
 func NewAnthropicCompleter(model string) Completer {
 	if model == "" {
 		model = DefaultModel
 	}
-	client := anthropic.NewClient()
 	return CompleterFunc(func(ctx context.Context, system, user string) (string, error) {
-		resp, err := client.Messages.New(ctx, anthropic.MessageNewParams{
-			Model:     anthropic.Model(model),
-			MaxTokens: 16000,
-			System:    []anthropic.TextBlockParam{{Text: system}},
-			Messages: []anthropic.MessageParam{
-				anthropic.NewUserMessage(anthropic.NewTextBlock(user)),
-			},
-		})
-		if err != nil {
-			return "", err
-		}
-		var b strings.Builder
-		for _, block := range resp.Content {
-			if t, ok := block.AsAny().(anthropic.TextBlock); ok {
-				b.WriteString(t.Text)
-			}
-		}
-		return b.String(), nil
+		return callAnthropic(ctx, model, system, user)
 	})
+}
+
+// callAnthropic sends one Messages API request and returns the text of the reply.
+func callAnthropic(ctx context.Context, model, system, user string) (string, error) {
+	key := os.Getenv("ANTHROPIC_API_KEY")
+	if key == "" {
+		return "", fmt.Errorf("ANTHROPIC_API_KEY is not set")
+	}
+
+	body, err := json.Marshal(messagesRequest{
+		Model:     model,
+		MaxTokens: maxTokens,
+		System:    system,
+		Messages:  []message{{Role: "user", Content: user}},
+	})
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, anthropicEndpoint, bytes.NewReader(body))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("content-type", "application/json")
+	req.Header.Set("x-api-key", key)
+	req.Header.Set("anthropic-version", anthropicVersion)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	reply, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("anthropic api: %s: %s", resp.Status, strings.TrimSpace(string(reply)))
+	}
+
+	var out messagesResponse
+	if err := json.Unmarshal(reply, &out); err != nil {
+		return "", err
+	}
+	var b strings.Builder
+	for _, block := range out.Content {
+		if block.Type == "text" {
+			b.WriteString(block.Text)
+		}
+	}
+	return b.String(), nil
+}
+
+// messagesRequest is the POST body for the Anthropic Messages API.
+type messagesRequest struct {
+	// Model is the model id.
+	Model string `json:"model"`
+	// MaxTokens caps the reply length.
+	MaxTokens int `json:"max_tokens"`
+	// System is the system prompt.
+	System string `json:"system"`
+	// Messages is the conversation, one user turn here.
+	Messages []message `json:"messages"`
+}
+
+// message is one turn in a Messages API request.
+type message struct {
+	// Role is user or assistant.
+	Role string `json:"role"`
+	// Content is the turn text.
+	Content string `json:"content"`
+}
+
+// messagesResponse is the part of the Messages API reply the rewriter reads.
+type messagesResponse struct {
+	// Content is the model's reply, a list of blocks.
+	Content []contentBlock `json:"content"`
+}
+
+// contentBlock is one block of the model's reply.
+type contentBlock struct {
+	// Type is the block kind, text for prose.
+	Type string `json:"type"`
+	// Text is the block text.
+	Text string `json:"text"`
 }
