@@ -6,15 +6,47 @@ import (
 )
 
 // codeRanges returns the byte ranges of markdown code in text: fenced blocks, inline
-// code spans, and indented code blocks. Rules skip matches inside these ranges, so the
-// engine never rewrites code.
+// code spans, and indented code blocks. Overlapping ranges are merged so the result is
+// sorted and disjoint. Rules skip matches inside these ranges, so the engine never
+// rewrites code.
 func codeRanges(text string) [][2]int {
 	fences := fenceRanges(text)
 	ranges := append([][2]int{}, fences...)
 	ranges = append(ranges, inlineCodeRanges(text, fences)...)
 	ranges = append(ranges, indentedCodeRanges(text, fences)...)
+	return mergeRanges(ranges)
+}
+
+// mergeRanges sorts ranges by start offset and merges any that touch or overlap, so the
+// result is disjoint and ordered.
+func mergeRanges(ranges [][2]int) [][2]int {
+	if len(ranges) < 2 {
+		return ranges
+	}
 	sort.Slice(ranges, func(i, j int) bool { return ranges[i][0] < ranges[j][0] })
-	return ranges
+	merged := ranges[:1]
+	for _, r := range ranges[1:] {
+		last := &merged[len(merged)-1]
+		if r[0] <= last[1] {
+			if r[1] > last[1] {
+				last[1] = r[1]
+			}
+			continue
+		}
+		merged = append(merged, r)
+	}
+	return merged
+}
+
+// CodeSegments returns the code substrings in text, in order. A rewrite pass compares
+// the segments of its input and output to catch a model that altered protected code.
+func CodeSegments(text string) []string {
+	ranges := codeRanges(text)
+	segs := make([]string, 0, len(ranges))
+	for _, r := range ranges {
+		segs = append(segs, text[r[0]:r[1]])
+	}
+	return segs
 }
 
 // fenceRanges returns the byte ranges of fenced code blocks. A block runs from its

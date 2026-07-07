@@ -147,6 +147,10 @@ It defaults to Claude Opus 4.8. Set the voice it aims for with the `tone` list i
 profile. This pass costs money and the output varies from run to run, so the rules pass
 stays the default.
 
+The model's reply is verified before you get it. The rules run over it again to clean any
+tell the model slipped back in, and slop-chop warns on stderr if the reply kept a buzzword
+or changed a code block from your input.
+
 ## Style profiles
 
 A profile is a small config file that lists what to cut and what to put in its place:

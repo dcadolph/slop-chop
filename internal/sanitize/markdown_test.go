@@ -60,3 +60,28 @@ func TestCodeRanges(t *testing.T) {
 		})
 	}
 }
+
+// TestCodeSegments checks that the code substrings come back in order.
+func TestCodeSegments(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		In   string
+		Want []string
+	}{{ // Test 0: Plain text has no segments.
+		In: "no code", Want: nil,
+	}, { // Test 1: A fence and an inline span come back in order.
+		In: "use `x`\n```\ny\n```", Want: []string{"`x`", "```\ny\n```"},
+	}, { // Test 2: An indented block is a segment.
+		In: "a\n\n    code\n\nb", Want: []string{"    code"},
+	}}
+
+	for testNum, test := range tests {
+		t.Run(fmt.Sprintf("test %d", testNum), func(t *testing.T) {
+			t.Parallel()
+			got := CodeSegments(test.In)
+			if diff := cmp.Diff(test.Want, got, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}

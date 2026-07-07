@@ -4,8 +4,19 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 )
+
+// fakeRewrite swaps rewritePass to return reply verbatim for the duration of a test.
+func fakeRewrite(t *testing.T, reply string) {
+	t.Helper()
+	old := rewritePass
+	rewritePass = func(_ context.Context, _ string, _ []string, _ string) (string, error) {
+		return reply, nil
+	}
+	t.Cleanup(func() { rewritePass = old })
+}
 
 // TestFixStdout checks that fix writes cleaned text to stdout.
 func TestFixStdout(t *testing.T) {
@@ -57,14 +68,55 @@ func TestFixWriteMultiFile(t *testing.T) {
 	}
 }
 
+// TestFixRewriteReintroducedTell checks that a reply that undoes a rule is cleaned again
+// and the user is warned.
+func TestFixRewriteReintroducedTell(t *testing.T) {
+	fakeRewrite(t, "a plan — and more")
+	out, stderr, err := runCLI(t, []string{"fix", "--rewrite"}, "seed")
+	if err != nil {
+		t.Fatalf("fix: %v", err)
+	}
+	if strings.Contains(out, "—") {
+		t.Errorf("stdout = %q, still has an em-dash", out)
+	}
+	if !strings.Contains(stderr, "reintroduced tells") {
+		t.Errorf("stderr = %q, want a reintroduced-tells warning", stderr)
+	}
+}
+
+// TestFixRewriteLeftBlockWord checks that a buzzword the model failed to drop is warned
+// about, since the rules only flag it and cannot remove it.
+func TestFixRewriteLeftBlockWord(t *testing.T) {
+	fakeRewrite(t, "a robust plan")
+	out, stderr, err := runCLI(t, []string{"fix", "--rewrite"}, "seed")
+	if err != nil {
+		t.Fatalf("fix: %v", err)
+	}
+	if out != "a robust plan" {
+		t.Errorf("stdout = %q, want the reply unchanged", out)
+	}
+	if !strings.Contains(stderr, "left word:robust") {
+		t.Errorf("stderr = %q, want a left-buzzword warning", stderr)
+	}
+}
+
+// TestFixRewriteChangedCode checks that a reply which dropped the input's code block is
+// flagged as a code change.
+func TestFixRewriteChangedCode(t *testing.T) {
+	fakeRewrite(t, "just prose now")
+	_, stderr, err := runCLI(t, []string{"fix", "--rewrite"}, "text\n```\ncode()\n```\n")
+	if err != nil {
+		t.Fatalf("fix: %v", err)
+	}
+	if !strings.Contains(stderr, "changed code") {
+		t.Errorf("stderr = %q, want a changed-code warning", stderr)
+	}
+}
+
 // TestFixRewriteNewline checks that the trailing newline survives the rewrite pass,
 // which trims the model reply.
 func TestFixRewriteNewline(t *testing.T) {
-	old := rewritePass
-	rewritePass = func(_ context.Context, _ string, _ []string, _ string) (string, error) {
-		return "clean text", nil
-	}
-	t.Cleanup(func() { rewritePass = old })
+	fakeRewrite(t, "clean text")
 
 	tests := []struct {
 		In         string

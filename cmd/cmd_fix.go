@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -66,7 +67,8 @@ func runFix(cmd *cobra.Command, args []string) error {
 			if err != nil {
 				return err
 			}
-			if err := fixOne(cmd.Context(), s, profile.Tone, text, path, cmd.OutOrStdout()); err != nil {
+			if err := fixOne(cmd.Context(), s, profile.Tone, text, path,
+				cmd.OutOrStdout(), cmd.ErrOrStderr()); err != nil {
 				return err
 			}
 		}
@@ -80,19 +82,21 @@ func runFix(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	return fixOne(cmd.Context(), s, profile.Tone, text, path, cmd.OutOrStdout())
+	return fixOne(cmd.Context(), s, profile.Tone, text, path, cmd.OutOrStdout(), cmd.ErrOrStderr())
 }
 
 // fixOne cleans one input and writes it to stdout, back into its file with --write, or
-// as JSON. With --rewrite it runs the model pass on the rules output first.
+// as JSON. With --rewrite it runs the model pass on the rules output first, then verifies
+// the reply against the deterministic guarantees.
 func fixOne(ctx context.Context, s *sanitize.Sanitizer, tone []string, text, path string,
-	stdout io.Writer) error {
+	stdout, stderr io.Writer) error {
 	out, findings := s.Fix(text)
 	if config.Rewrite() {
 		rw, err := rewritePass(ctx, config.Model(), tone, out)
 		if err != nil {
 			return err
 		}
+		rw = verifyRewrite(s, text, rw, stderr)
 		// The rewriter trims the reply, so put back the newline the input ended with.
 		if strings.HasSuffix(text, "\n") && !strings.HasSuffix(rw, "\n") {
 			rw += "\n"
@@ -107,6 +111,29 @@ func fixOne(ctx context.Context, s *sanitize.Sanitizer, tone []string, text, pat
 	}
 	_, err := io.WriteString(stdout, out)
 	return err
+}
+
+// verifyRewrite re-checks the model's reply against the deterministic guarantees. A
+// model can undo the rules, reintroducing tells the rules removed, or disturb the code
+// the rules protect. So this runs the rules once more over the reply, cleaning any
+// fixable tells, and warns on stderr when the reply still carries buzzwords the rules
+// only flag or when its code segments no longer match the original. The re-cleaned text
+// is returned.
+func verifyRewrite(s *sanitize.Sanitizer, original, reply string, stderr io.Writer) string {
+	cleaned, _ := s.Fix(reply)
+	if cleaned != reply {
+		fmt.Fprintln(stderr, "slop-chop: the rewrite reintroduced tells the rules removed; cleaned them again")
+	}
+	for _, f := range s.Check(cleaned) {
+		if f.Replacement == nil {
+			fmt.Fprintf(stderr, "slop-chop: the rewrite left %s %q at %d:%d\n", f.Rule, f.Match, f.Line, f.Col)
+		}
+	}
+	if in, out := sanitize.CodeSegments(original), sanitize.CodeSegments(cleaned); !slices.Equal(in, out) {
+		fmt.Fprintf(stderr, "slop-chop: the rewrite changed code (%d segment(s) in, %d out); check the output\n",
+			len(in), len(out))
+	}
+	return cleaned
 }
 
 // rewritePass runs the model rewrite over text. It is a variable so tests can swap in

@@ -232,3 +232,11 @@ The rules pass is deterministic, cheap, and good at the common tells, but it can
 a sentence, judge tone, or match a voice. That takes a model, and that pass exists: run
 `fix --rewrite` to send the rules output through one. It needs an API key and costs money,
 so the cheap and predictable rules pass stays the default and the one you reach for most.
+
+A model can drift, so its reply is not trusted blind. After the model returns, the rules
+run once more over the reply. Any deterministic tell the model reintroduced is cleaned
+again, and a warning goes to stderr. Buzzwords the rules only flag are reported when the
+model failed to drop them. The code segments of the reply are compared against the input,
+so a model that altered a fenced block, an inline span, or an indented block is caught and
+called out. The rewrite stays best-effort, but its output can no longer quietly break the
+guarantees the rules pass makes.
