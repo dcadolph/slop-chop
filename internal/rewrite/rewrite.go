@@ -49,17 +49,19 @@ func New(completer Completer, tone ...string) *Rewriter {
 	return &Rewriter{completer: completer, tone: tone}
 }
 
-// Rewrite returns the text rewritten to read like a person wrote it.
-func (r *Rewriter) Rewrite(ctx context.Context, text string) (string, error) {
-	out, err := r.completer.Complete(ctx, buildSystem(r.tone), text)
+// Rewrite returns the text rewritten to read like a person wrote it. Any feedback notes
+// name facts a prior attempt changed, so the model can preserve them this time.
+func (r *Rewriter) Rewrite(ctx context.Context, text string, feedback ...string) (string, error) {
+	out, err := r.completer.Complete(ctx, buildSystem(r.tone, feedback), text)
 	if err != nil {
 		return "", fmt.Errorf("rewrite: %w", err)
 	}
 	return strings.TrimSpace(out), nil
 }
 
-// buildSystem assembles the instruction that tells the model how to clean the text.
-func buildSystem(tone []string) string {
+// buildSystem assembles the instruction that tells the model how to clean the text. Any
+// feedback notes are appended so a retry keeps the facts a prior attempt changed.
+func buildSystem(tone, feedback []string) string {
 	var b strings.Builder
 	b.WriteString("You rewrite text so it reads like a person wrote it, not a chatbot. ")
 	b.WriteString("Keep the meaning and the facts unchanged. Do not add or remove ideas.\n\n")
@@ -75,6 +77,15 @@ func buildSystem(tone []string) string {
 		for _, t := range tone {
 			b.WriteString("- ")
 			b.WriteString(t)
+			b.WriteString("\n")
+		}
+		b.WriteString("\n")
+	}
+	if len(feedback) > 0 {
+		b.WriteString("A prior rewrite changed the meaning. Keep these facts exactly this time:\n")
+		for _, note := range feedback {
+			b.WriteString("- ")
+			b.WriteString(note)
 			b.WriteString("\n")
 		}
 		b.WriteString("\n")

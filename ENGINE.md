@@ -255,3 +255,10 @@ rewrite to a model and asks for a strict JSON verdict on whether the meaning hel
 reports each change on stderr. This is Layer 3: it costs a second call and is only as
 sure as the model, so it is off by default, and a verdict it cannot run or parse is a
 warning, not a failure, since the rewrite is already valid output.
+
+By default the verdict only warns. Three flags change that. `--verify-retry N` feeds the
+flagged issues back: they become notes on the rewrite prompt, and the rewrite runs again,
+up to N more times, until the check passes or the tries run out. `--verify-strict` makes a
+change that survives fail the command, so a pipeline stops on drift, and the rewrite is
+still written first. With `--json` the verdict goes into the report as a `verify` object,
+there only when the check ran, so a program can read it without parsing stderr.

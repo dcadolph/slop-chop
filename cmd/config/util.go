@@ -39,3 +39,12 @@ func loadBool(key string, def bool) bool {
 	}
 	return b
 }
+
+// loadInt resolves key as an int, falling back to def when the raw value does not parse.
+func loadInt(key string, def int) int {
+	n, err := strconv.Atoi(load(key, strconv.Itoa(def)))
+	if err != nil {
+		return def
+	}
+	return n
+}

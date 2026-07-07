@@ -15,7 +15,7 @@ import (
 func fakeRewrite(t *testing.T, reply string) {
 	t.Helper()
 	old := rewritePass
-	rewritePass = func(_ context.Context, _ string, _ []string, _ string) (string, error) {
+	rewritePass = func(_ context.Context, _ string, _ []string, _ string, _ ...string) (string, error) {
 		return reply, nil
 	}
 	t.Cleanup(func() { rewritePass = old })
@@ -27,6 +27,44 @@ func fakeJudge(t *testing.T, verdict rewrite.Verdict, err error) {
 	old := judgePass
 	judgePass = func(_ context.Context, _, _, _ string) (rewrite.Verdict, error) {
 		return verdict, err
+	}
+	t.Cleanup(func() { judgePass = old })
+}
+
+// fakeRewriteSeq swaps rewritePass to return replies in order, returning the last reply
+// once they run out. It records the feedback passed on each call so a test can check that
+// a retry carried the flagged issues.
+func fakeRewriteSeq(t *testing.T, replies ...string) *[][]string {
+	t.Helper()
+	old := rewritePass
+	calls := 0
+	feedbacks := &[][]string{}
+	rewritePass = func(_ context.Context, _ string, _ []string, _ string, feedback ...string) (string, error) {
+		*feedbacks = append(*feedbacks, feedback)
+		reply := replies[len(replies)-1]
+		if calls < len(replies) {
+			reply = replies[calls]
+		}
+		calls++
+		return reply, nil
+	}
+	t.Cleanup(func() { rewritePass = old })
+	return feedbacks
+}
+
+// fakeJudgeSeq swaps judgePass to return verdicts in order, returning the last verdict
+// once they run out.
+func fakeJudgeSeq(t *testing.T, verdicts ...rewrite.Verdict) {
+	t.Helper()
+	old := judgePass
+	calls := 0
+	judgePass = func(_ context.Context, _, _, _ string) (rewrite.Verdict, error) {
+		verdict := verdicts[len(verdicts)-1]
+		if calls < len(verdicts) {
+			verdict = verdicts[calls]
+		}
+		calls++
+		return verdict, nil
 	}
 	t.Cleanup(func() { judgePass = old })
 }
@@ -225,6 +263,126 @@ func TestFixVerifyJudgeErrorWarns(t *testing.T) {
 	}
 	if !strings.Contains(stderr, "meaning check could not run") {
 		t.Errorf("stderr = %q, want a could-not-run warning", stderr)
+	}
+}
+
+// TestFixVerifyStrictGates checks that --verify-strict exits non-zero on a flagged change
+// while still delivering the rewrite it produced.
+func TestFixVerifyStrictGates(t *testing.T) {
+	fakeRewrite(t, "we reached 99% uptime")
+	fakeJudge(t, rewrite.Verdict{
+		Faithful: false,
+		Issues:   []rewrite.Issue{{Kind: "changed", Was: "99.9%", Now: "99%", Note: "figure changed"}},
+	}, nil)
+	out, _, err := runCLI(t, []string{"fix", "--rewrite", "--verify", "--verify-strict"}, "we hit 99.9% uptime")
+	if err == nil || !strings.Contains(err.Error(), "meaning check flagged the rewrite") {
+		t.Errorf("err = %v, want a strict gate error", err)
+	}
+	if !strings.Contains(out, "99%") {
+		t.Errorf("stdout = %q, want the rewrite delivered before the gate", out)
+	}
+}
+
+// TestFixVerifyStrictFaithfulPasses checks that a faithful verdict does not trip the gate.
+func TestFixVerifyStrictFaithfulPasses(t *testing.T) {
+	fakeRewrite(t, "we reached 99.9% uptime")
+	fakeJudge(t, rewrite.Verdict{Faithful: true}, nil)
+	if _, _, err := runCLI(t, []string{"fix", "--rewrite", "--verify", "--verify-strict"},
+		"we hit 99.9% uptime"); err != nil {
+		t.Fatalf("fix: %v", err)
+	}
+}
+
+// TestFixVerifyStrictNeedsVerify checks that --verify-strict without --verify is rejected.
+func TestFixVerifyStrictNeedsVerify(t *testing.T) {
+	_, _, err := runCLI(t, []string{"fix", "--rewrite", "--verify-strict"}, "some text")
+	if err == nil || !strings.Contains(err.Error(), "--verify-strict needs --verify") {
+		t.Errorf("err = %v, want a strict-needs-verify error", err)
+	}
+}
+
+// TestFixVerifyRetryNeedsVerify checks that --verify-retry without --verify is rejected.
+func TestFixVerifyRetryNeedsVerify(t *testing.T) {
+	_, _, err := runCLI(t, []string{"fix", "--rewrite", "--verify-retry", "2"}, "some text")
+	if err == nil || !strings.Contains(err.Error(), "--verify-retry needs --verify") {
+		t.Errorf("err = %v, want a retry-needs-verify error", err)
+	}
+}
+
+// TestFixVerifyRetrySucceeds checks that a flagged rewrite is retried with the issue fed
+// back and the faithful second attempt is delivered.
+func TestFixVerifyRetrySucceeds(t *testing.T) {
+	feedbacks := fakeRewriteSeq(t, "we reached 99% uptime", "we reached 99.9% uptime")
+	fakeJudgeSeq(t,
+		rewrite.Verdict{
+			Faithful: false,
+			Issues:   []rewrite.Issue{{Kind: "changed", Was: "99.9%", Now: "99%", Note: "figure changed"}},
+		},
+		rewrite.Verdict{Faithful: true},
+	)
+	out, stderr, err := runCLI(t, []string{"fix", "--rewrite", "--verify", "--verify-retry", "1"},
+		"we hit 99.9% uptime")
+	if err != nil {
+		t.Fatalf("fix: %v", err)
+	}
+	if out != "we reached 99.9% uptime" {
+		t.Errorf("stdout = %q, want the retry result", out)
+	}
+	if !strings.Contains(stderr, "retrying (1 of 1)") {
+		t.Errorf("stderr = %q, want a retry notice", stderr)
+	}
+	if len(*feedbacks) != 2 || len((*feedbacks)[1]) == 0 || !strings.Contains((*feedbacks)[1][0], "99.9%") {
+		t.Errorf("feedback = %v, want the second call to carry the flagged fact", *feedbacks)
+	}
+}
+
+// TestFixVerifyRetryExhausted checks that a rewrite that stays flagged reports the final
+// verdict after the retries run out, and without --verify-strict does not fail.
+func TestFixVerifyRetryExhausted(t *testing.T) {
+	fakeRewrite(t, "we reached 99% uptime")
+	fakeJudge(t, rewrite.Verdict{
+		Faithful: false,
+		Issues:   []rewrite.Issue{{Kind: "changed", Was: "99.9%", Now: "99%", Note: "figure changed"}},
+	}, nil)
+	_, stderr, err := runCLI(t, []string{"fix", "--rewrite", "--verify", "--verify-retry", "1"},
+		"we hit 99.9% uptime")
+	if err != nil {
+		t.Fatalf("fix: %v", err)
+	}
+	if !strings.Contains(stderr, "retrying (1 of 1)") {
+		t.Errorf("stderr = %q, want a retry notice", stderr)
+	}
+	if !strings.Contains(stderr, `meaning changed: was "99.9%" now "99%"`) {
+		t.Errorf("stderr = %q, want the final verdict reported", stderr)
+	}
+}
+
+// TestFixVerifyJSON checks that the verdict rides along in the JSON report.
+func TestFixVerifyJSON(t *testing.T) {
+	fakeRewrite(t, "clean text")
+	fakeJudge(t, rewrite.Verdict{
+		Faithful: false,
+		Issues:   []rewrite.Issue{{Kind: "removed", Was: "a fact", Note: "dropped"}},
+	}, nil)
+	out, _, err := runCLI(t, []string{"fix", "--rewrite", "--verify", "--json"}, "dirty text")
+	if err != nil {
+		t.Fatalf("fix: %v", err)
+	}
+	if !strings.Contains(out, `"verify"`) || !strings.Contains(out, `"faithful":false`) {
+		t.Errorf("stdout = %q, want the verdict in the JSON report", out)
+	}
+}
+
+// TestFixJSONNoVerifyOmitsVerdict checks that the verify field is absent when the meaning
+// check did not run.
+func TestFixJSONNoVerifyOmitsVerdict(t *testing.T) {
+	fakeRewrite(t, "clean text")
+	out, _, err := runCLI(t, []string{"fix", "--rewrite", "--json"}, "dirty text")
+	if err != nil {
+		t.Fatalf("fix: %v", err)
+	}
+	if strings.Contains(out, "verify") {
+		t.Errorf("stdout = %q, want no verify field without --verify", out)
 	}
 }
 
