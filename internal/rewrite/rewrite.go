@@ -183,6 +183,9 @@ func (c *anthropicCompleter) Complete(ctx context.Context, system, user string) 
 	case "end_turn":
 	case "max_tokens":
 		return "", fmt.Errorf("anthropic api: reply hit the %d token cap and is truncated", maxTokens)
+	case "refusal":
+		// A safety classifier can decline the request with a 200 and an empty reply.
+		return "", fmt.Errorf("anthropic api: the model declined to rewrite the text")
 	default:
 		return "", fmt.Errorf("anthropic api: unexpected stop_reason %q", out.StopReason)
 	}
