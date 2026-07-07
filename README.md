@@ -177,8 +177,13 @@ full.
 
 Still early, but the core is in place. The rules pass is built and working. The rewrite
 pass is built too and sits behind the `--rewrite` flag, because it needs an API key and
-costs money, so the free, predictable rules pass stays the default. The one part not yet
-exercised is a live rewrite run against the real API.
+costs money, so the free, predictable rules pass stays the default. The live rewrite path
+has a key-gated integration test, kept out of the default build so it never spends money by
+accident. Run it against the real API with an API key:
+
+```sh
+ANTHROPIC_API_KEY=sk-... go test -tags=integration ./internal/rewrite/ -run Live -v
+```
 
 ## License
 
