@@ -17,6 +17,11 @@ inputs:
       spelling alone.
     required: false
     default: ""
+  preset:
+    description: Apply built-in presets on top of the profile, comma separated (e.g.
+      plain). Leave empty for none.
+    required: false
+    default: ""
   mode:
     description: check flags slop and fails the run. fix rewrites the files in place.
     required: false
@@ -51,11 +56,13 @@ runs:
         FILES: ${{ inputs.files }}
         PROFILE: ${{ inputs.profile }}
         DIALECT: ${{ inputs.dialect }}
+        PRESET: ${{ inputs.preset }}
         MODE: ${{ inputs.mode }}
       run: |
         args=()
         if [ -n "$PROFILE" ]; then args+=(--profile "$PROFILE"); fi
         if [ -n "$DIALECT" ]; then args+=(--dialect "$DIALECT"); fi
+        if [ -n "$PRESET" ]; then args+=(--preset "$PRESET"); fi
         case "$MODE" in
           check)
             rc=0

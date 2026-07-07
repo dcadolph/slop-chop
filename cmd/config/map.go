@@ -8,6 +8,7 @@ import "github.com/spf13/pflag"
 var flags = map[string]*pflag.Flag{
 	KeyProfile:      &FlagProfile,
 	KeyDialect:      &FlagDialect,
+	KeyPreset:       &FlagPreset,
 	KeyJSON:         &FlagJSON,
 	KeyPretty:       &FlagPretty,
 	KeyWrite:        &FlagWrite,

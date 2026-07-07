@@ -12,9 +12,18 @@
     "in summary, ": "",
     "overall, ": "",
     "it's worth noting that ": "",
-    "giving it to you honestly, ": ""
+    "giving it to you honestly, ": "",
+    "in order to": "to"
+  },
+  "wordReplace": {
+    "utilize": "use",
+    "regarding": "about"
+  },
+  "regexReplace": {
+    "([0-9]+) ?%": "$1 percent"
   },
   "blockWords": ["comprehensive", "robust", "seamless", "delve", "blast radius", "substrate"],
+  "allow": ["bandwidth"],
   "collapseSpaces": true,
   "splitSemicolons": true,
   "dialect": "off",

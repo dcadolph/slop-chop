@@ -21,9 +21,20 @@ type Profile struct {
 	// PhraseReplace maps a case-insensitive phrase to its replacement. An empty
 	// replacement deletes the phrase.
 	PhraseReplace map[string]string `json:"phraseReplace"`
+	// WordReplace maps a whole word to its replacement, matched case-insensitively with
+	// the match's capitalization carried onto the replacement. Unlike a block word it
+	// rewrites, so it is the safe way to swap one word for another.
+	WordReplace map[string]string `json:"wordReplace"`
+	// RegexReplace maps a regular expression to its replacement. The pattern is used as
+	// written, so the caller controls anchoring, and a reference like $1 in the
+	// replacement expands against the match.
+	RegexReplace map[string]string `json:"regexReplace"`
 	// BlockWords are words flagged wherever they appear. They are reported but never
 	// rewritten, since a safe replacement depends on context.
 	BlockWords []string `json:"blockWords"`
+	// Allow lists words a rule must never flag or rewrite, matched case-insensitively
+	// against the exact text a rule matched. It silences false positives.
+	Allow []string `json:"allow"`
 	// CollapseSpaces collapses runs of two or more spaces into one and removes spaces
 	// left before closing punctuation, like the debris an em-dash swap leaves behind.
 	// Runs at the start of a line are indentation and stay as they are.
@@ -151,6 +162,22 @@ func (p Profile) compile() ([]Rule, error) {
 		rules = append(rules, spelling)
 	}
 
+	replace, ok, err := wordSwapRule("replace", lowerBoth(p.WordReplace))
+	if err != nil {
+		return nil, err
+	}
+	if ok {
+		rules = append(rules, replace)
+	}
+
+	for _, pat := range slices.Sorted(maps.Keys(p.RegexReplace)) {
+		r, err := regexRule(pat, p.RegexReplace[pat])
+		if err != nil {
+			return nil, err
+		}
+		rules = append(rules, r)
+	}
+
 	for _, w := range p.BlockWords {
 		re, err := regexp.Compile(`(?i)\b` + flexSpaces(regexp.QuoteMeta(w)) + `\b`)
 		if err != nil {
@@ -194,7 +221,66 @@ func (p Profile) compile() ([]Rule, error) {
 		})
 	}
 
+	if allow := allowSet(p.Allow); allow != nil {
+		for i := range rules {
+			rules[i].allow = allow
+		}
+	}
+
 	return rules, nil
+}
+
+// allowSet turns the allow list into a lower-cased lookup, or nil when it is empty.
+func allowSet(words []string) map[string]bool {
+	if len(words) == 0 {
+		return nil
+	}
+	set := make(map[string]bool, len(words))
+	for _, w := range words {
+		set[strings.ToLower(w)] = true
+	}
+	return set
+}
+
+// lowerBoth returns m with every key and value lower-cased and empty keys dropped, the
+// shape wordSwapRule expects. It returns nil for an empty map.
+func lowerBoth(m map[string]string) map[string]string {
+	if len(m) == 0 {
+		return nil
+	}
+	out := make(map[string]string, len(m))
+	for k, v := range m {
+		if k == "" {
+			continue
+		}
+		out[strings.ToLower(k)] = strings.ToLower(v)
+	}
+	return out
+}
+
+// regexRule compiles a user regular expression into a rewriting rule. The pattern is used
+// as written, so the caller controls anchoring and boundaries, and a reference like $1 in
+// the replacement expands against the match. Zero-width matches are skipped so a pattern
+// that can match nothing does not insert its replacement between every character.
+func regexRule(pattern, repl string) (Rule, error) {
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return Rule{}, fmt.Errorf("%w: regex %q: %w", ErrCompile, pattern, err)
+	}
+	return Rule{
+		Name: "regex:" + pattern,
+		re:   re,
+		replFunc: func(text string, loc []int) string {
+			span := text[loc[0]:loc[1]]
+			sub := re.FindStringSubmatchIndex(span)
+			if sub == nil {
+				return span
+			}
+			return string(re.ExpandString(nil, repl, span, sub))
+		},
+		keep:    func(_ string, start, end int) bool { return end > start },
+		rewrite: true,
+	}, nil
 }
 
 // wsGap matches the whitespace between two words: spaces and tabs crossing at most one
@@ -208,6 +294,16 @@ func flexSpaces(quoted string) string {
 	return strings.ReplaceAll(quoted, " ", wsGap)
 }
 
+// endsWithWordChar reports whether s ends in an ASCII word character, the set the \b
+// boundary recognizes, so a closing boundary is added only where it would hold.
+func endsWithWordChar(s string) bool {
+	if s == "" {
+		return false
+	}
+	c := s[len(s)-1]
+	return c == '_' || ('0' <= c && c <= '9') || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
+}
+
 // phraseRule builds the rule for one phrase swap. A leading word boundary keeps the
 // phrase from matching inside another word. A deletion also eats the horizontal space
 // after the phrase and captures the letter that follows, so it can restore a sentence's
@@ -215,7 +311,14 @@ func flexSpaces(quoted string) string {
 // deleting a phrase never merges prose into a code fence or an indented block.
 func phraseRule(phrase, repl string) (Rule, error) {
 	name := "phrase:" + strings.TrimSpace(phrase)
-	core := `(?i)\b` + flexSpaces(regexp.QuoteMeta(strings.TrimRight(phrase, " ")))
+	trimmed := strings.TrimRight(phrase, " ")
+	core := `(?i)\b` + flexSpaces(regexp.QuoteMeta(trimmed))
+	// A phrase ending in a word character gets a closing boundary so a key like "cat"
+	// never fires inside "category". A phrase ending in punctuation, like the trailing
+	// comma on "in summary,", is already bounded and takes no extra anchor.
+	if endsWithWordChar(trimmed) {
+		core += `\b`
+	}
 	if repl != "" {
 		re, err := regexp.Compile(core)
 		if err != nil {

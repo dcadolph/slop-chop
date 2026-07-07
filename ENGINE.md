@@ -36,10 +36,12 @@ flowchart TD
     A["Input text"] --> B["1. Character swaps"]
     B --> C["2. Phrase removal"]
     C --> S["3. Spelling swaps (with --dialect)"]
-    S --> D["4. Block-word flags"]
-    D --> E["5. Semicolon split"]
-    E --> F["6. Punctuation cleanup"]
-    F --> G["7. Space collapse"]
+    S --> W["4. Word swaps"]
+    W --> X["5. Regex swaps"]
+    X --> D["6. Block-word flags"]
+    D --> E["7. Semicolon split"]
+    E --> F["8. Punctuation cleanup"]
+    F --> G["9. Space collapse"]
     G --> H["Clean text"]
 ```
 
@@ -51,18 +53,22 @@ flowchart TD
 | Rules     | The compiled profile. An ordered list, each a regex plus an action.      |
 | Sanitizer | Holds the rules and runs them over your text.                            |
 
-## The seven rule kinds
+## The nine rule kinds
 
 Each entry in a profile compiles into one or more rules. Every rule is a compiled regular
 expression paired with an action. The `collapseSpaces` field compiles into the last two,
 which together tidy the debris the earlier rewrites leave behind. The spelling swap appears
-only when `--dialect` or a profile's `dialect` field asks for one.
+only when `--dialect` or a profile's `dialect` field asks for one, and the word and regex
+swaps appear only when a profile lists them. See
+[docs/PROFILE.md](docs/PROFILE.md) for the field that drives each kind.
 
 | Kind                | Matches                     | Action      | Example                        |
 | ------------------- | --------------------------- | ----------- | ------------------------------ |
 | Character swap      | a literal character         | rewrite     | `—` becomes `, `               |
 | Phrase removal      | a phrase, any casing        | rewrite     | `In summary, ` becomes empty   |
 | Spelling swap       | a dialect spelling          | rewrite     | `behaviour` becomes `behavior` |
+| Word swap           | a whole word, any casing    | rewrite     | `utilize` becomes `use`        |
+| Regex swap          | your own pattern            | rewrite     | `50%` becomes `50 percent`     |
 | Block word          | a whole word or term        | flag only   | `comprehensive`, `blast radius`|
 | Semicolon split     | `;` then space, a letter    | rewrite     | `; it` becomes `. It`          |
 | Punctuation cleanup | spaces before punctuation   | rewrite     | `word ,` becomes `word,`       |
@@ -73,6 +79,9 @@ A few notes on the matching:
 - Character swaps match the literal text, so nothing inside it acts as a regex.
 - Phrase keys keep the trailing comma and space, so deleting one leaves a clean sentence
   rather than a dangling comma.
+- A phrase whose last character is a word, like the bare word `cat`, matches only as a
+  whole word, so it never fires inside `category`. A phrase that ends in punctuation is
+  bounded by that punctuation instead.
 - Deleting a phrase that opened a sentence restores the capital on the word after it, so
   `In summary, it works.` becomes `It works.` and not `it works.`. A phrase deleted
   mid-sentence leaves the next word lowercase.
@@ -82,6 +91,11 @@ A few notes on the matching:
   ending but no dialect difference, like `size`, is never touched. The swap keeps the
   match's case, and a word whose other-dialect spelling doubles as an unrelated word, like
   `cheque` and `check`, rewrites only toward American.
+- Word swaps match a whole word without regard to case, and the replacement takes the case
+  of what it replaced, so one entry covers `utilize`, `Utilize`, and `UTILIZE`.
+- Regex swaps use the pattern as written, so you set the anchoring yourself. A reference
+  like `$1` in the replacement expands against the match, and a pattern that can match
+  nothing is skipped rather than inserted between every character.
 - A phrase or a multi-word term still matches when a line wrap splits it. The gap
   between its words can be spaces, tabs, or one line break, but never a blank line, so
   nothing matches across a paragraph break.
@@ -99,10 +113,12 @@ A few notes on the matching:
 | 1    | Character swaps     |                                                             |
 | 2    | Phrase removal      |                                                             |
 | 3    | Spelling swaps      | Only with a dialect. Rewrites the other dialect's spelling. |
-| 4    | Block-word flags    | Flags only, never changes the text.                         |
-| 5    | Semicolon split     |                                                             |
-| 6    | Punctuation cleanup | Drops spaces left in front of punctuation.                  |
-| 7    | Space collapse      | Runs last to mop up spaces the earlier swaps leave behind.  |
+| 4    | Word swaps          | Only with `wordReplace`. Whole-word, case-carrying.         |
+| 5    | Regex swaps         | Only with `regexReplace`. Your own patterns.                |
+| 6    | Block-word flags    | Flags only, never changes the text.                         |
+| 7    | Semicolon split     |                                                             |
+| 8    | Punctuation cleanup | Drops spaces left in front of punctuation.                  |
+| 9    | Space collapse      | Runs last to mop up spaces the earlier swaps leave behind.  |
 
 Why the cleanup stages go last: take the input `word — word`. The em-dash becomes a comma
 and a space, which leaves `word ,  word`. The punctuation pass pulls the comma back
@@ -164,6 +180,8 @@ engine flags them but leaves the swap to you.
 | Character swap      | rewrites     |
 | Phrase removal      | rewrites     |
 | Spelling swap       | rewrites     |
+| Word swap           | rewrites     |
+| Regex swap          | rewrites     |
 | Semicolon split     | rewrites     |
 | Punctuation cleanup | rewrites     |
 | Space collapse      | rewrites     |
@@ -183,6 +201,14 @@ example or a semicolon in a code sample stays exactly as written, in `check` and
 
 A lone backtick with no closing partner before the next blank line is plain text, so
 one stray character does not hide the rest of a paragraph from the rules.
+
+Two more things drop a match. A word in the profile's `allow` list is exempt from every
+rule, matched against the exact text a rule matched, without regard to case, so a false
+positive can be silenced without turning off the rule that raised it. And a line carrying
+an inline directive is skipped: `<!-- slop-chop-ignore -->` silences its own line and
+`<!-- slop-chop-ignore-next-line -->` silences the line after it, the way a linter pragma
+does. Both the allow list and the directives apply to `check` and `fix` alike. See
+[docs/PROFILE.md](docs/PROFILE.md) for how to use them.
 
 ## Under the hood
 
