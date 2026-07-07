@@ -238,5 +238,13 @@ run once more over the reply. Any deterministic tell the model reintroduced is c
 again, and a warning goes to stderr. Buzzwords the rules only flag are reported when the
 model failed to drop them. The code segments of the reply are compared against the input,
 so a model that altered a fenced block, an inline span, or an indented block is caught and
-called out. The rewrite stays best-effort, but its output can no longer quietly break the
-guarantees the rules pass makes.
+called out.
+
+The reply is also checked for fact drift, deterministically and for free. slop-chop pulls
+the load-bearing tokens out of the prose, the numbers, percentages, money, URLs, emails,
+and all-caps acronyms, and diffs the set against the input. A dropped or added token,
+like a percentage that changed or a link that vanished, is reported on stderr as a likely
+fact change. This does not judge meaning, so a reworded claim with the same numbers passes
+quietly, but the high-consequence, checkable drift no longer slips through. The rewrite
+stays best-effort, but its output can no longer quietly break the guarantees the rules
+pass makes.

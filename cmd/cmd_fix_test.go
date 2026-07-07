@@ -132,6 +132,35 @@ func TestFixRewriteChangedCode(t *testing.T) {
 	}
 }
 
+// TestFixRewriteAnchorDrift checks that a reply which changed a number is flagged as a
+// possible fact change, dropping the old value and adding the new one.
+func TestFixRewriteAnchorDrift(t *testing.T) {
+	fakeRewrite(t, "we reached 99% uptime")
+	_, stderr, err := runCLI(t, []string{"fix", "--rewrite"}, "we hit 99.9% uptime")
+	if err != nil {
+		t.Fatalf("fix: %v", err)
+	}
+	if !strings.Contains(stderr, `dropped "99.9%"`) {
+		t.Errorf("stderr = %q, want a dropped-anchor warning", stderr)
+	}
+	if !strings.Contains(stderr, `added "99%"`) {
+		t.Errorf("stderr = %q, want an added-anchor warning", stderr)
+	}
+}
+
+// TestFixRewriteFaithfulNoDrift checks that a reply keeping the same anchors raises no
+// drift warning, so faithful rewrites stay quiet.
+func TestFixRewriteFaithfulNoDrift(t *testing.T) {
+	fakeRewrite(t, "we reached 99.9% uptime")
+	_, stderr, err := runCLI(t, []string{"fix", "--rewrite"}, "we hit 99.9% uptime")
+	if err != nil {
+		t.Fatalf("fix: %v", err)
+	}
+	if strings.Contains(stderr, "fact may have changed") {
+		t.Errorf("stderr = %q, want no drift warning", stderr)
+	}
+}
+
 // TestFixRewriteNewline checks that the trailing newline survives the rewrite pass,
 // which trims the model reply.
 func TestFixRewriteNewline(t *testing.T) {

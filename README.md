@@ -149,7 +149,9 @@ stays the default.
 
 The model's reply is verified before you get it. The rules run over it again to clean any
 tell the model slipped back in, and slop-chop warns on stderr if the reply kept a buzzword
-or changed a code block from your input.
+or changed a code block from your input. It also diffs the load-bearing tokens, numbers,
+percentages, money, links, and acronyms, so a changed figure or a dropped link is flagged
+as a likely fact change.
 
 ## Style profiles
 

@@ -137,7 +137,57 @@ func verifyRewrite(s *sanitize.Sanitizer, original, reply string, stderr io.Writ
 		_, _ = fmt.Fprintf(stderr, "slop-chop: the rewrite changed code (%d segment(s) in, %d out); check the output\n",
 			len(in), len(out))
 	}
+	reportAnchorDrift(original, cleaned, stderr)
 	return cleaned
+}
+
+// reportAnchorDrift warns when the rewrite dropped or added a load-bearing token like a
+// number, link, or acronym, which usually means a fact changed rather than the wording.
+func reportAnchorDrift(original, cleaned string, stderr io.Writer) {
+	dropped, added := anchorDelta(sanitize.Anchors(original), sanitize.Anchors(cleaned))
+	warnAnchors(stderr, "dropped", dropped)
+	warnAnchors(stderr, "added", added)
+}
+
+// warnAnchors writes one line per anchor, capped so a wholesale rewrite cannot flood the
+// output.
+func warnAnchors(stderr io.Writer, verb string, anchors []string) {
+	const limit = 20
+	for i, a := range anchors {
+		if i == limit {
+			_, _ = fmt.Fprintf(stderr, "slop-chop: ... and %d more %s\n", len(anchors)-limit, verb)
+			return
+		}
+		_, _ = fmt.Fprintf(stderr, "slop-chop: the rewrite %s %q; a fact may have changed\n", verb, a)
+	}
+}
+
+// anchorDelta returns the anchors present more often in before than after (dropped) and
+// more often in after than before (added), each sorted for a stable report.
+func anchorDelta(before, after []string) (dropped, added []string) {
+	bc, ac := anchorCounts(before), anchorCounts(after)
+	for v, n := range bc {
+		for i := 0; i < n-ac[v]; i++ {
+			dropped = append(dropped, v)
+		}
+	}
+	for v, n := range ac {
+		for i := 0; i < n-bc[v]; i++ {
+			added = append(added, v)
+		}
+	}
+	slices.Sort(dropped)
+	slices.Sort(added)
+	return dropped, added
+}
+
+// anchorCounts tallies how many times each anchor appears.
+func anchorCounts(anchors []string) map[string]int {
+	m := make(map[string]int, len(anchors))
+	for _, a := range anchors {
+		m[a]++
+	}
+	return m
 }
 
 // rewritePass runs the model rewrite over text. It is a variable so tests can swap in
