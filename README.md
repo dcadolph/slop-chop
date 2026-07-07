@@ -161,6 +161,21 @@ For the meaning a token diff cannot see, a flipped negation or a softened claim,
 and reports any change in meaning on stderr. It costs another call and is only as reliable
 as the model, so it is off by default and warns rather than fails.
 
+Two flags go further. `--verify-strict` makes a flagged change fail the command with a
+non-zero exit, so CI can catch drift. The rewrite still gets written first. `--verify-retry
+N` gives the model another go: when the check flags a change, slop-chop tells it which facts
+it changed and asks for the rewrite again, up to N more times, until the check passes. With
+`--json`, the verdict shows up in the report as a `verify` object, so you can read it
+instead of watching stderr.
+
+```sh
+# Fail CI when the rewrite drifts from your meaning.
+slop-chop fix --rewrite --verify --verify-strict notes.md
+
+# Give the model two more tries to keep the facts it changed.
+slop-chop fix --rewrite --verify --verify-retry 2 notes.md
+```
+
 ## Style profiles
 
 A profile is a small config file that lists what to cut and what to put in its place:

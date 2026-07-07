@@ -59,12 +59,25 @@ func TestRewrite(t *testing.T) {
 // TestBuildSystemTone checks that tone notes land in the system prompt.
 func TestBuildSystemTone(t *testing.T) {
 	t.Parallel()
-	got := buildSystem([]string{"dry and direct"})
+	got := buildSystem([]string{"dry and direct"}, nil)
 	if !strings.Contains(got, "dry and direct") {
 		t.Errorf("system prompt missing tone note:\n%s", got)
 	}
 	if !strings.Contains(got, "em-dash") {
 		t.Errorf("system prompt missing core instruction:\n%s", got)
+	}
+}
+
+// TestBuildSystemFeedback checks that feedback notes land in the system prompt so a retry
+// can preserve the flagged facts.
+func TestBuildSystemFeedback(t *testing.T) {
+	t.Parallel()
+	got := buildSystem(nil, []string{`keep "99.9%", do not drop it (figure)`})
+	if !strings.Contains(got, "99.9%") {
+		t.Errorf("system prompt missing feedback note:\n%s", got)
+	}
+	if !strings.Contains(got, "changed the meaning") {
+		t.Errorf("system prompt missing feedback preamble:\n%s", got)
 	}
 }
 

@@ -16,8 +16,13 @@ func (v *FlagValue) String() string { return v.Val }
 
 // Set validates s against the value type and stores it.
 func (v *FlagValue) Set(s string) error {
-	if v.ValType == "bool" {
+	switch v.ValType {
+	case "bool":
 		if _, err := strconv.ParseBool(s); err != nil {
+			return err
+		}
+	case "int":
+		if _, err := strconv.Atoi(s); err != nil {
 			return err
 		}
 	}
