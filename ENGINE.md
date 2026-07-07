@@ -248,3 +248,10 @@ fact change. This does not judge meaning, so a reworded claim with the same numb
 quietly, but the high-consequence, checkable drift no longer slips through. The rewrite
 stays best-effort, but its output can no longer quietly break the guarantees the rules
 pass makes.
+
+For the meaning no deterministic check can see, a flipped negation or a softened claim,
+`fix --rewrite --verify` adds a model pass of its own. It sends the original and the
+rewrite to a model and asks for a strict JSON verdict on whether the meaning held, then
+reports each change on stderr. This is Layer 3: it costs a second call and is only as
+sure as the model, so it is off by default, and a verdict it cannot run or parse is a
+warning, not a failure, since the rewrite is already valid output.
