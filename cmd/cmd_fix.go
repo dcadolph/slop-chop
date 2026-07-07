@@ -38,6 +38,7 @@ func fixCmd() *cobra.Command {
 	f.AddFlag(&config.FlagWrite)
 	f.AddFlag(&config.FlagRewrite)
 	f.AddFlag(&config.FlagModel)
+	f.AddFlag(&config.FlagVerify)
 	cmd.MarkFlagsMutuallyExclusive(config.KeyWrite, config.KeyJSON)
 	return cmd
 }
@@ -48,6 +49,8 @@ func runFix(cmd *cobra.Command, args []string) error {
 	switch {
 	case config.Changed(config.KeyModel) && !config.Rewrite():
 		return fmt.Errorf("--model needs --rewrite")
+	case config.Verify() && !config.Rewrite():
+		return fmt.Errorf("--verify needs --rewrite")
 	case config.Write() && config.JSON():
 		// Cobra rejects this when both come from the command line, but env vars can set
 		// either without tripping that check, so guard it here too.
@@ -106,6 +109,9 @@ func fixOne(ctx context.Context, s *sanitize.Sanitizer, tone []string, text, pat
 			rw += "\n"
 		}
 		out = rw
+		if config.Verify() {
+			reportMeaningDrift(ctx, config.Model(), text, out, stderr)
+		}
 	}
 	if config.JSON() {
 		return writeJSON(stdout, fixReport{Cleaned: out, Findings: orEmpty(findings)}, config.Pretty())
@@ -190,6 +196,24 @@ func anchorCounts(anchors []string) map[string]int {
 	return m
 }
 
+// reportMeaningDrift runs the model meaning check and warns on stderr for each change it
+// found. A judge that cannot run is a warning, not a failure, since the rewrite itself
+// already succeeded and is valid output.
+func reportMeaningDrift(ctx context.Context, model, original, rewritten string, stderr io.Writer) {
+	verdict, err := judgePass(ctx, model, original, rewritten)
+	if err != nil {
+		_, _ = fmt.Fprintf(stderr, "slop-chop: the meaning check could not run: %v\n", err)
+		return
+	}
+	for _, issue := range verdict.Issues {
+		_, _ = fmt.Fprintf(stderr, "slop-chop: meaning %s: was %q now %q (%s)\n",
+			issue.Kind, issue.Was, issue.Now, issue.Note)
+	}
+	if !verdict.Faithful && len(verdict.Issues) == 0 {
+		_, _ = fmt.Fprintln(stderr, "slop-chop: the meaning check flagged the rewrite but gave no detail")
+	}
+}
+
 // rewritePass runs the model rewrite over text. It is a variable so tests can swap in
 // a fake model.
 //
@@ -197,6 +221,14 @@ func anchorCounts(anchors []string) map[string]int {
 var rewritePass = func(ctx context.Context, model string, tone []string, text string) (string, error) {
 	rw := rewrite.New(rewrite.NewAnthropicCompleter(model), tone...)
 	return rw.Rewrite(ctx, text)
+}
+
+// judgePass runs the model meaning check over the original and the rewrite. It is a
+// variable so tests can swap in a fake judge.
+//
+//nolint:gochecknoglobals // Test seam.
+var judgePass = func(ctx context.Context, model, original, rewritten string) (rewrite.Verdict, error) {
+	return rewrite.NewJudge(rewrite.NewAnthropicCompleter(model)).Judge(ctx, original, rewritten)
 }
 
 // writeFile writes out back to path, keeping the file's existing mode.

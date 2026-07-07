@@ -79,6 +79,9 @@ slop-chop fix --json notes.md
 # Deeper clean: rules first, then a model rewrite (needs ANTHROPIC_API_KEY)
 slop-chop fix --rewrite notes.md
 slop-chop fix --rewrite --model claude-sonnet-4-6 notes.md
+
+# Ask a model to check the rewrite kept your meaning (a second, paid call)
+slop-chop fix --rewrite --verify notes.md
 ```
 
 `check --json` prints a `{"findings": [...]}` object to stdout, and `fix --json` adds the
@@ -151,7 +154,12 @@ The model's reply is verified before you get it. The rules run over it again to 
 tell the model slipped back in, and slop-chop warns on stderr if the reply kept a buzzword
 or changed a code block from your input. It also diffs the load-bearing tokens, numbers,
 percentages, money, links, and acronyms, so a changed figure or a dropped link is flagged
-as a likely fact change.
+as a likely fact change. All of that is deterministic and free.
+
+For the meaning a token diff cannot see, a flipped negation or a softened claim, add
+`--verify`. It makes a second model call that compares the rewrite against your original
+and reports any change in meaning on stderr. It costs another call and is only as reliable
+as the model, so it is off by default and warns rather than fails.
 
 ## Style profiles
 
