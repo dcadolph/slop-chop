@@ -166,7 +166,7 @@ func (c *anthropicCompleter) Complete(ctx context.Context, system, user string) 
 
 	var out messagesResponse
 	if err := json.Unmarshal(reply, &out); err != nil {
-		return "", err
+		return "", fmt.Errorf("anthropic api: decode reply: %w", err)
 	}
 	switch out.StopReason {
 	case "end_turn":
@@ -180,6 +180,11 @@ func (c *anthropicCompleter) Complete(ctx context.Context, system, user string) 
 		if block.Type == "text" {
 			b.WriteString(block.Text)
 		}
+	}
+	// An end_turn reply with no text would overwrite the input with nothing under
+	// --write, so treat it as an error rather than silent data loss.
+	if b.Len() == 0 {
+		return "", fmt.Errorf("anthropic api: reply had no text content")
 	}
 	return b.String(), nil
 }

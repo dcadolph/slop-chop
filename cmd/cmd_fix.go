@@ -48,6 +48,10 @@ func runFix(cmd *cobra.Command, args []string) error {
 	switch {
 	case config.Changed(config.KeyModel) && !config.Rewrite():
 		return fmt.Errorf("--model needs --rewrite")
+	case config.Write() && config.JSON():
+		// Cobra rejects this when both come from the command line, but env vars can set
+		// either without tripping that check, so guard it here too.
+		return fmt.Errorf("cannot use --write with --json")
 	case config.JSON() && len(args) > 1:
 		return fmt.Errorf("--json takes at most one file")
 	case config.Write() && len(args) == 0:
@@ -122,15 +126,15 @@ func fixOne(ctx context.Context, s *sanitize.Sanitizer, tone []string, text, pat
 func verifyRewrite(s *sanitize.Sanitizer, original, reply string, stderr io.Writer) string {
 	cleaned, _ := s.Fix(reply)
 	if cleaned != reply {
-		fmt.Fprintln(stderr, "slop-chop: the rewrite reintroduced tells the rules removed; cleaned them again")
+		_, _ = fmt.Fprintln(stderr, "slop-chop: the rewrite carried tells the rules had to clean")
 	}
 	for _, f := range s.Check(cleaned) {
 		if f.Replacement == nil {
-			fmt.Fprintf(stderr, "slop-chop: the rewrite left %s %q at %d:%d\n", f.Rule, f.Match, f.Line, f.Col)
+			_, _ = fmt.Fprintf(stderr, "slop-chop: the rewrite left %s %q at %d:%d\n", f.Rule, f.Match, f.Line, f.Col)
 		}
 	}
 	if in, out := sanitize.CodeSegments(original), sanitize.CodeSegments(cleaned); !slices.Equal(in, out) {
-		fmt.Fprintf(stderr, "slop-chop: the rewrite changed code (%d segment(s) in, %d out); check the output\n",
+		_, _ = fmt.Fprintf(stderr, "slop-chop: the rewrite changed code (%d segment(s) in, %d out); check the output\n",
 			len(in), len(out))
 	}
 	return cleaned

@@ -102,6 +102,14 @@ func TestCompleteResponses(t *testing.T) {
 		Body: `{"content":[{"type":"text","text":"a"},{"type":"thinking","text":"x"},` +
 			`{"type":"text","text":"b"}],"stop_reason":"end_turn"}`,
 		WantResult: "ab",
+	}, { // Test 5: A finished reply with no text content is an error, not empty output.
+		Status: 200, Body: `{"content":[],"stop_reason":"end_turn"}`,
+		WantErrSub: "no text content",
+	}, { // Test 6: A finished reply with only non-text blocks is an error too.
+		Status: 200, Body: `{"content":[{"type":"thinking","text":"x"}],"stop_reason":"end_turn"}`,
+		WantErrSub: "no text content",
+	}, { // Test 7: A 200 with a body that is not JSON is a decode error.
+		Status: 200, Body: `not json`, WantErrSub: "decode reply",
 	}}
 
 	t.Setenv("ANTHROPIC_API_KEY", "test-key")

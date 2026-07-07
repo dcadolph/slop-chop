@@ -18,6 +18,17 @@ func fakeRewrite(t *testing.T, reply string) {
 	t.Cleanup(func() { rewritePass = old })
 }
 
+// TestFixWriteJSONEnvGuard checks that --write and --json set through the environment
+// are still rejected, since cobra's mutual-exclusion only sees command-line flags.
+func TestFixWriteJSONEnvGuard(t *testing.T) {
+	path := writeTemp(t, t.TempDir(), "notes.md", "In summary, a plan.")
+	t.Setenv("SLOP_CHOP_JSON", "true")
+	_, _, err := runCLI(t, []string{"fix", "-w", path}, "")
+	if err == nil || !strings.Contains(err.Error(), "cannot use --write with --json") {
+		t.Errorf("err = %v, want a write-with-json rejection", err)
+	}
+}
+
 // TestFixStdout checks that fix writes cleaned text to stdout.
 func TestFixStdout(t *testing.T) {
 	out, _, err := runCLI(t, []string{"fix"}, "a robust plan; it works")
@@ -26,6 +37,14 @@ func TestFixStdout(t *testing.T) {
 	}
 	if out != "a robust plan. It works" {
 		t.Errorf("stdout = %q", out)
+	}
+}
+
+// TestFixMissingFile checks that a missing input file is a read error, not a crash.
+func TestFixMissingFile(t *testing.T) {
+	_, _, err := runCLI(t, []string{"fix", "/no/such/file.md"}, "")
+	if err == nil || !strings.Contains(err.Error(), "read file") {
+		t.Errorf("err = %v, want a read-file error", err)
 	}
 }
 
@@ -79,8 +98,8 @@ func TestFixRewriteReintroducedTell(t *testing.T) {
 	if strings.Contains(out, "—") {
 		t.Errorf("stdout = %q, still has an em-dash", out)
 	}
-	if !strings.Contains(stderr, "reintroduced tells") {
-		t.Errorf("stderr = %q, want a reintroduced-tells warning", stderr)
+	if !strings.Contains(stderr, "carried tells the rules had to clean") {
+		t.Errorf("stderr = %q, want a carried-tells warning", stderr)
 	}
 }
 
