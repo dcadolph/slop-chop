@@ -73,24 +73,46 @@ func dedupeFindings(findings []Finding) []Finding {
 }
 
 // Fix returns the cleaned text along with the findings from the original. Rules that
-// only flag are reported but leave the text unchanged.
+// only flag are reported but leave the text unchanged. Findings carry positions against
+// the original text, so they are gathered before the rewriting starts.
 func (s *Sanitizer) Fix(text string) (string, []Finding) {
 	findings := s.Check(text)
+	return s.fixpoint(text), findings
+}
+
+// fixpoint runs the rewriting rules over the text until it stops changing, so a later
+// rule that alters an earlier rule's input, like the punctuation cleanup dropping a space
+// the semicolon split had read, cannot leave the output half done. It is capped so a
+// profile whose swaps cycle, such as a to b and b to a, terminates instead of looping.
+func (s *Sanitizer) fixpoint(text string) string {
+	const maxPasses = 10
+	out := text
+	for range maxPasses {
+		next := s.applyAll(out)
+		if next == out {
+			break
+		}
+		out = next
+	}
+	return out
+}
+
+// applyAll runs every rewriting rule once, in order. Each rewrite shifts offsets, so the
+// protected ranges are recomputed after any rule that changed the text.
+func (s *Sanitizer) applyAll(text string) string {
 	out := text
 	protected := skipRanges(out)
 	for _, r := range s.rules {
 		if !r.rewrite {
 			continue
 		}
-		// Each rewrite shifts offsets, so the protected ranges are recomputed after
-		// any rule that changed the text.
 		next := r.apply(out, protected)
 		if next != out {
 			out = next
 			protected = skipRanges(out)
 		}
 	}
-	return out, findings
+	return out
 }
 
 // newlineOffsets returns the byte offset of every newline in text, in order. Computing

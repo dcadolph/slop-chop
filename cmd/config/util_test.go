@@ -80,3 +80,37 @@ func TestChangedAndReset(t *testing.T) {
 		t.Errorf("Model() = %q, want default %q after Reset", Model(), DefaultModel)
 	}
 }
+
+// TestDialectPresetPriority checks that the dialect and preset accessors resolve in the
+// order flag, then environment, then the empty default that lets a profile stand.
+func TestDialectPresetPriority(t *testing.T) {
+	Reset()
+	t.Cleanup(Reset)
+
+	// Test 0: Unset, both are empty so a profile's own value wins downstream.
+	if Dialect() != "" {
+		t.Errorf("Dialect() = %q, want empty default", Dialect())
+	}
+	if Preset() != "" {
+		t.Errorf("Preset() = %q, want empty default", Preset())
+	}
+
+	// Test 1: The environment sets each.
+	t.Setenv("SLOP_CHOP_DIALECT", "british")
+	t.Setenv("SLOP_CHOP_PRESET", "plain")
+	if Dialect() != "british" {
+		t.Errorf("Dialect() = %q, want env british", Dialect())
+	}
+	if Preset() != "plain" {
+		t.Errorf("Preset() = %q, want env plain", Preset())
+	}
+
+	// Test 2: A set flag overrides the environment.
+	if err := FlagDialect.Value.Set("american"); err != nil {
+		t.Fatal(err)
+	}
+	FlagDialect.Changed = true
+	if Dialect() != "american" {
+		t.Errorf("Dialect() = %q, want flag american", Dialect())
+	}
+}

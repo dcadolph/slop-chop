@@ -36,3 +36,15 @@ func TestPresetProfilePrecedence(t *testing.T) {
 		t.Errorf("out = %q, want %q", out, "we employ it")
 	}
 }
+
+// TestPresetEnv checks that the environment variable applies a preset with no flag passed.
+func TestPresetEnv(t *testing.T) {
+	t.Setenv("SLOP_CHOP_PRESET", "plain")
+	out, _, err := runCLI(t, []string{"fix"}, "we utilize it")
+	if err != nil {
+		t.Fatalf("err = %v, want nil", err)
+	}
+	if out != "we use it" {
+		t.Errorf("out = %q, want %q", out, "we use it")
+	}
+}
