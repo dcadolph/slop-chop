@@ -108,20 +108,23 @@ func TestCompleteResponses(t *testing.T) {
 	}, { // Test 2: A reply cut off at the token cap is an error, not truncated text.
 		Status: 200, Body: `{"content":[{"type":"text","text":"half"}],"stop_reason":"max_tokens"}`,
 		WantErrSub: "truncated",
-	}, { // Test 3: An unexpected stop reason is an error.
-		Status: 200, Body: `{"content":[],"stop_reason":"refusal"}`, WantErrSub: "refusal",
-	}, { // Test 4: Text blocks concatenate and non-text blocks are skipped.
+	}, { // Test 3: A safety refusal is a clear error, not an unexpected one.
+		Status: 200, Body: `{"content":[],"stop_reason":"refusal"}`, WantErrSub: "declined",
+	}, { // Test 4: Any other stop reason is reported as unexpected.
+		Status: 200, Body: `{"content":[{"type":"text","text":"x"}],"stop_reason":"pause_turn"}`,
+		WantErrSub: "unexpected",
+	}, { // Test 5: Text blocks concatenate and non-text blocks are skipped.
 		Status: 200,
 		Body: `{"content":[{"type":"text","text":"a"},{"type":"thinking","text":"x"},` +
 			`{"type":"text","text":"b"}],"stop_reason":"end_turn"}`,
 		WantResult: "ab",
-	}, { // Test 5: A finished reply with no text content is an error, not empty output.
+	}, { // Test 6: A finished reply with no text content is an error, not empty output.
 		Status: 200, Body: `{"content":[],"stop_reason":"end_turn"}`,
 		WantErrSub: "no text content",
-	}, { // Test 6: A finished reply with only non-text blocks is an error too.
+	}, { // Test 7: A finished reply with only non-text blocks is an error too.
 		Status: 200, Body: `{"content":[{"type":"thinking","text":"x"}],"stop_reason":"end_turn"}`,
 		WantErrSub: "no text content",
-	}, { // Test 7: A 200 with a body that is not JSON is a decode error.
+	}, { // Test 8: A 200 with a body that is not JSON is a decode error.
 		Status: 200, Body: `not json`, WantErrSub: "decode reply",
 	}}
 
