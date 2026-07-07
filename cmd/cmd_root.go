@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -58,11 +59,30 @@ func newSanitizer() (*sanitize.Sanitizer, sanitize.Profile, error) {
 	if d := config.Dialect(); d != "" {
 		profile.Dialect = sanitize.Dialect(d)
 	}
+	// Presets add their rules on top of the profile, which still wins on any conflict.
+	if names := splitList(config.Preset()); len(names) > 0 {
+		merged, err := sanitize.ApplyPresets(profile, names...)
+		if err != nil {
+			return nil, sanitize.Profile{}, err
+		}
+		profile = merged
+	}
 	s, err := sanitize.New(profile)
 	if err != nil {
 		return nil, sanitize.Profile{}, err
 	}
 	return s, profile, nil
+}
+
+// splitList splits a comma-separated flag value into trimmed, non-empty items.
+func splitList(s string) []string {
+	var out []string
+	for _, part := range strings.Split(s, ",") {
+		if p := strings.TrimSpace(part); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 // readInput returns the text from file, or from stdin when file is empty.

@@ -21,6 +21,9 @@ type Rule struct {
 	// match. It lets a rule skip matches by context, like a semicolon that separates
 	// list items instead of joining two clauses.
 	keep func(text string, start, end int) bool
+	// allow is the shared set of matched texts to skip, lower-cased. A nil set skips
+	// nothing. It lets a profile exempt a word every rule would otherwise act on.
+	allow map[string]bool
 	// rewrite reports whether the rule changes text. When false the rule only flags.
 	rewrite bool
 }
@@ -35,6 +38,9 @@ func (r Rule) matches(text string, protected [][2]int) [][]int {
 			continue
 		}
 		if r.keep != nil && !r.keep(text, loc[0], loc[1]) {
+			continue
+		}
+		if r.allow != nil && r.allow[strings.ToLower(text[loc[0]:loc[1]])] {
 			continue
 		}
 		kept = append(kept, loc)

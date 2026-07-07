@@ -23,15 +23,14 @@ the same way every time.
 There are two passes, and you can run either one on its own.
 
 The first is a rules pass. It is fast and deterministic. It swaps characters, drops words
-you have flagged, rewrites stock phrases, and tidies the punctuation, with no model, no
-cost, and the same output on every run. It knows markdown, so fenced code blocks and
-inline backtick spans come through untouched.
+you have flagged, rewrites stock phrases and words, runs your own patterns, fixes spelling
+to one dialect, and tidies the punctuation, with no model, no cost, and the same output on
+every run. It knows markdown, so fenced code blocks and inline backtick spans come through
+untouched.
 
 The second is an optional rewrite pass that hands the text to a model for the things
 rules cannot manage, like reworking a sentence so it no longer needs a semicolon, or
 nudging the writing toward a voice you picked.
-
-[ENGINE.md](ENGINE.md) has the details if you want them.
 
 ## Install
 
@@ -70,6 +69,9 @@ slop-chop fix -w docs/intro.md docs/guide.md
 slop-chop check --dialect american notes.md
 slop-chop fix --dialect british notes.md
 
+# Overlay a built-in pack, like corporate phrasing to plain English
+slop-chop fix --preset plain notes.md
+
 # Use your own profile
 slop-chop fix --profile myprofile.json notes.md
 
@@ -77,14 +79,8 @@ slop-chop fix --profile myprofile.json notes.md
 slop-chop check --json notes.md
 slop-chop check --json --pretty notes.md
 
-# Get the cleaned text and the findings together
-slop-chop fix --json notes.md
-
 # Deeper clean: rules first, then a model rewrite (needs ANTHROPIC_API_KEY)
 slop-chop fix --rewrite notes.md
-slop-chop fix --rewrite --model claude-sonnet-4-6 notes.md
-
-# Ask a model to check the rewrite kept your meaning (a second, paid call)
 slop-chop fix --rewrite --verify notes.md
 ```
 
@@ -110,10 +106,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dcadolph/slop-chop@v0.8.0
+      - uses: dcadolph/slop-chop@v0.9.0
         with:
           files: docs/intro.md docs/guide.md
           # profile: myprofile.json   # optional
+          # dialect: american         # optional
+          # preset: plain             # optional
 ```
 
 Or have it fix the files and push the cleanup back to the pull request branch:
@@ -130,7 +128,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
-      - uses: dcadolph/slop-chop@v0.8.0
+      - uses: dcadolph/slop-chop@v0.9.0
         with:
           files: docs/intro.md docs/guide.md
           mode: fix
@@ -138,76 +136,42 @@ jobs:
           # message: Chop the slop   # optional commit message
 ```
 
+## Profiles and presets
+
+A profile is a JSON file that lists what to cut and what to put in its place: characters,
+phrases, words, regular expressions, a blacklist, and a few switches. Point the tool at one
+with `--profile`, or drop a `.slop-chop.json` in the directory you run from and it gets
+picked up on its own. With neither, a built-in default runs.
+
+Presets are curated packs you overlay with `--preset`. `--preset plain` turns corporate
+phrasing into plain English on top of whatever profile you already have.
+
+[docs/PROFILE.md](docs/PROFILE.md) is the full reference: every field, the presets, the
+spelling dialects, the allow list, and the inline ignore directives.
+
 ## Rewrite pass (optional)
 
 The rules pass is deterministic and free. For the work rules cannot do, like reworking a
 sentence so it no longer needs a semicolon or bending the text toward your voice, add
-`--rewrite`. It runs the rules first, then hands the result to a model.
+`--rewrite`. It runs the rules first, then hands the result to a model. It needs
+`ANTHROPIC_API_KEY` and costs money, so it stays off by default.
 
 ```sh
 export ANTHROPIC_API_KEY=sk-...
 slop-chop fix --rewrite notes.md
-slop-chop fix --rewrite --model claude-sonnet-4-6 notes.md
+slop-chop fix --rewrite --verify notes.md
 ```
 
-It defaults to Claude Opus 4.8. Set the voice it aims for with the `tone` list in your
-profile. This pass costs money and the output varies from run to run, so the rules pass
-stays the default.
+The reply is checked before you get it. The rules run over it again, its code blocks and
+load-bearing tokens are compared against your input, and `--verify` adds a model pass that
+flags a change in meaning. [ENGINE.md](ENGINE.md) covers the rewrite and its checks in
+full.
 
-The model's reply is verified before you get it. The rules run over it again to clean any
-tell the model slipped back in, and slop-chop warns on stderr if the reply kept a buzzword
-or changed a code block from your input. It also diffs the load-bearing tokens, numbers,
-percentages, money, links, and acronyms, so a changed figure or a dropped link is flagged
-as a likely fact change. All of that is deterministic and free.
+## Docs
 
-For the meaning a token diff cannot see, a flipped negation or a softened claim, add
-`--verify`. It makes a second model call that compares the rewrite against your original
-and reports any change in meaning on stderr. It costs another call and is only as reliable
-as the model, so it is off by default and warns rather than fails.
-
-Two flags go further. `--verify-strict` makes a flagged change fail the command with a
-non-zero exit, so CI can catch drift. The rewrite still gets written first. `--verify-retry
-N` gives the model another go: when the check flags a change, slop-chop tells it which facts
-it changed and asks for the rewrite again, up to N more times, until the check passes. With
-`--json`, the verdict shows up in the report as a `verify` object, so you can read it
-instead of watching stderr.
-
-```sh
-# Fail CI when the rewrite drifts from your meaning.
-slop-chop fix --rewrite --verify --verify-strict notes.md
-
-# Give the model two more tries to keep the facts it changed.
-slop-chop fix --rewrite --verify --verify-retry 2 notes.md
-```
-
-## Spelling
-
-Pass `--dialect american` to flag British spellings and rewrite them, or `--dialect
-british` for the reverse. It is off by default. In `check` a foreign spelling is a finding
-like any other, so it fails the CI gate. In `fix` it is rewritten in place, with the
-capitalization kept, so `Behaviour` becomes `Behavior` and `BEHAVIOUR` becomes `BEHAVIOR`.
-Code spans and fenced blocks are left alone, so `colour` in a CSS sample stays as written.
-
-The swap is a word-for-word lookup against a built-in list, not a suffix rule, so words
-that share an ending but no dialect difference, like `size` or `advertise`, are never
-touched. American mode is the fuller of the two. Some words spell one dialect as a word
-that means something else in the other, like `cheque` and `check` or `tyre` and `tire`.
-Those rewrite only toward American, so British mode never turns a plain `check` into a
-`cheque`.
-
-One call it makes on purpose: `-ize` endings like `organize` are treated as American even
-though British writing accepts them too, so `--dialect british` rewrites `organize` to
-`organise`. If your house style keeps `-ize`, leave the dialect off.
-
-A repo can pin a dialect in its profile with `"dialect": "american"`, and the flag
-overrides it for a single run.
-
-## Style profiles
-
-A profile is a small config file that lists what to cut and what to put in its place:
-characters, words, phrases, and a couple of notes on tone. Keep your own and point the
-tool at it with `--profile`, or name it `.slop-chop.json` in the directory you run from
-and it gets picked up on its own.
+- [docs/PROFILE.md](docs/PROFILE.md) is the profile and preset reference.
+- [ENGINE.md](ENGINE.md) is how the engine works: the rule kinds, the order they run in,
+  and the rewrite pass in detail.
 
 ## Status
 
