@@ -75,11 +75,11 @@ func spellingMap(d Dialect) map[string]string {
 	return m
 }
 
-// spellingRule builds the single rule that flags and rewrites spellings foreign to the
-// target dialect. It returns ok false when the dialect enforces no spelling, and an error
-// when the dialect is unknown. The dialect name is matched case-insensitively, and "off"
-// or "none" disable the pass alongside the empty value.
-func spellingRule(d Dialect) (rule Rule, ok bool, err error) {
+// spellingRule builds the rule that flags and rewrites spellings foreign to the target
+// dialect. It returns ok false when the dialect enforces no spelling, and an error when
+// the dialect is unknown. The dialect name is matched case-insensitively, and "off" or
+// "none" disable the pass alongside the empty value.
+func spellingRule(d Dialect) (Rule, bool, error) {
 	switch strings.ToLower(string(d)) {
 	case string(DialectOff), "off", "none":
 		return Rule{}, false, nil
@@ -90,8 +90,16 @@ func spellingRule(d Dialect) (rule Rule, ok bool, err error) {
 	default:
 		return Rule{}, false, fmt.Errorf("%w: %q", ErrDialect, string(d))
 	}
+	return wordSwapRule("spelling", spellingMap(d))
+}
 
-	from := spellingMap(d)
+// wordSwapRule builds one rule that rewrites any whole word found in from to its mapped
+// value, carrying the match's case onto the replacement. Keys and values are lower case.
+// It returns ok false when from is empty, so the caller can skip it.
+func wordSwapRule(name string, from map[string]string) (Rule, bool, error) {
+	if len(from) == 0 {
+		return Rule{}, false, nil
+	}
 	words := slices.Sorted(maps.Keys(from))
 	quoted := make([]string, len(words))
 	for i, w := range words {
@@ -99,20 +107,15 @@ func spellingRule(d Dialect) (rule Rule, ok bool, err error) {
 	}
 	re, err := regexp.Compile(`(?i)\b(?:` + strings.Join(quoted, "|") + `)\b`)
 	if err != nil {
-		return Rule{}, false, fmt.Errorf("%w: dialect %q: %w", ErrCompile, string(d), err)
+		return Rule{}, false, fmt.Errorf("%w: %s: %w", ErrCompile, name, err)
 	}
-	return Rule{
-		Name:     "spelling",
-		re:       re,
-		replFunc: spellingReplace(from),
-		rewrite:  true,
-	}, true, nil
+	return Rule{Name: name, re: re, replFunc: wordSwapReplace(from), rewrite: true}, true, nil
 }
 
-// spellingReplace returns a replFunc that swaps a matched spelling for its target,
-// carrying over the match's capitalization. An unmapped match is left as it is, though the
-// rule only matches words the map holds.
-func spellingReplace(from map[string]string) func(text string, loc []int) string {
+// wordSwapReplace returns a replFunc that swaps a matched word for its target, carrying
+// over the match's capitalization. An unmapped match is left as it is, though the rule
+// only matches words the map holds.
+func wordSwapReplace(from map[string]string) func(text string, loc []int) string {
 	return func(text string, loc []int) string {
 		match := text[loc[0]:loc[1]]
 		to, ok := from[strings.ToLower(match)]

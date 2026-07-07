@@ -67,7 +67,7 @@ jobs:
       - name: The docs must pass slop-chop
         uses: ./
         with:
-          files: README.md ENGINE.md
+          files: README.md ENGINE.md docs/PROFILE.md
 
   check-fails-on-slop:
     runs-on: ubuntu-latest

@@ -249,6 +249,47 @@ func TestLoadMalformed(t *testing.T) {
 	}
 }
 
+// TestPhraseWordBoundary checks that a phrase ending in a word character matches only as a
+// whole word, so a key never fires inside a longer word, while a phrase ending in
+// punctuation stays bounded by that punctuation.
+func TestPhraseWordBoundary(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		Phrases    map[string]string
+		In         string
+		WantResult string
+	}{{ // Test 0: A bare-word swap does not fire inside a longer word.
+		Phrases: map[string]string{"cat": "dog"}, In: "the category holds a cat",
+		WantResult: "the category holds a dog",
+	}, { // Test 1: A leading boundary keeps the key off a word's tail.
+		Phrases: map[string]string{"cat": "dog"}, In: "scatter the cat",
+		WantResult: "scatter the dog",
+	}, { // Test 2: A word-ending multi-word swap fires only on the whole phrase.
+		Phrases: map[string]string{"in order to": "to"}, In: "in order to win, in order toward loss",
+		WantResult: "to win, in order toward loss",
+	}, { // Test 3: A word-ending deletion does not fire inside a longer word.
+		Phrases: map[string]string{"basically": ""}, In: "so basically it works but basicallyglued stays",
+		WantResult: "so it works but basicallyglued stays",
+	}, { // Test 4: A comma-ending phrase stays bounded by its comma.
+		Phrases: map[string]string{"in summary, ": ""}, In: "let me begin summary, then go",
+		WantResult: "let me begin summary, then go",
+	}}
+
+	for testNum, test := range tests {
+		t.Run(fmt.Sprintf("test %d", testNum), func(t *testing.T) {
+			t.Parallel()
+			s, err := New(Profile{PhraseReplace: test.Phrases})
+			if err != nil {
+				t.Fatalf("New: %v", err)
+			}
+			got, _ := s.Fix(test.In)
+			if diff := cmp.Diff(test.WantResult, got); diff != "" {
+				t.Errorf("mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
 // mustSanitizer builds a Sanitizer from the default profile or fails the test.
 func mustSanitizer(t *testing.T) *Sanitizer {
 	t.Helper()

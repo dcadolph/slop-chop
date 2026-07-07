@@ -3,6 +3,7 @@ package sanitize
 import (
 	"cmp"
 	"slices"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -27,7 +28,7 @@ func New(p Profile) (*Sanitizer, error) {
 func (s *Sanitizer) Check(text string) []Finding {
 	var findings []Finding
 	newlines := newlineOffsets(text)
-	protected := codeRanges(text)
+	protected := skipRanges(text)
 	for _, r := range s.rules {
 		for _, loc := range r.matches(text, protected) {
 			match := text[loc[0]:loc[1]]
@@ -50,7 +51,25 @@ func (s *Sanitizer) Check(text string) []Finding {
 	slices.SortFunc(findings, func(a, b Finding) int {
 		return cmp.Or(cmp.Compare(a.Offset, b.Offset), cmp.Compare(a.Rule, b.Rule))
 	})
-	return findings
+	return dedupeFindings(findings)
+}
+
+// dedupeFindings collapses findings that mark the same text at the same offset, which
+// happens when a rewrite rule and a flag rule both match one word. It keeps the rewrite so
+// the report shows the fix rather than a bare flag. Findings arrive sorted by offset, so
+// duplicates sit next to each other.
+func dedupeFindings(findings []Finding) []Finding {
+	out := findings[:0]
+	for _, f := range findings {
+		if n := len(out); n > 0 && out[n-1].Offset == f.Offset && strings.EqualFold(out[n-1].Match, f.Match) {
+			if out[n-1].Replacement == nil && f.Replacement != nil {
+				out[n-1] = f
+			}
+			continue
+		}
+		out = append(out, f)
+	}
+	return out
 }
 
 // Fix returns the cleaned text along with the findings from the original. Rules that
@@ -58,7 +77,7 @@ func (s *Sanitizer) Check(text string) []Finding {
 func (s *Sanitizer) Fix(text string) (string, []Finding) {
 	findings := s.Check(text)
 	out := text
-	protected := codeRanges(out)
+	protected := skipRanges(out)
 	for _, r := range s.rules {
 		if !r.rewrite {
 			continue
@@ -68,7 +87,7 @@ func (s *Sanitizer) Fix(text string) (string, []Finding) {
 		next := r.apply(out, protected)
 		if next != out {
 			out = next
-			protected = codeRanges(out)
+			protected = skipRanges(out)
 		}
 	}
 	return out, findings
