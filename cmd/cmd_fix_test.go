@@ -2,10 +2,13 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/dcadolph/slop-chop/internal/rewrite"
 )
 
 // fakeRewrite swaps rewritePass to return reply verbatim for the duration of a test.
@@ -16,6 +19,16 @@ func fakeRewrite(t *testing.T, reply string) {
 		return reply, nil
 	}
 	t.Cleanup(func() { rewritePass = old })
+}
+
+// fakeJudge swaps judgePass to return verdict and err for the duration of a test.
+func fakeJudge(t *testing.T, verdict rewrite.Verdict, err error) {
+	t.Helper()
+	old := judgePass
+	judgePass = func(_ context.Context, _, _, _ string) (rewrite.Verdict, error) {
+		return verdict, err
+	}
+	t.Cleanup(func() { judgePass = old })
 }
 
 // TestFixWriteJSONEnvGuard checks that --write and --json set through the environment
@@ -158,6 +171,60 @@ func TestFixRewriteFaithfulNoDrift(t *testing.T) {
 	}
 	if strings.Contains(stderr, "fact may have changed") {
 		t.Errorf("stderr = %q, want no drift warning", stderr)
+	}
+}
+
+// TestFixVerifyNeedsRewrite checks that --verify without --rewrite is rejected.
+func TestFixVerifyNeedsRewrite(t *testing.T) {
+	_, _, err := runCLI(t, []string{"fix", "--verify"}, "some text")
+	if err == nil || !strings.Contains(err.Error(), "--verify needs --rewrite") {
+		t.Errorf("err = %v, want a verify-needs-rewrite error", err)
+	}
+}
+
+// TestFixVerifyReportsIssues checks that a meaning change from the judge is warned.
+func TestFixVerifyReportsIssues(t *testing.T) {
+	fakeRewrite(t, "we reached 99% uptime")
+	fakeJudge(t, rewrite.Verdict{
+		Faithful: false,
+		Issues:   []rewrite.Issue{{Kind: "changed", Was: "99.9%", Now: "99%", Note: "figure changed"}},
+	}, nil)
+	_, stderr, err := runCLI(t, []string{"fix", "--rewrite", "--verify"}, "we hit 99.9% uptime")
+	if err != nil {
+		t.Fatalf("fix: %v", err)
+	}
+	if !strings.Contains(stderr, `meaning changed: was "99.9%" now "99%"`) {
+		t.Errorf("stderr = %q, want a meaning-change warning", stderr)
+	}
+}
+
+// TestFixVerifyFaithfulQuiet checks that a faithful verdict raises no meaning warning.
+func TestFixVerifyFaithfulQuiet(t *testing.T) {
+	fakeRewrite(t, "we reached 99.9% uptime")
+	fakeJudge(t, rewrite.Verdict{Faithful: true}, nil)
+	_, stderr, err := runCLI(t, []string{"fix", "--rewrite", "--verify"}, "we hit 99.9% uptime")
+	if err != nil {
+		t.Fatalf("fix: %v", err)
+	}
+	if strings.Contains(stderr, "meaning") {
+		t.Errorf("stderr = %q, want no meaning warning", stderr)
+	}
+}
+
+// TestFixVerifyJudgeErrorWarns checks that a judge that cannot run warns without failing
+// the fix, since the rewrite itself is valid output.
+func TestFixVerifyJudgeErrorWarns(t *testing.T) {
+	fakeRewrite(t, "clean text")
+	fakeJudge(t, rewrite.Verdict{}, errors.New("api down"))
+	out, stderr, err := runCLI(t, []string{"fix", "--rewrite", "--verify"}, "dirty text")
+	if err != nil {
+		t.Fatalf("fix: %v", err)
+	}
+	if out != "clean text" {
+		t.Errorf("stdout = %q, want the rewrite delivered anyway", out)
+	}
+	if !strings.Contains(stderr, "meaning check could not run") {
+		t.Errorf("stderr = %q, want a could-not-run warning", stderr)
 	}
 }
 
