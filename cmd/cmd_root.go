@@ -53,6 +53,11 @@ func newSanitizer() (*sanitize.Sanitizer, sanitize.Profile, error) {
 		}
 		profile = p
 	}
+	// The flag and its env var override the profile's own dialect. Left unset, the
+	// profile's field stands, so a repo can pin a dialect in .slop-chop.json.
+	if d := config.Dialect(); d != "" {
+		profile.Dialect = sanitize.Dialect(d)
+	}
 	s, err := sanitize.New(profile)
 	if err != nil {
 		return nil, sanitize.Profile{}, err
