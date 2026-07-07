@@ -40,6 +40,14 @@ func TestCodeRanges(t *testing.T) {
 		In: "use `x`\n```\ny\n```", Want: [][2]int{{4, 7}, {8, 17}},
 	}, { // Test 12: Backticks inside a fence do not open a span outside it.
 		In: "```\na ` b\n```\nplain", Want: [][2]int{{0, 13}},
+	}, { // Test 13: An indented block set off by a blank line is code.
+		In: "a\n\n    code\n\nb", Want: [][2]int{{3, 11}},
+	}, { // Test 14: An indented block at the start of the text is code.
+		In: "    code\nplain", Want: [][2]int{{0, 8}},
+	}, { // Test 15: An indented line that continues a paragraph is not code.
+		In: "text\n    more text\n", Want: nil,
+	}, { // Test 16: A tab-indented block counts as code.
+		In: "a\n\n\tcode\n\nb", Want: [][2]int{{3, 8}},
 	}}
 
 	for testNum, test := range tests {

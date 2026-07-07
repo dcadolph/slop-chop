@@ -5,12 +5,14 @@ import (
 	"strings"
 )
 
-// codeRanges returns the byte ranges of markdown code in text: fenced blocks and inline
-// code spans. Rules skip matches inside these ranges, so the engine never rewrites code.
+// codeRanges returns the byte ranges of markdown code in text: fenced blocks, inline
+// code spans, and indented code blocks. Rules skip matches inside these ranges, so the
+// engine never rewrites code.
 func codeRanges(text string) [][2]int {
 	fences := fenceRanges(text)
 	ranges := append([][2]int{}, fences...)
 	ranges = append(ranges, inlineCodeRanges(text, fences)...)
+	ranges = append(ranges, indentedCodeRanges(text, fences)...)
 	sort.Slice(ranges, func(i, j int) bool { return ranges[i][0] < ranges[j][0] })
 	return ranges
 }
@@ -68,6 +70,83 @@ func fenceMarker(line string) (mark byte, n int, rest string) {
 		return 0, 0, ""
 	}
 	return mark, j - i, line[j:]
+}
+
+// indentedCodeRanges returns the byte ranges of markdown indented code blocks: runs of
+// lines indented at least four spaces or one tab. As CommonMark requires, an indented
+// block cannot interrupt a paragraph, so a run only opens after a blank line or at the
+// start of the text. Blank lines stay inside an open block but trailing blanks fall
+// outside its range. Lines within a fenced block are skipped, since the fence already
+// protects them.
+func indentedCodeRanges(text string, fences [][2]int) [][2]int {
+	var ranges [][2]int
+	blockStart := -1
+	blockEnd := 0
+	prevBlank := true
+
+	f := 0
+	pos := 0
+	for pos <= len(text) {
+		lineEnd := len(text)
+		if i := strings.IndexByte(text[pos:], '\n'); i >= 0 {
+			lineEnd = pos + i
+		}
+		for f < len(fences) && pos >= fences[f][1] {
+			f++
+		}
+		inFence := f < len(fences) && pos >= fences[f][0]
+		line := text[pos:lineEnd]
+
+		switch {
+		case inFence:
+			if blockStart >= 0 {
+				ranges = append(ranges, [2]int{blockStart, blockEnd})
+				blockStart = -1
+			}
+			prevBlank = false
+		case strings.TrimSpace(line) == "":
+			prevBlank = true
+		case indentedCodeLine(line):
+			if blockStart < 0 && prevBlank {
+				blockStart = pos
+			}
+			if blockStart >= 0 {
+				blockEnd = lineEnd
+			}
+			prevBlank = false
+		default:
+			if blockStart >= 0 {
+				ranges = append(ranges, [2]int{blockStart, blockEnd})
+				blockStart = -1
+			}
+			prevBlank = false
+		}
+
+		if lineEnd == len(text) {
+			break
+		}
+		pos = lineEnd + 1
+	}
+	if blockStart >= 0 {
+		ranges = append(ranges, [2]int{blockStart, blockEnd})
+	}
+	return ranges
+}
+
+// indentedCodeLine reports whether line is indented enough to start or continue an
+// indented code block: a leading tab, or at least four leading spaces.
+func indentedCodeLine(line string) bool {
+	if len(line) > 0 && line[0] == '\t' {
+		return true
+	}
+	n := 0
+	for n < len(line) && line[n] == ' ' {
+		n++
+		if n == 4 {
+			return true
+		}
+	}
+	return false
 }
 
 // inlineCodeRanges returns the byte ranges of inline code spans outside the given
