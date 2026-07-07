@@ -196,20 +196,22 @@ func flexSpaces(quoted string) string {
 	return strings.ReplaceAll(quoted, " ", wsGap)
 }
 
-// phraseRule builds the rule for one phrase swap. A deletion also captures the letter
-// after the phrase so the rewrite can restore the capital when the phrase opened its
-// sentence.
+// phraseRule builds the rule for one phrase swap. A leading word boundary keeps the
+// phrase from matching inside another word. A deletion also eats the horizontal space
+// after the phrase and captures the letter that follows, so it can restore a sentence's
+// opening capital. It crosses a line break only when a word follows on the next line, so
+// deleting a phrase never merges prose into a code fence or an indented block.
 func phraseRule(phrase, repl string) (Rule, error) {
 	name := "phrase:" + strings.TrimSpace(phrase)
-	pat := "(?i)" + flexSpaces(regexp.QuoteMeta(phrase))
+	core := `(?i)\b` + flexSpaces(regexp.QuoteMeta(strings.TrimRight(phrase, " ")))
 	if repl != "" {
-		re, err := regexp.Compile(pat)
+		re, err := regexp.Compile(core)
 		if err != nil {
 			return Rule{}, fmt.Errorf("%w: phrase %q: %w", ErrCompile, phrase, err)
 		}
 		return Rule{Name: name, re: re, repl: repl, rewrite: true}, nil
 	}
-	re, err := regexp.Compile(pat + `(\p{L})?`)
+	re, err := regexp.Compile(core + `[ \t]*(?:\n[ \t]*(\p{L})|(\p{L})?)`)
 	if err != nil {
 		return Rule{}, fmt.Errorf("%w: phrase %q: %w", ErrCompile, phrase, err)
 	}
@@ -218,18 +220,34 @@ func phraseRule(phrase, repl string) (Rule, error) {
 
 // deleteWithRecap returns a replFunc that drops a phrase match, keeping the letter
 // captured after it. The letter turns into a capital when the phrase opened a sentence,
-// so deleting "In summary, it works." leaves "It works." and not "it works.".
+// so deleting "In summary, it works." leaves "It works." and not "it works.". The letter
+// may sit on the next line, which the match pulled up.
 func deleteWithRecap(re *regexp.Regexp) func(text string, loc []int) string {
 	return func(text string, loc []int) string {
-		sub := re.FindStringSubmatchIndex(text[loc[0]:loc[1]])
-		if sub == nil || sub[2] < 0 {
+		start, end := recapLetter(re.FindStringSubmatchIndex(text[loc[0]:loc[1]]))
+		if start < 0 {
 			return ""
 		}
-		letter := text[loc[0]+sub[2] : loc[0]+sub[3]]
+		letter := text[loc[0]+start : loc[0]+end]
 		if sentenceStart(text, loc[0]) {
 			return strings.ToUpper(letter)
 		}
 		return letter
+	}
+}
+
+// recapLetter returns the byte range of the recaptured letter within a submatch, taking
+// whichever of the two capture groups matched, or -1, -1 when neither did.
+func recapLetter(sub []int) (start, end int) {
+	switch {
+	case sub == nil:
+		return -1, -1
+	case sub[2] >= 0:
+		return sub[2], sub[3]
+	case len(sub) >= 6 && sub[4] >= 0:
+		return sub[4], sub[5]
+	default:
+		return -1, -1
 	}
 }
 
@@ -288,11 +306,18 @@ func inTableRow(text string, offset int) bool {
 }
 
 // splitSemicolon rewrites a "; x" match into ". X", ending the clause and capitalizing
-// the next word.
+// the next word. When the clause already ends in sentence punctuation, the semicolon is
+// dropped without adding a second period, so "2.; the" does not become "2.. The".
 func splitSemicolon(text string, loc []int) string {
 	r := []rune(text[loc[0]:loc[1]])
-	last := r[len(r)-1]
-	return ". " + string(unicode.ToUpper(last))
+	last := string(unicode.ToUpper(r[len(r)-1]))
+	if loc[0] > 0 {
+		switch text[loc[0]-1] {
+		case '.', '!', '?':
+			return " " + last
+		}
+	}
+	return ". " + last
 }
 
 // semicolonConjunctions are the words that, right after a semicolon, mark it as a list

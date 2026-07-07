@@ -81,6 +81,14 @@ func TestFix(t *testing.T) {
 		In: "line one  \nline two", WantResult: "line one  \nline two",
 	}, { // Test 30: A space run at the very end of the text stays.
 		In: "line one  ", WantResult: "line one  ",
+	}, { // Test 31: A phrase ending a line does not eat the newline into a code fence.
+		In: "note in summary,\n```\ncode  x\n```", WantResult: "note \n```\ncode  x\n```",
+	}, { // Test 32: A phrase does not match inside another word.
+		In: "Let me begin summary, then details.", WantResult: "Let me begin summary, then details.",
+	}, { // Test 33: A semicolon after a period does not make a double period.
+		In: "See 2.; the rest wins.", WantResult: "See 2. The rest wins.",
+	}, { // Test 34: A phrase before a blank-set indented block leaves the block alone.
+		In: "text in summary,\n\n    robust code\n\nmore", WantResult: "text \n\n    robust code\n\nmore",
 	}}
 
 	s := mustSanitizer(t)

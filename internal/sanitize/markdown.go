@@ -11,9 +11,10 @@ import (
 // rewrites code.
 func codeRanges(text string) [][2]int {
 	fences := fenceRanges(text)
-	ranges := append([][2]int{}, fences...)
-	ranges = append(ranges, inlineCodeRanges(text, fences)...)
-	ranges = append(ranges, indentedCodeRanges(text, fences)...)
+	indented := indentedCodeRanges(text, fences)
+	blocks := mergeRanges(append(append([][2]int{}, fences...), indented...))
+	ranges := append([][2]int{}, blocks...)
+	ranges = append(ranges, inlineCodeRanges(text, blocks)...)
 	return mergeRanges(ranges)
 }
 
@@ -181,19 +182,20 @@ func indentedCodeLine(line string) bool {
 	return false
 }
 
-// inlineCodeRanges returns the byte ranges of inline code spans outside the given
-// fenced blocks. A span opens with a run of backticks and closes at the next run of
-// the same length.
-func inlineCodeRanges(text string, fences [][2]int) [][2]int {
+// inlineCodeRanges returns the byte ranges of inline code spans outside the given code
+// blocks, which are the fenced and indented blocks. A span opens with a run of backticks
+// and closes at the next run of the same length. Skipping the blocks keeps a stray
+// backtick inside one from opening a span that swallows the prose after it.
+func inlineCodeRanges(text string, blocks [][2]int) [][2]int {
 	var ranges [][2]int
 	f := 0
 	i := 0
 	for i < len(text) {
-		for f < len(fences) && i >= fences[f][1] {
+		for f < len(blocks) && i >= blocks[f][1] {
 			f++
 		}
-		if f < len(fences) && i >= fences[f][0] {
-			i = fences[f][1]
+		if f < len(blocks) && i >= blocks[f][0] {
+			i = blocks[f][1]
 			continue
 		}
 		if text[i] != '`' {
