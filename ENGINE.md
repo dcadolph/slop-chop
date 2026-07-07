@@ -261,6 +261,18 @@ report reads top to bottom no matter which rule matched first.
 
 </details>
 
+<details>
+<summary>Why fixing twice changes nothing</summary>
+
+One rule can change another rule's input. The punctuation cleanup can drop a space the
+semicolon split had read, which would make a second run split where the first did not. So
+`fix` runs the rewriting rules over and over until the text stops changing, then returns
+that settled result. Running `fix` on already-fixed text is a no-op, which makes it safe
+to run in a commit hook or on every save. The loop is capped, so a profile whose own swaps
+cycle, like `a` to `b` and `b` to `a`, stops instead of running forever.
+
+</details>
+
 ## Where the rules stop
 
 The rules pass is deterministic, cheap, and good at the common tells, but it cannot reword

@@ -71,3 +71,26 @@ func TestDialectProfilePin(t *testing.T) {
 		t.Fatalf("flag override: err = %v, want nil", err)
 	}
 }
+
+// TestDialectEnv checks the environment variable path: it sets the dialect with no flag,
+// overrides a profile's pinned dialect, and yields to an explicit flag.
+func TestDialectEnv(t *testing.T) {
+	// The env var enforces American with no flag, so a British spelling is flagged.
+	t.Setenv("SLOP_CHOP_DIALECT", "american")
+	if _, _, err := runCLI(t, []string{"check"}, "the colour"); !errors.Is(err, errFindings) {
+		t.Fatalf("env dialect: err = %v, want errFindings", err)
+	}
+
+	// The env var overrides a profile that pins the other dialect. The profile pins
+	// British, but with the env set to American an American spelling passes.
+	dir := t.TempDir()
+	pinned := writeTemp(t, dir, ".slop-chop.json", `{"dialect": "british"}`)
+	if _, _, err := runCLI(t, []string{"check", "--profile", pinned}, "the color"); err != nil {
+		t.Fatalf("env over profile: err = %v, want nil", err)
+	}
+
+	// An explicit flag still wins over the env var.
+	if _, _, err := runCLI(t, []string{"check", "--dialect", "off"}, "the colour"); err != nil {
+		t.Fatalf("flag over env: err = %v, want nil", err)
+	}
+}
