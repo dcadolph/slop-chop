@@ -35,10 +35,11 @@ The rules run in a fixed sequence, each pass handing its output to the next.
 flowchart TD
     A["Input text"] --> B["1. Character swaps"]
     B --> C["2. Phrase removal"]
-    C --> D["3. Block-word flags"]
-    D --> E["4. Semicolon split"]
-    E --> F["5. Punctuation cleanup"]
-    F --> G["6. Space collapse"]
+    C --> S["3. Spelling swaps (with --dialect)"]
+    S --> D["4. Block-word flags"]
+    D --> E["5. Semicolon split"]
+    E --> F["6. Punctuation cleanup"]
+    F --> G["7. Space collapse"]
     G --> H["Clean text"]
 ```
 
@@ -50,16 +51,18 @@ flowchart TD
 | Rules     | The compiled profile. An ordered list, each a regex plus an action.      |
 | Sanitizer | Holds the rules and runs them over your text.                            |
 
-## The six rule kinds
+## The seven rule kinds
 
 Each entry in a profile compiles into one or more rules. Every rule is a compiled regular
 expression paired with an action. The `collapseSpaces` field compiles into the last two,
-which together tidy the debris the earlier rewrites leave behind.
+which together tidy the debris the earlier rewrites leave behind. The spelling swap appears
+only when `--dialect` or a profile's `dialect` field asks for one.
 
 | Kind                | Matches                     | Action      | Example                        |
 | ------------------- | --------------------------- | ----------- | ------------------------------ |
 | Character swap      | a literal character         | rewrite     | `—` becomes `, `               |
 | Phrase removal      | a phrase, any casing        | rewrite     | `In summary, ` becomes empty   |
+| Spelling swap       | a dialect spelling          | rewrite     | `behaviour` becomes `behavior` |
 | Block word          | a whole word or term        | flag only   | `comprehensive`, `blast radius`|
 | Semicolon split     | `;` then space, a letter    | rewrite     | `; it` becomes `. It`          |
 | Punctuation cleanup | spaces before punctuation   | rewrite     | `word ,` becomes `word,`       |
@@ -75,6 +78,10 @@ A few notes on the matching:
   mid-sentence leaves the next word lowercase.
 - Block words match on word boundaries, so `robust` matches the standalone word and not
   the middle of a longer one. Multi-word terms like `blast radius` work the same way.
+- Spelling swaps are a word-for-word lookup, not a suffix rule, so a word that shares an
+  ending but no dialect difference, like `size`, is never touched. The swap keeps the
+  match's case, and a word whose other-dialect spelling doubles as an unrelated word, like
+  `cheque` and `check`, rewrites only toward American.
 - A phrase or a multi-word term still matches when a line wrap splits it. The gap
   between its words can be spaces, tabs, or one line break, but never a blank line, so
   nothing matches across a paragraph break.
@@ -87,14 +94,15 @@ A few notes on the matching:
 
 ## The order they run in
 
-| Step | Stage               | Note                                                       |
-| ---- | ------------------- | ---------------------------------------------------------- |
-| 1    | Character swaps     |                                                            |
-| 2    | Phrase removal      |                                                            |
-| 3    | Block-word flags    | Flags only, never changes the text.                        |
-| 4    | Semicolon split     |                                                            |
-| 5    | Punctuation cleanup | Drops spaces left in front of punctuation.                 |
-| 6    | Space collapse      | Runs last to mop up spaces the earlier swaps leave behind. |
+| Step | Stage               | Note                                                        |
+| ---- | ------------------- | ----------------------------------------------------------- |
+| 1    | Character swaps     |                                                             |
+| 2    | Phrase removal      |                                                             |
+| 3    | Spelling swaps      | Only with a dialect. Rewrites the other dialect's spelling. |
+| 4    | Block-word flags    | Flags only, never changes the text.                         |
+| 5    | Semicolon split     |                                                             |
+| 6    | Punctuation cleanup | Drops spaces left in front of punctuation.                  |
+| 7    | Space collapse      | Runs last to mop up spaces the earlier swaps leave behind.  |
 
 Why the cleanup stages go last: take the input `word — word`. The em-dash becomes a comma
 and a space, which leaves `word ,  word`. The punctuation pass pulls the comma back
@@ -155,6 +163,7 @@ engine flags them but leaves the swap to you.
 | ------------------- | ------------ |
 | Character swap      | rewrites     |
 | Phrase removal      | rewrites     |
+| Spelling swap       | rewrites     |
 | Semicolon split     | rewrites     |
 | Punctuation cleanup | rewrites     |
 | Space collapse      | rewrites     |

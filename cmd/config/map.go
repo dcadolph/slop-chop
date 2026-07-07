@@ -7,6 +7,7 @@ import "github.com/spf13/pflag"
 //nolint:gochecknoglobals // Flag registry, written once at init.
 var flags = map[string]*pflag.Flag{
 	KeyProfile:      &FlagProfile,
+	KeyDialect:      &FlagDialect,
 	KeyJSON:         &FlagJSON,
 	KeyPretty:       &FlagPretty,
 	KeyWrite:        &FlagWrite,

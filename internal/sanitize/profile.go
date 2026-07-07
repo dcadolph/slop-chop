@@ -33,6 +33,10 @@ type Profile struct {
 	// Tone holds optional notes on the voice to aim for. The rules pass ignores it.
 	// The rewrite pass feeds it to the model so output sounds like you.
 	Tone []string `json:"tone"`
+	// Dialect enforces a spelling variant. "american" flags British spellings and
+	// rewrites them, "british" does the reverse, and an empty value or "off" leaves
+	// spelling alone.
+	Dialect Dialect `json:"dialect"`
 }
 
 // DefaultProfile returns the built-in profile that targets common AI tells.
@@ -137,6 +141,14 @@ func (p Profile) compile() ([]Rule, error) {
 			return nil, err
 		}
 		rules = append(rules, r)
+	}
+
+	spelling, ok, err := spellingRule(p.Dialect)
+	if err != nil {
+		return nil, err
+	}
+	if ok {
+		rules = append(rules, spelling)
 	}
 
 	for _, w := range p.BlockWords {

@@ -17,6 +17,7 @@
   "blockWords": ["comprehensive", "robust", "seamless", "delve", "blast radius", "substrate"],
   "collapseSpaces": true,
   "splitSemicolons": true,
+  "dialect": "off",
   "tone": [
     "Plain and direct. Short sentences.",
     "Sound like a person talking, not a press release."

@@ -27,6 +27,7 @@ func checkCmd() *cobra.Command {
 	}
 	f := cmd.Flags()
 	f.AddFlag(&config.FlagProfile)
+	f.AddFlag(&config.FlagDialect)
 	f.AddFlag(&config.FlagJSON)
 	f.AddFlag(&config.FlagPretty)
 	return cmd

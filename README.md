@@ -66,6 +66,10 @@ slop-chop check notes.md
 slop-chop check docs/intro.md docs/guide.md README.md
 slop-chop fix -w docs/intro.md docs/guide.md
 
+# Enforce a spelling variant: flag or fix the other dialect
+slop-chop check --dialect american notes.md
+slop-chop fix --dialect british notes.md
+
 # Use your own profile
 slop-chop fix --profile myprofile.json notes.md
 
@@ -175,6 +179,28 @@ slop-chop fix --rewrite --verify --verify-strict notes.md
 # Give the model two more tries to keep the facts it changed.
 slop-chop fix --rewrite --verify --verify-retry 2 notes.md
 ```
+
+## Spelling
+
+Pass `--dialect american` to flag British spellings and rewrite them, or `--dialect
+british` for the reverse. It is off by default. In `check` a foreign spelling is a finding
+like any other, so it fails the CI gate. In `fix` it is rewritten in place, with the
+capitalization kept, so `Behaviour` becomes `Behavior` and `BEHAVIOUR` becomes `BEHAVIOR`.
+Code spans and fenced blocks are left alone, so `colour` in a CSS sample stays as written.
+
+The swap is a word-for-word lookup against a built-in list, not a suffix rule, so words
+that share an ending but no dialect difference, like `size` or `advertise`, are never
+touched. American mode is the fuller of the two. Some words spell one dialect as a word
+that means something else in the other, like `cheque` and `check` or `tyre` and `tire`.
+Those rewrite only toward American, so British mode never turns a plain `check` into a
+`cheque`.
+
+One call it makes on purpose: `-ize` endings like `organize` are treated as American even
+though British writing accepts them too, so `--dialect british` rewrites `organize` to
+`organise`. If your house style keeps `-ize`, leave the dialect off.
+
+A repo can pin a dialect in its profile with `"dialect": "american"`, and the flag
+overrides it for a single run.
 
 ## Style profiles
 
