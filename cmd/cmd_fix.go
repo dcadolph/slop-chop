@@ -21,6 +21,8 @@ type fixReport struct {
 	Cleaned string `json:"cleaned"`
 	// Findings is every rule match in the original input.
 	Findings []sanitize.Finding `json:"findings"`
+	// Verify is the model meaning check verdict, present only when --verify ran.
+	Verify *rewrite.Verdict `json:"verify,omitempty"`
 }
 
 // fixCmd builds the fix subcommand.
@@ -39,6 +41,8 @@ func fixCmd() *cobra.Command {
 	f.AddFlag(&config.FlagRewrite)
 	f.AddFlag(&config.FlagModel)
 	f.AddFlag(&config.FlagVerify)
+	f.AddFlag(&config.FlagVerifyStrict)
+	f.AddFlag(&config.FlagVerifyRetry)
 	cmd.MarkFlagsMutuallyExclusive(config.KeyWrite, config.KeyJSON)
 	return cmd
 }
@@ -51,6 +55,10 @@ func runFix(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("--model needs --rewrite")
 	case config.Verify() && !config.Rewrite():
 		return fmt.Errorf("--verify needs --rewrite")
+	case config.VerifyStrict() && !config.Verify():
+		return fmt.Errorf("--verify-strict needs --verify")
+	case config.Changed(config.KeyVerifyRetry) && !config.Verify():
+		return fmt.Errorf("--verify-retry needs --verify")
 	case config.Write() && config.JSON():
 		// Cobra rejects this when both come from the command line, but env vars can set
 		// either without tripping that check, so guard it here too.
@@ -98,29 +106,75 @@ func runFix(cmd *cobra.Command, args []string) error {
 func fixOne(ctx context.Context, s *sanitize.Sanitizer, tone []string, text, path string,
 	stdout, stderr io.Writer) error {
 	out, findings := s.Fix(text)
+	var verdict *rewrite.Verdict
 	if config.Rewrite() {
-		rw, err := rewritePass(ctx, config.Model(), tone, out)
+		rw, v, err := rewriteAndVerify(ctx, s, tone, text, out, stderr)
 		if err != nil {
 			return err
 		}
-		rw = verifyRewrite(s, text, rw, stderr)
+		out, verdict = rw, v
+	}
+	if config.JSON() {
+		report := fixReport{Cleaned: out, Findings: orEmpty(findings), Verify: verdict}
+		if err := writeJSON(stdout, report, config.Pretty()); err != nil {
+			return err
+		}
+	} else if config.Write() {
+		if err := writeFile(path, out); err != nil {
+			return err
+		}
+	} else if _, err := io.WriteString(stdout, out); err != nil {
+		return err
+	}
+	// Gate after the output is written so --verify-strict still hands back the rewrite and
+	// only then fails with a non-zero exit.
+	if config.VerifyStrict() && verdict != nil && !verdict.Faithful {
+		return fmt.Errorf("meaning check flagged the rewrite")
+	}
+	return nil
+}
+
+// rewriteAndVerify runs the model rewrite over rulesOut and re-checks it against the
+// deterministic guarantees. When --verify is set it runs the meaning check, and on a
+// flagged change it re-rewrites up to --verify-retry more times, feeding the flagged
+// issues back so the model can preserve them. It returns the final text and the last
+// verdict, which is nil when --verify is off or the check could not run.
+func rewriteAndVerify(ctx context.Context, s *sanitize.Sanitizer, tone []string,
+	original, rulesOut string, stderr io.Writer) (string, *rewrite.Verdict, error) {
+	tries := 1
+	if config.Verify() {
+		tries += config.VerifyRetry()
+	}
+	var feedback []string
+	var out string
+	for attempt := 0; attempt < tries; attempt++ {
+		rw, err := rewritePass(ctx, config.Model(), tone, rulesOut, feedback...)
+		if err != nil {
+			return "", nil, err
+		}
+		rw = verifyRewrite(s, original, rw, stderr)
 		// The rewriter trims the reply, so put back the newline the input ended with.
-		if strings.HasSuffix(text, "\n") && !strings.HasSuffix(rw, "\n") {
+		if strings.HasSuffix(original, "\n") && !strings.HasSuffix(rw, "\n") {
 			rw += "\n"
 		}
 		out = rw
-		if config.Verify() {
-			reportMeaningDrift(ctx, config.Model(), text, out, stderr)
+		if !config.Verify() {
+			return out, nil, nil
 		}
+		verdict, err := judgePass(ctx, config.Model(), original, out)
+		if err != nil {
+			_, _ = fmt.Fprintf(stderr, "slop-chop: the meaning check could not run: %v\n", err)
+			return out, nil, nil
+		}
+		if verdict.Faithful || attempt+1 == tries {
+			reportVerdict(verdict, stderr)
+			return out, &verdict, nil
+		}
+		feedback = feedbackNotes(verdict.Issues)
+		_, _ = fmt.Fprintf(stderr, "slop-chop: the meaning check flagged the rewrite; retrying (%d of %d)\n",
+			attempt+1, tries-1)
 	}
-	if config.JSON() {
-		return writeJSON(stdout, fixReport{Cleaned: out, Findings: orEmpty(findings)}, config.Pretty())
-	}
-	if config.Write() {
-		return writeFile(path, out)
-	}
-	_, err := io.WriteString(stdout, out)
-	return err
+	return out, nil, nil
 }
 
 // verifyRewrite re-checks the model's reply against the deterministic guarantees. A
@@ -196,15 +250,10 @@ func anchorCounts(anchors []string) map[string]int {
 	return m
 }
 
-// reportMeaningDrift runs the model meaning check and warns on stderr for each change it
-// found. A judge that cannot run is a warning, not a failure, since the rewrite itself
-// already succeeded and is valid output.
-func reportMeaningDrift(ctx context.Context, model, original, rewritten string, stderr io.Writer) {
-	verdict, err := judgePass(ctx, model, original, rewritten)
-	if err != nil {
-		_, _ = fmt.Fprintf(stderr, "slop-chop: the meaning check could not run: %v\n", err)
-		return
-	}
+// reportVerdict warns on stderr for each meaning change the judge found. A faithful
+// verdict stays quiet. An unfaithful verdict with no detail still gets a line so the
+// warning is never silent.
+func reportVerdict(verdict rewrite.Verdict, stderr io.Writer) {
 	for _, issue := range verdict.Issues {
 		_, _ = fmt.Fprintf(stderr, "slop-chop: meaning %s: was %q now %q (%s)\n",
 			issue.Kind, issue.Was, issue.Now, issue.Note)
@@ -214,13 +263,33 @@ func reportMeaningDrift(ctx context.Context, model, original, rewritten string, 
 	}
 }
 
+// feedbackNotes turns judge issues into short instructions the retry rewrite can act on,
+// naming the fact to keep so the model does not repeat the change.
+func feedbackNotes(issues []rewrite.Issue) []string {
+	notes := make([]string, 0, len(issues))
+	for _, issue := range issues {
+		switch {
+		case issue.Was != "" && issue.Now != "":
+			notes = append(notes, fmt.Sprintf("keep %q, do not change it to %q (%s)", issue.Was, issue.Now, issue.Note))
+		case issue.Was != "":
+			notes = append(notes, fmt.Sprintf("keep %q, do not drop it (%s)", issue.Was, issue.Note))
+		case issue.Now != "":
+			notes = append(notes, fmt.Sprintf("do not add %q (%s)", issue.Now, issue.Note))
+		case issue.Note != "":
+			notes = append(notes, issue.Note)
+		}
+	}
+	return notes
+}
+
 // rewritePass runs the model rewrite over text. It is a variable so tests can swap in
 // a fake model.
 //
 //nolint:gochecknoglobals // Test seam.
-var rewritePass = func(ctx context.Context, model string, tone []string, text string) (string, error) {
+var rewritePass = func(ctx context.Context, model string, tone []string, text string,
+	feedback ...string) (string, error) {
 	rw := rewrite.New(rewrite.NewAnthropicCompleter(model), tone...)
-	return rw.Rewrite(ctx, text)
+	return rw.Rewrite(ctx, text, feedback...)
 }
 
 // judgePass runs the model meaning check over the original and the rewrite. It is a
