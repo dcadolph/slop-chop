@@ -77,7 +77,7 @@ func newSanitizer() (*sanitize.Sanitizer, sanitize.Profile, error) {
 // splitList splits a comma-separated flag value into trimmed, non-empty items.
 func splitList(s string) []string {
 	var out []string
-	for _, part := range strings.Split(s, ",") {
+	for part := range strings.SplitSeq(s, ",") {
 		if p := strings.TrimSpace(part); p != "" {
 			out = append(out, p)
 		}
