@@ -1,5 +1,5 @@
 # Binaries
-slop-chop
+/slop-chop
 *.exe
 *.out
 bin/

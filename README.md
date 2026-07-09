@@ -136,6 +136,21 @@ jobs:
           # message: Chop the slop   # optional commit message
 ```
 
+## Use it as a Claude Code plugin
+
+slop-chop ships a Claude Code plugin so the assistant can run the CLI for you. The repo is
+its own marketplace. Add it, then install the plugin:
+
+```
+/plugin marketplace add dcadolph/slop-chop
+/plugin install slop-chop@slop-chop
+```
+
+The plugin brings a `slop-chop` skill that teaches Claude when to reach for the tool, and a
+`/slop-chop` command that cleans a file or pasted text on demand. It calls the `slop-chop`
+binary, so install that first with `go install`. The rewrite pass still needs
+`ANTHROPIC_API_KEY` and stays off unless you ask for it.
+
 ## Profiles and presets
 
 A profile is a JSON file that lists what to cut and what to put in its place: characters,

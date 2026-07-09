@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "slop-chop",
+  "description": "The slop-chop plugin: strip AI writing tells from text inside Claude Code.",
+  "owner": {
+    "name": "dcadolph",
+    "url": "https://github.com/dcadolph"
+  },
+  "plugins": [
+    {
+      "name": "slop-chop",
+      "source": "./",
+      "description": "Chop the slop. Run the slop-chop CLI to clean AI tells from a draft, check docs for slop, or rewrite text to read like a person wrote it.",
+      "category": "productivity"
+    }
+  ]
+}
