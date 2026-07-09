@@ -1,0 +1,38 @@
+{
+  "phraseReplace": {
+    "it is important to note that ": "",
+    "it should be noted that ": "",
+    "it is worth mentioning that ": "",
+    "as previously mentioned, ": "",
+    "as can be seen, ": "",
+    "in light of the fact that ": "because ",
+    "due to the fact that ": "because ",
+    "with regard to ": "about ",
+    "in the context of ": "in ",
+    "a number of ": "several ",
+    "a wide range of ": "many ",
+    "in order to ": "to ",
+    "the present study ": "this study ",
+    "the current paper ": "this paper "
+  },
+  "wordReplace": {
+    "utilize": "use",
+    "demonstrate": "show",
+    "facilitate": "help",
+    "elucidate": "explain",
+    "endeavor": "try",
+    "commence": "start",
+    "terminate": "end",
+    "ascertain": "find out",
+    "methodology": "method",
+    "aforementioned": "earlier",
+    "heretofore": "until now",
+    "furthermore": "also",
+    "moreover": "also"
+  },
+  "blockWords": [
+    "novel approach", "paradigm", "seminal", "robustly",
+    "comprehensive analysis", "significant implications",
+    "future research directions", "to the best of our knowledge"
+  ]
+}

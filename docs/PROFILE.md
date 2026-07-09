@@ -15,6 +15,7 @@ the format. For the order the rules run in and how each one works, see
 - [wordReplace](#wordreplace)
 - [regexReplace](#regexreplace)
 - [blockWords](#blockwords)
+- [flagPatterns](#flagpatterns)
 - [allow](#allow)
 - [dialect](#dialect)
 - [collapseSpaces and splitSemicolons](#collapsespaces-and-splitsemicolons)
@@ -58,6 +59,7 @@ key both set, so a preset adds without overwriting what you wrote. See
 | `wordReplace`     | object              | yes      | Swap a whole word, keeping its case.          |
 | `regexReplace`    | object              | yes      | Swap on your own regular expression.          |
 | `blockWords`      | array of strings    | no       | Flag a word or term but leave it in place.    |
+| `flagPatterns`    | object              | no       | Flag a structural tell by regex, no rewrite.  |
 | `allow`           | array of strings    | n/a      | Exempt a word from every rule.                |
 | `dialect`         | string              | yes      | Enforce American or British spelling.         |
 | `collapseSpaces`  | boolean             | yes      | Fold repeated spaces and tidy punctuation.    |
@@ -161,6 +163,27 @@ the right replacement depends on the sentence. This is your blacklist.
 
 A term matches on word boundaries, so a listed word is caught on its own and not inside a
 longer one. A multi-word term works the same way.
+
+## flagPatterns
+
+Maps a rule name to a regular expression that flags its matches without rewriting them. It
+catches structural tells a word list cannot, like a stock sentence shape, where the fix
+depends on the whole sentence and belongs to the rewrite pass rather than a swap. The name
+is what shows up in a finding, as `structural:<name>`.
+
+```json
+{
+  "flagPatterns": {
+    "rule-of-three": "(?i)\\b\\w+, \\w+,? and \\w+\\b",
+    "as-an-ai": "(?i)\\bas an ai\\b"
+  }
+}
+```
+
+The engine is [RE2](https://github.com/google/re2/wiki/Syntax), so the pattern is used as
+written and you control the anchoring. A malformed pattern is an error the moment the
+profile loads. The default profile ships a starter set for the common cadence tells, such
+as `it's not just X, it's Y` and `let's dive in`.
 
 ## allow
 

@@ -13,10 +13,13 @@ var flags = map[string]*pflag.Flag{
 	KeyPretty:       &FlagPretty,
 	KeyWrite:        &FlagWrite,
 	KeyRewrite:      &FlagRewrite,
+	KeyProvider:     &FlagProvider,
 	KeyModel:        &FlagModel,
+	KeyBaseURL:      &FlagBaseURL,
 	KeyVerify:       &FlagVerify,
 	KeyVerifyStrict: &FlagVerifyStrict,
 	KeyVerifyRetry:  &FlagVerifyRetry,
+	KeyMax:          &FlagMax,
 }
 
 // Changed reports whether the flag for key was set on the command line.

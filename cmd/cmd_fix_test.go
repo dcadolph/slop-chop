@@ -15,7 +15,7 @@ import (
 func fakeRewrite(t *testing.T, reply string) {
 	t.Helper()
 	old := rewritePass
-	rewritePass = func(_ context.Context, _ string, _ []string, _ string, _ ...string) (string, error) {
+	rewritePass = func(_ context.Context, _ rewrite.Completer, _ []string, _ string, _ ...string) (string, error) {
 		return reply, nil
 	}
 	t.Cleanup(func() { rewritePass = old })
@@ -25,7 +25,7 @@ func fakeRewrite(t *testing.T, reply string) {
 func fakeJudge(t *testing.T, verdict rewrite.Verdict, err error) {
 	t.Helper()
 	old := judgePass
-	judgePass = func(_ context.Context, _, _, _ string) (rewrite.Verdict, error) {
+	judgePass = func(_ context.Context, _ rewrite.Completer, _, _ string) (rewrite.Verdict, error) {
 		return verdict, err
 	}
 	t.Cleanup(func() { judgePass = old })
@@ -39,7 +39,7 @@ func fakeRewriteSeq(t *testing.T, replies ...string) *[][]string {
 	old := rewritePass
 	calls := 0
 	feedbacks := &[][]string{}
-	rewritePass = func(_ context.Context, _ string, _ []string, _ string, feedback ...string) (string, error) {
+	rewritePass = func(_ context.Context, _ rewrite.Completer, _ []string, _ string, feedback ...string) (string, error) {
 		*feedbacks = append(*feedbacks, feedback)
 		reply := replies[len(replies)-1]
 		if calls < len(replies) {
@@ -58,7 +58,7 @@ func fakeJudgeSeq(t *testing.T, verdicts ...rewrite.Verdict) {
 	t.Helper()
 	old := judgePass
 	calls := 0
-	judgePass = func(_ context.Context, _, _, _ string) (rewrite.Verdict, error) {
+	judgePass = func(_ context.Context, _ rewrite.Completer, _, _ string) (rewrite.Verdict, error) {
 		verdict := verdicts[len(verdicts)-1]
 		if calls < len(verdicts) {
 			verdict = verdicts[calls]

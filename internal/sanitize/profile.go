@@ -32,6 +32,11 @@ type Profile struct {
 	// BlockWords are words flagged wherever they appear. They are reported but never
 	// rewritten, since a safe replacement depends on context.
 	BlockWords []string `json:"blockWords"`
+	// FlagPatterns maps a rule name to a regular expression that only flags its matches,
+	// never rewrites them. It catches structural tells a word list cannot, like the
+	// "not just X, but Y" cadence, where the fix depends on the whole sentence and is
+	// left to the rewrite pass.
+	FlagPatterns map[string]string `json:"flagPatterns"`
 	// Allow lists words a rule must never flag or rewrite, matched case-insensitively
 	// against the exact text a rule matched. It silences false positives.
 	Allow []string `json:"allow"`
@@ -102,6 +107,18 @@ func DefaultProfile() Profile {
 			"unleash", "unleashed", "unleashes", "unleashing",
 			"unlock the full potential", "unlock the potential", "unparalleled",
 			"utilize", "utilized", "utilizes", "utilizing", "world-class",
+		},
+		FlagPatterns: map[string]string{
+			// "It's not just X, it's Y" and its "this is not X, it's Y" cousin.
+			"its-not-x-its-y": `(?i)\b(it|this|that)'?s (not|isn'?t)\b[^.!?\n]{1,40}[,;]\s*it'?s\b`,
+			// "not just X but also Y" and "not only X but also Y".
+			"not-just-but-also": `(?i)\bnot (just|only)\b[^.!?\n]{1,60}\bbut\b[^.!?\n]{0,25}\balso\b`,
+			// Throat-clearing openers that promise a payoff.
+			"heres-the-thing": `(?i)\bhere'?s the (thing|kicker|deal|catch|secret|problem)\b`,
+			// The "let's dive in" invitation.
+			"lets-dive-in": `(?i)\blet'?s (dive|delve|jump) in(to)?\b`,
+			// "That's where X comes in", the setup-and-reveal move.
+			"thats-where-comes-in": `(?i)\bthat'?s where\b[^.!?\n]{1,30}\bcomes? in\b`,
 		},
 		CollapseSpaces:  true,
 		SplitSemicolons: true,
@@ -185,6 +202,18 @@ func (p Profile) compile() ([]Rule, error) {
 		}
 		rules = append(rules, Rule{
 			Name:    "word:" + w,
+			re:      re,
+			rewrite: false,
+		})
+	}
+
+	for _, name := range slices.Sorted(maps.Keys(p.FlagPatterns)) {
+		re, err := regexp.Compile(p.FlagPatterns[name])
+		if err != nil {
+			return nil, fmt.Errorf("%w: flag pattern %q: %w", ErrCompile, name, err)
+		}
+		rules = append(rules, Rule{
+			Name:    "structural:" + name,
 			re:      re,
 			rewrite: false,
 		})
@@ -448,6 +477,9 @@ func semicolonJoinsClauses(text string, semi int) bool {
 	if strings.Count(text[start:end], ";") > 1 {
 		return false
 	}
+	if inTableRow(text, semi) || inParens(text[start:semi]) {
+		return false
+	}
 	rest := strings.ToLower(strings.TrimLeft(text[semi+1:end], " \t"))
 	for _, conj := range semicolonConjunctions {
 		if strings.HasPrefix(rest, conj) {
@@ -455,6 +487,13 @@ func semicolonJoinsClauses(text string, semi int) bool {
 		}
 	}
 	return true
+}
+
+// inParens reports whether prefix, the text from the sentence start up to a semicolon,
+// leaves a parenthesis open, which means the semicolon sits inside a parenthetical and is
+// almost always a list separator rather than a clause join.
+func inParens(prefix string) bool {
+	return strings.Count(prefix, "(") > strings.Count(prefix, ")")
 }
 
 // sentenceBounds returns the byte range of the sentence around offset, bounded by
