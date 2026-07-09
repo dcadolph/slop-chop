@@ -1,6 +1,6 @@
 {
   "name": "slop-chop",
-  "version": "0.1.0",
+  "version": "0.10.0",
   "description": "Chop AI writing tells out of text. Wraps the slop-chop CLI so Claude can strip em-dashes, semicolons, and buzzwords, enforce a spelling dialect, or run the model rewrite pass on a draft.",
   "author": {
     "name": "dcadolph",
