@@ -1,7 +1,10 @@
 # slop-chop as a Claude Code plugin
 
-slop-chop ships a Claude Code plugin, so the assistant can run the tool while you write. The
-plugin does not bundle its own copy of slop-chop. It calls the `slop-chop` binary on your
+slop-chop ships a Claude Code plugin, so the assistant can run the tool while you write. As a
+plugin, it cleans the text you are working on, your drafts and notes, when you ask. It does
+not restyle the assistant's own replies or change how many tokens it spends.
+
+The plugin does not bundle its own copy of slop-chop. It calls the `slop-chop` binary on your
 `PATH`, so the same rules, profiles, and presets you use on the command line apply inside
 Claude.
 
