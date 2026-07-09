@@ -2,10 +2,10 @@
 name: slop-chop
 description: >-
   Remove AI writing tells from text with the slop-chop CLI. Use when the user
-  wants to clean up a draft, strip em-dashes, semicolons, and buzzwords like
-  "comprehensive" or "robust", enforce a spelling dialect, or make text read
-  like a person wrote it instead of a chatbot. Also use before handing back a
-  written draft, or to flag slop in Markdown docs in CI.
+  wants to clean up a draft, strip em-dashes, semicolons, and stock buzzwords,
+  enforce a spelling dialect, or make text read like a person wrote it instead
+  of a chatbot. Also use before handing back a written draft, or to flag slop
+  in Markdown docs in CI.
 ---
 
 # slop-chop

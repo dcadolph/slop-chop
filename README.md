@@ -113,8 +113,8 @@ does.
 ## Structural tells
 
 Word swaps catch the vocabulary of AI writing. The rules pass also flags a few structural
-tells that a word list misses, like the "it's not just X, it's Y" and "not only X but also
-Y" cadence, the "let's dive in" opener, and "here's the thing" throat-clearing. These are
+tells that a word list misses, like the `it's not just X, it's Y` and `not only X but also
+Y` cadence, the `let's dive in` opener, and `here's the thing` throat-clearing. These are
 flagged, not rewritten, since the fix depends on the whole sentence and is left to the
 rewrite pass. Add your own with the `flagPatterns` field in a profile.
 

@@ -183,7 +183,7 @@ is what shows up in a finding, as `structural:<name>`.
 The engine is [RE2](https://github.com/google/re2/wiki/Syntax), so the pattern is used as
 written and you control the anchoring. A malformed pattern is an error the moment the
 profile loads. The default profile ships a starter set for the common cadence tells, such
-as "it's not just X, it's Y" and "let's dive in".
+as `it's not just X, it's Y` and `let's dive in`.
 
 ## allow
 
