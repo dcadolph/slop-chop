@@ -162,18 +162,48 @@ jobs:
 
 ## Use it as a Claude Code plugin
 
-slop-chop ships a Claude Code plugin so the assistant can run the CLI for you. The repo is
-its own marketplace. Add it, then install the plugin:
+slop-chop ships a Claude Code plugin, so the assistant can run the tool for you. The repo is
+its own marketplace. Add the marketplace, then install the plugin from it:
 
 ```
 /plugin marketplace add dcadolph/slop-chop
 /plugin install slop-chop@slop-chop
 ```
 
-The plugin brings a `slop-chop` skill that teaches Claude when to reach for the tool, and a
-`/slop-chop` command that cleans a file or pasted text on demand. It calls the `slop-chop`
-binary, so install that first with `go install`. The rewrite pass still needs
-`ANTHROPIC_API_KEY` and stays off unless you ask for it.
+The `slop-chop@slop-chop` name is `plugin@marketplace`: the plugin named slop-chop, from the
+marketplace named slop-chop.
+
+The plugin drives the `slop-chop` binary rather than replacing it, so install the binary and
+put it on your `PATH` first:
+
+```sh
+go install github.com/dcadolph/slop-chop@latest   # lands in $(go env GOPATH)/bin
+slop-chop --version                                # confirm it is on PATH
+```
+
+The plugin then gives Claude two ways to reach the tool:
+
+| Way            | What it is                                        | You do                                  |
+| -------------- | ------------------------------------------------- | --------------------------------------- |
+| `slop-chop` skill  | Claude picks it up on its own for a draft.    | Hand it text and ask for a clean.       |
+| `/slop-chop` command | A command you invoke on a file or text.     | Type `/slop-chop notes.md`.             |
+
+```
+# Let the skill decide
+Clean the slop out of this before I send it: <paste your text>
+
+# Or call the command
+/slop-chop notes.md
+```
+
+The rules pass is free. The rewrite pass needs a key and stays off unless you ask for it, so
+say when you want the deeper clean, and name a backend if you want a local, keyless one:
+
+```
+Rewrite this to sound human, and use my local Ollama so it costs nothing.
+```
+
+[docs/PLUGIN.md](docs/PLUGIN.md) is the full plugin guide, including troubleshooting.
 
 ## Profiles and presets
 
@@ -228,6 +258,8 @@ a model is bad at spotting its own tics.
 
 ## Docs
 
+- [docs/PLUGIN.md](docs/PLUGIN.md) is the Claude Code plugin guide: install, the skill, the
+  command, backends, and troubleshooting.
 - [docs/PROFILE.md](docs/PROFILE.md) is the profile and preset reference.
 - [ENGINE.md](ENGINE.md) is how the engine works: the rule kinds, the order they run in,
   and the rewrite pass in detail.
