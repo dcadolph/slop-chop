@@ -2,10 +2,10 @@
 name: slop-chop
 description: >-
   Remove AI writing tells from text with the slop-chop CLI. Use when the user
-  wants to clean up a draft, strip em-dashes, semicolons, and buzzwords like
-  "comprehensive" or "robust", enforce a spelling dialect, or make text read
-  like a person wrote it instead of a chatbot. Also use before handing back a
-  written draft, or to flag slop in Markdown docs in CI.
+  wants to clean up a draft, strip em-dashes, semicolons, and stock buzzwords,
+  enforce a spelling dialect, or make text read like a person wrote it instead
+  of a chatbot. Also use before handing back a written draft, or to flag slop
+  in Markdown docs in CI.
 ---
 
 # slop-chop
@@ -49,6 +49,16 @@ slop-chop fix notes.md
 echo "In summary, a robust and seamless result." | slop-chop fix
 ```
 
+`score` rates the text from 0 (clean) to 100 (heavy slop), weighing tell density against
+how flat the sentence cadence is. `--max N` fails the run when the score is above N, so it
+gates CI like `check` does.
+
+```sh
+slop-chop score notes.md
+slop-chop score --json notes.md
+slop-chop score --max 20 notes.md
+```
+
 `fix -w` (or `--write`) cleans the file in place, like `gofmt -w`. It needs a
 file argument and cannot read stdin.
 
@@ -90,6 +100,11 @@ Warnings go to stderr. `--verify-strict` makes a flagged meaning change a
 non-zero exit. `--verify-retry N` re-rewrites up to N more times, feeding the
 flagged issues back. `--model` picks the model id and needs `--rewrite`.
 
+The pass defaults to Anthropic. `--provider openai` uses any OpenAI-compatible API with
+`OPENAI_API_KEY`, and `--base-url http://localhost:11434/v1` aims that at a local server
+like Ollama for a free, private, keyless rewrite. Prefer a different vendor than the one
+that wrote the draft, since a model is poor at catching its own tells.
+
 ## Dialect, presets, and profiles
 
 ```sh
@@ -99,8 +114,9 @@ slop-chop fix --preset plain notes.md            # corporate phrasing to plain E
 slop-chop fix --profile myprofile.json notes.md  # your own cut list
 ```
 
-Dialects: `american`, `british`. Preset shipped: `plain`. A profile is a JSON
-file listing characters, phrases, words, regexes, an allow list, and switches.
+Dialects: `american`, `british`. Presets shipped: `plain`, `corporate`, `academic`,
+`marketing`. Overlay several with a comma. A profile is a JSON file listing characters,
+phrases, words, regexes, structural `flagPatterns`, an allow list, and switches.
 When `--profile` is not set and a `.slop-chop.json` file sits in the working
 directory, that profile is used instead of the built-in one, so a repo can pin
 its own style.
