@@ -1,0 +1,30 @@
+{
+  "phraseReplace": {
+    "take it to the next level": "improve it",
+    "unlock the full potential of": "",
+    "supercharge your": "improve your",
+    "revolutionize the way you": "change how you",
+    "say goodbye to": "no more",
+    "look no further": "",
+    "the ultimate guide to": "how to",
+    "everything you need to know about": "",
+    "in today's fast-paced world": "",
+    "join the thousands of": "",
+    "trusted by industry leaders": ""
+  },
+  "wordReplace": {
+    "elevate": "improve",
+    "curated": "chosen",
+    "bespoke": "custom",
+    "artisanal": "handmade",
+    "turnkey": "ready to use",
+    "next-generation": "new",
+    "best-in-class": "leading"
+  },
+  "blockWords": [
+    "game-changer", "must-have", "one-stop shop", "no-brainer",
+    "hidden gem", "secret weapon", "level up", "power user",
+    "rockstar", "ninja", "guru", "hassle-free", "effortless",
+    "unmatched", "unrivaled", "second to none"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "phraseReplace": {
+    "circle back": "follow up",
+    "reach out to": "ask",
+    "touch base": "talk",
+    "at this point in time": "now",
+    "in order to": "to",
+    "for all intents and purposes": "",
+    "moving forward": "",
+    "going forward": "",
+    "on a go-forward basis": "",
+    "at the end of the day": "",
+    "boil the ocean": "do too much",
+    "move the needle": "make a difference",
+    "low-hanging fruit": "easy wins",
+    "take this offline": "discuss later",
+    "run it up the flagpole": "get sign-off",
+    "drink from the firehose": "take in a lot",
+    "open the kimono": "share the details",
+    "peel the onion": "look closer"
+  },
+  "wordReplace": {
+    "utilize": "use",
+    "leverage": "use",
+    "ideate": "brainstorm",
+    "operationalize": "put in place",
+    "incentivize": "encourage",
+    "actionable": "usable",
+    "learnings": "lessons",
+    "deliverables": "results",
+    "bandwidth": "time",
+    "synergize": "combine"
+  },
+  "blockWords": [
+    "core competency", "value-add", "mission-critical", "best practice",
+    "north star", "paradigm", "stakeholder alignment", "thought leadership",
+    "win-win", "deep dive", "double-click", "table stakes"
+  ]
+}

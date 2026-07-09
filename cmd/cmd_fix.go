@@ -41,7 +41,9 @@ func fixCmd() *cobra.Command {
 	f.AddFlag(&config.FlagPretty)
 	f.AddFlag(&config.FlagWrite)
 	f.AddFlag(&config.FlagRewrite)
+	f.AddFlag(&config.FlagProvider)
 	f.AddFlag(&config.FlagModel)
+	f.AddFlag(&config.FlagBaseURL)
 	f.AddFlag(&config.FlagVerify)
 	f.AddFlag(&config.FlagVerifyStrict)
 	f.AddFlag(&config.FlagVerifyRetry)
@@ -55,6 +57,12 @@ func runFix(cmd *cobra.Command, args []string) error {
 	switch {
 	case config.Changed(config.KeyModel) && !config.Rewrite():
 		return fmt.Errorf("--model needs --rewrite")
+	case config.Changed(config.KeyProvider) && !config.Rewrite():
+		return fmt.Errorf("--provider needs --rewrite")
+	case config.Changed(config.KeyBaseURL) && !config.Rewrite():
+		return fmt.Errorf("--base-url needs --rewrite")
+	case config.Changed(config.KeyBaseURL) && config.Provider() != string(rewrite.ProviderOpenAI):
+		return fmt.Errorf("--base-url only applies to --provider openai")
 	case config.Verify() && !config.Rewrite():
 		return fmt.Errorf("--verify needs --rewrite")
 	case config.VerifyStrict() && !config.Verify():
@@ -143,6 +151,10 @@ func fixOne(ctx context.Context, s *sanitize.Sanitizer, tone []string, text, pat
 // verdict, which is nil when --verify is off or the check could not run.
 func rewriteAndVerify(ctx context.Context, s *sanitize.Sanitizer, tone []string,
 	original, rulesOut string, stderr io.Writer) (string, *rewrite.Verdict, error) {
+	completer, err := newRewriteCompleter()
+	if err != nil {
+		return "", nil, err
+	}
 	tries := 1
 	if config.Verify() {
 		tries += config.VerifyRetry()
@@ -150,7 +162,7 @@ func rewriteAndVerify(ctx context.Context, s *sanitize.Sanitizer, tone []string,
 	var feedback []string
 	var out string
 	for attempt := 0; attempt < tries; attempt++ {
-		rw, err := rewritePass(ctx, config.Model(), tone, rulesOut, feedback...)
+		rw, err := rewritePass(ctx, completer, tone, rulesOut, feedback...)
 		if err != nil {
 			return "", nil, err
 		}
@@ -163,7 +175,7 @@ func rewriteAndVerify(ctx context.Context, s *sanitize.Sanitizer, tone []string,
 		if !config.Verify() {
 			return out, nil, nil
 		}
-		verdict, err := judgePass(ctx, config.Model(), original, out)
+		verdict, err := judgePass(ctx, completer, original, out)
 		if err != nil {
 			_, _ = fmt.Fprintf(stderr, "slop-chop: the meaning check could not run: %v\n", err)
 			return out, nil, nil
@@ -284,22 +296,32 @@ func feedbackNotes(issues []rewrite.Issue) []string {
 	return notes
 }
 
+// newRewriteCompleter builds the model backend for the rewrite pass from the configured
+// provider, model, and base URL. The model is left empty unless set, so each provider
+// falls back to its own default rather than the Anthropic one.
+func newRewriteCompleter() (rewrite.Completer, error) {
+	model := ""
+	if config.Changed(config.KeyModel) {
+		model = config.Model()
+	}
+	return rewrite.NewCompleter(rewrite.Provider(config.Provider()), model, config.BaseURL())
+}
+
 // rewritePass runs the model rewrite over text. It is a variable so tests can swap in
 // a fake model.
 //
 //nolint:gochecknoglobals // Test seam.
-var rewritePass = func(ctx context.Context, model string, tone []string, text string,
+var rewritePass = func(ctx context.Context, c rewrite.Completer, tone []string, text string,
 	feedback ...string) (string, error) {
-	rw := rewrite.New(rewrite.NewAnthropicCompleter(model), tone...)
-	return rw.Rewrite(ctx, text, feedback...)
+	return rewrite.New(c, tone...).Rewrite(ctx, text, feedback...)
 }
 
 // judgePass runs the model meaning check over the original and the rewrite. It is a
 // variable so tests can swap in a fake judge.
 //
 //nolint:gochecknoglobals // Test seam.
-var judgePass = func(ctx context.Context, model, original, rewritten string) (rewrite.Verdict, error) {
-	return rewrite.NewJudge(rewrite.NewAnthropicCompleter(model)).Judge(ctx, original, rewritten)
+var judgePass = func(ctx context.Context, c rewrite.Completer, original, rewritten string) (rewrite.Verdict, error) {
+	return rewrite.NewJudge(c).Judge(ctx, original, rewritten)
 }
 
 // writeFile writes out back to path, keeping the file's existing mode.

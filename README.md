@@ -93,6 +93,30 @@ the matched text, the suggested replacement, and a line and column.
 - `check` flags what it finds and exits non-zero. Drop it in CI.
 - `fix` writes the cleaned text to stdout and leaves your file alone. Pass `-w` to change
   the file in place instead.
+- `score` rates the text from 0 to 100 on how much it reads like AI wrote it.
+
+## Score
+
+`score` gives a single number from 0 for clean to 100 for heavy slop. It weighs the density
+of rule tells against how flat the sentence cadence is, since an even, machine-like rhythm
+is a tell no word list catches.
+
+```sh
+slop-chop score notes.md            # prints a number like 42
+slop-chop score --json notes.md     # {"value":42,"tells":7,"words":210,...}
+slop-chop score --max 20 notes.md   # exit non-zero when the score is above 20
+```
+
+`--max` turns it into a gate, so a document over the bar fails a build the same way `check`
+does.
+
+## Structural tells
+
+Word swaps catch the vocabulary of AI writing. The rules pass also flags a few structural
+tells that a word list misses, like the "it's not just X, it's Y" and "not only X but also
+Y" cadence, the "let's dive in" opener, and "here's the thing" throat-clearing. These are
+flagged, not rewritten, since the fix depends on the whole sentence and is left to the
+rewrite pass. Add your own with the `flagPatterns` field in a profile.
 
 ## Use it in CI
 
@@ -158,8 +182,10 @@ phrases, words, regular expressions, a blacklist, and a few switches. Point the 
 with `--profile`, or drop a `.slop-chop.json` in the directory you run from and it gets
 picked up on its own. With neither, a built-in default runs.
 
-Presets are curated packs you overlay with `--preset`. `--preset plain` turns corporate
-phrasing into plain English on top of whatever profile you already have.
+Presets are curated packs you overlay with `--preset`. The built-in packs are `plain`,
+`corporate`, `academic`, and `marketing`. `--preset plain` turns corporate phrasing into
+plain English on top of whatever profile you already have, and the others target the stock
+phrasing of their own worlds. Overlay more than one with a comma: `--preset corporate,plain`.
 
 [docs/PROFILE.md](docs/PROFILE.md) is the full reference: every field, the presets, the
 spelling dialects, the allow list, and the inline ignore directives.
@@ -181,6 +207,24 @@ The reply is checked before you get it. The rules run over it again, its code bl
 load-bearing tokens are compared against your input, and `--verify` adds a model pass that
 flags a change in meaning. [ENGINE.md](ENGINE.md) covers the rewrite and its checks in
 full.
+
+### Backends
+
+The rewrite pass defaults to Anthropic, but `--provider openai` points it at any
+OpenAI-compatible Chat Completions API using `OPENAI_API_KEY`. With `--base-url` you can
+aim that at a local server, so the rewrite runs on your own machine with no key and no cost.
+
+```sh
+# OpenAI
+OPENAI_API_KEY=sk-... slop-chop fix --rewrite --provider openai --model gpt-4o notes.md
+
+# Local Ollama, no key, no bill
+slop-chop fix --rewrite --provider openai --base-url http://localhost:11434/v1 \
+  --model llama3.1 notes.md
+```
+
+Using a different vendor to rewrite than the one that wrote the draft is a good idea, since
+a model is bad at spotting its own tics.
 
 ## Docs
 
