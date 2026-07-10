@@ -83,5 +83,5 @@ slop-chop fix --rewrite --verify notes.md
 
 ## Next
 
-- [Profiles](PROFILE.md) — say what to cut and what to put in its place.
-- [Claude plugin](PLUGIN.md) — run it from Claude Code with a skill and a command.
+- [Profiles](PROFILE.md): say what to cut and what to put in its place.
+- [Claude plugin](PLUGIN.md): run it from Claude Code with a skill and a command.
