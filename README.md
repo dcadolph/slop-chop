@@ -34,17 +34,28 @@ nudging the writing toward a voice you picked.
 
 ## Install
 
+Homebrew:
+
+```sh
+brew install dcadolph/tap/slop-chop
+```
+
+With Go:
+
 ```sh
 go install github.com/dcadolph/slop-chop@latest
 ```
 
-Or clone and build:
+Or clone and use the Makefile:
 
 ```sh
 git clone git@github.com:dcadolph/slop-chop.git
 cd slop-chop
-go install .
+make install     # build and install into $(go env GOPATH)/bin, version stamped
+make uninstall   # remove it again
 ```
+
+Run `make` with no target for the full list (`build`, `test`, `cover`, `lint`, `fmt`, `tidy`, `clean`).
 
 ## Usage
 
