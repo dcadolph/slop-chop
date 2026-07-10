@@ -1,0 +1,10 @@
+{% extends "main.html" %}
+
+{% block content %}
+<div class="sc-404">
+  <img src="{{ 'assets/icon.png' | url }}" alt="slop-chop">
+  <h1>404</h1>
+  <p>Chopped a little too hard. That page is gone.</p>
+  <p><a href="{{ 'README.html' | url }}">Back to the start</a></p>
+</div>
+{% endblock %}
