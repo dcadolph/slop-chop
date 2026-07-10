@@ -28,7 +28,7 @@ check reports the tells and exits non-zero when it finds any. fix rewrites the t
 With no file, both read stdin. The --rewrite pass needs the ANTHROPIC_API_KEY
 environment variable. When --profile is not set and a .slop-chop.json file sits in the
 working directory, that profile is used instead of the built-in one.`,
-		Version:       version,
+		Version:       resolveVersion(),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
