@@ -1,0 +1,242 @@
+/* slop-chop brand: lime slime on charcoal, black outlines. */
+
+:root {
+  --sc-lime: #9bcf1a;
+  --sc-lime-bright: #b8f03a;
+  --md-accent-fg-color: var(--sc-lime);
+}
+
+[data-md-color-scheme="slate"] {
+  --md-default-bg-color: #191919;
+  --md-primary-fg-color: #191919;
+  --md-accent-fg-color: var(--sc-lime-bright);
+  --md-typeset-a-color: var(--sc-lime-bright);
+  --md-code-bg-color: #111111;
+}
+
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #1c1c1c;
+  --md-typeset-a-color: #4f7a0c;
+}
+
+/* Header stays dark charcoal in both schemes. */
+.md-header,
+.md-tabs {
+  background-color: #191919;
+  color: #f2f4ea;
+}
+
+/* Left-nav active page: brand lime label, not a floating blue link. */
+.md-nav__item--active > .md-nav__link,
+.md-nav__link--active {
+  color: var(--sc-lime-bright);
+  font-weight: 700;
+}
+
+.md-nav__link:hover,
+.md-nav__link:focus {
+  color: var(--sc-lime);
+}
+
+/* Hero on the landing page. */
+.sc-hero {
+  position: relative;
+  text-align: center;
+  padding: 3rem 1rem 1.5rem;
+}
+
+.sc-hero img.hero-logo {
+  width: 128px;
+  height: auto;
+  margin-bottom: 0.4rem;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.35));
+}
+
+.sc-hero h1 {
+  font-size: 3.1rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 0.2rem 0 0.1rem;
+}
+
+.sc-hero .tagline {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--sc-lime-bright);
+  margin: 0.2rem 0;
+}
+
+.sc-hero .subtitle {
+  font-size: 1.05rem;
+  opacity: 0.82;
+  max-width: 40rem;
+  margin: 0.4rem auto 1.2rem;
+}
+
+.sc-hero .md-button {
+  margin: 0.3rem 0.35rem 0;
+}
+
+/* Green glow behind the hero. */
+.sc-hero::before {
+  content: "";
+  position: absolute;
+  inset: -25% 0 auto 0;
+  height: 340px;
+  background: radial-gradient(55% 100% at 50% 0%, rgba(155, 207, 26, 0.16), transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Install snippet under the hero, centered and roomy. */
+.sc-install {
+  max-width: 34rem;
+  margin: 0 auto 2rem;
+}
+
+/* Primary button in brand lime. */
+.md-typeset .md-button--primary {
+  background-color: var(--sc-lime);
+  border-color: var(--sc-lime);
+  color: #141414;
+}
+
+.md-typeset .md-button--primary:hover {
+  background-color: var(--sc-lime-bright);
+  border-color: var(--sc-lime-bright);
+  color: #141414;
+}
+
+/* Feature cards lift on hover. */
+.md-typeset .grid.cards > ul > li,
+.md-typeset .grid > .card {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.7rem;
+  padding: 1.1rem 1.2rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.md-typeset .grid.cards > ul > li:hover {
+  border-color: var(--md-accent-fg-color);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28);
+  transform: translateY(-3px);
+}
+
+.md-typeset .grid.cards .twemoji,
+.md-typeset .grid.cards svg {
+  color: var(--sc-lime);
+  height: 1.6rem;
+}
+
+/* Rounder code blocks. */
+.md-typeset pre > code {
+  border-radius: 0.5rem;
+}
+
+/* Banner images breathe. */
+.md-typeset p > img[src*="banner"] {
+  border-radius: 0.6rem;
+}
+
+/* Fake terminal window that shows slop-chop running. */
+.sc-terminal {
+  max-width: 46rem;
+  margin: 0 auto 2.6rem;
+  border-radius: 0.65rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 14px 46px rgba(0, 0, 0, 0.4);
+}
+
+.sc-terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 0.85rem;
+  background: #2b2b2b;
+}
+
+.sc-terminal-bar .dot {
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 50%;
+}
+
+.sc-terminal-bar .red { background: #ff5f57; }
+.sc-terminal-bar .yellow { background: #febc2e; }
+.sc-terminal-bar .green { background: #28c840; }
+
+.sc-terminal-bar .title {
+  margin-left: 0.6rem;
+  font-family: var(--md-code-font, monospace);
+  font-size: 0.76rem;
+  letter-spacing: 0.02em;
+  opacity: 0.55;
+}
+
+.sc-terminal-body {
+  margin: 0;
+  padding: 1.05rem 1.2rem;
+  background: #101010;
+  color: #e6e6e6;
+  font-family: var(--md-code-font, monospace);
+  font-size: 0.86rem;
+  line-height: 1.6;
+  text-align: left;
+  white-space: pre-wrap;
+}
+
+.sc-terminal-body .prompt { color: var(--sc-lime); }
+.sc-terminal-body .cmd { color: #ffffff; }
+.sc-terminal-body .out { color: #9aa0a6; }
+
+/* How it works: a 1-2-3 strip. */
+.sc-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.1rem;
+  max-width: 54rem;
+  margin: 0 auto 2.6rem;
+}
+
+.sc-steps .step {
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.7rem;
+}
+
+.sc-steps .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  margin-bottom: 0.5rem;
+  border-radius: 50%;
+  background: var(--sc-lime);
+  color: #141414;
+  font-weight: 800;
+}
+
+.sc-steps .step strong {
+  display: block;
+  margin-bottom: 0.15rem;
+}
+
+@media (max-width: 700px) {
+  .sc-steps {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Slime-themed 404. */
+.sc-404 {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.sc-404 img {
+  width: 96px;
+  opacity: 0.85;
+  margin-bottom: 1rem;
+}

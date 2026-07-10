@@ -16,6 +16,9 @@ coverage.out
 *.swp
 .DS_Store
 
+# MkDocs build output
+/site/
+
 # Go
 go.work
 go.work.sum
