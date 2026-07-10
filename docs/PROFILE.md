@@ -3,7 +3,7 @@
 A profile is a JSON file that tells slop-chop what to cut and what to put in its place.
 Every rule the rules pass runs comes from a profile. This page is the full reference for
 the format. For the order the rules run in and how each one works, see
-[ENGINE.md](../ENGINE.md).
+[the engine reference](ENGINE.md).
 
 ## Contents
 

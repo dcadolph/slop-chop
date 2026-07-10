@@ -1,0 +1,73 @@
+site_name: slop-chop
+site_description: Chop the slop. Text that reads like a person wrote it.
+site_url: https://slop-chop.com/
+repo_url: https://github.com/dcadolph/slop-chop
+repo_name: dcadolph/slop-chop
+edit_uri: edit/main/docs/
+docs_dir: docs
+use_directory_urls: false
+copyright: MIT License
+
+theme:
+  name: material
+  custom_dir: overrides
+  logo: assets/icon.png
+  favicon: assets/icon.png
+  font:
+    text: Inter
+    code: JetBrains Mono
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: lime
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: lime
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+  features:
+    - navigation.tabs
+    - navigation.top
+    - navigation.tracking
+    - navigation.instant
+    - content.code.copy
+    - content.code.annotate
+    - search.highlight
+    - search.suggest
+    - toc.follow
+
+nav:
+  - Home: README.md
+  - Quickstart: quickstart.md
+  - Profiles: PROFILE.md
+  - Engine: ENGINE.md
+  - Claude plugin: PLUGIN.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+extra_css:
+  - stylesheets/extra.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/dcadolph/slop-chop
