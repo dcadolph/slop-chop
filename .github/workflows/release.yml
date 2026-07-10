@@ -1,0 +1,123 @@
+name: release
+
+# Cross-builds slop-chop on every v* tag, attaches the Homebrew-style archives and
+# checksums to the release, and (when a tap token is present) bumps the formula.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Test
+        run: go test ./...
+
+      - name: Install gox
+        run: go install github.com/mitchellh/gox@latest
+
+      - name: Cross-build and package
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          VER="${TAG#v}"
+          mkdir -p build dist
+          gox -osarch="darwin/amd64 darwin/arm64 linux/amd64 linux/arm64" \
+            -ldflags="-s -w -X github.com/dcadolph/slop-chop/cmd.version=${VER}" \
+            -output="build/slop-chop_{{.OS}}_{{.Arch}}" .
+          for f in build/slop-chop_*; do
+            base="${f#build/slop-chop_}"
+            os="${base%%_*}"
+            arch="${base##*_}"
+            case "$os" in darwin) osl=Darwin ;; linux) osl=Linux ;; esac
+            case "$arch" in amd64) al=x86_64 ;; arm64) al=arm64 ;; esac
+            cp "$f" build/slop-chop
+            tar -C build -czf "dist/slop-chop_${VER}_${osl}_${al}.tar.gz" slop-chop
+            rm build/slop-chop
+          done
+          ( cd dist && sha256sum *.tar.gz | tee checksums.txt )
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/*.tar.gz
+            dist/checksums.txt
+          fail_on_unmatched_files: true
+
+      - name: Bump Homebrew formula
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [ -z "${TAP_TOKEN:-}" ]; then
+            echo "HOMEBREW_TAP_TOKEN not set; skipping formula bump"
+            exit 0
+          fi
+          VER="${TAG#v}"
+          da=$(sha256sum "dist/slop-chop_${VER}_Darwin_arm64.tar.gz" | cut -d' ' -f1)
+          di=$(sha256sum "dist/slop-chop_${VER}_Darwin_x86_64.tar.gz" | cut -d' ' -f1)
+          la=$(sha256sum "dist/slop-chop_${VER}_Linux_arm64.tar.gz" | cut -d' ' -f1)
+          li=$(sha256sum "dist/slop-chop_${VER}_Linux_x86_64.tar.gz" | cut -d' ' -f1)
+          base="https://github.com/dcadolph/slop-chop/releases/download/v${VER}"
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/dcadolph/homebrew-tap.git" tap
+          cat > tap/Formula/slop-chop.rb <<EOF
+          class SlopChop < Formula
+            desc "Strip AI writing tells so text reads like a human wrote it"
+            homepage "https://github.com/dcadolph/slop-chop"
+            version "${VER}"
+            license "MIT"
+
+            on_macos do
+              on_arm do
+                url "${base}/slop-chop_${VER}_Darwin_arm64.tar.gz"
+                sha256 "${da}"
+              end
+              on_intel do
+                url "${base}/slop-chop_${VER}_Darwin_x86_64.tar.gz"
+                sha256 "${di}"
+              end
+            end
+
+            on_linux do
+              on_arm do
+                url "${base}/slop-chop_${VER}_Linux_arm64.tar.gz"
+                sha256 "${la}"
+              end
+              on_intel do
+                url "${base}/slop-chop_${VER}_Linux_x86_64.tar.gz"
+                sha256 "${li}"
+              end
+            end
+
+            def install
+              bin.install "slop-chop"
+            end
+
+            test do
+              system "#{bin}/slop-chop", "--version"
+            end
+          end
+          EOF
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/slop-chop.rb
+          git commit -m "Update slop-chop to ${VER}"
+          git push
