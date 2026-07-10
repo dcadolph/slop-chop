@@ -74,6 +74,6 @@ brew install dcadolph/tap/slop-chop
 
 ## Start here
 
-- [Quickstart](quickstart.md) — install and clean your first file in a couple of minutes.
-- [Profiles](PROFILE.md) — every field, the presets, the spelling dialects, and the allow list.
-- [Claude plugin](PLUGIN.md) — install, the skill, the command, backends, and troubleshooting.
+- [Quickstart](quickstart.md): install and clean your first file in a couple of minutes.
+- [Profiles](PROFILE.md): every field, the presets, the spelling dialects, and the allow list.
+- [Claude plugin](PLUGIN.md): install, the skill, the command, backends, and troubleshooting.
