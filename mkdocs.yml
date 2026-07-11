@@ -66,6 +66,10 @@ markdown_extensions:
 
 extra_css:
   - stylesheets/extra.css
+  - stylesheets/app.css
+
+extra_javascript:
+  - assets/app.js
 
 extra:
   social:
