@@ -38,10 +38,8 @@ type chopResult struct {
 	Output string `json:"output"`
 	// Findings lists every rule match against the original text.
 	Findings []sanitize.Finding `json:"findings"`
-	// ScoreIn rates the original text from 0 for clean to 100 for heavy slop.
-	ScoreIn sanitize.Score `json:"scoreIn"`
-	// ScoreOut rates the cleaned text, so the page can show before and after.
-	ScoreOut sanitize.Score `json:"scoreOut"`
+	// Score rates the original text from 0 for clean to 100 for heavy slop.
+	Score sanitize.Score `json:"score"`
 }
 
 // main registers the engine functions on the JavaScript global object and blocks
@@ -81,8 +79,7 @@ func chop(_ js.Value, args []js.Value) any {
 	return marshal(chopResult{
 		Output:   out,
 		Findings: orEmpty(findings),
-		ScoreIn:  s.Score(req.Text),
-		ScoreOut: s.Score(out),
+		Score:    s.Score(req.Text),
 	})
 }
 
