@@ -10,38 +10,51 @@
     "a tool, it's a paradigm shift; teams leverage it to unlock the full potential of " +
     "their content. Needless to say, the results are unparalleled.";
 
-  let wasmReady = null;
+  let engineReady = null;
+  let engineVersion = "";
   let defaults = null;
   let presetNames = [];
+  let worker = null;
+  let callSeq = 0;
+  const pendingCalls = new Map();
 
-  /* loadWasm fetches the engine once and resolves when its globals are registered. */
-  function loadWasm() {
-    if (wasmReady) return wasmReady;
-    wasmReady = (async () => {
-      if (!globalThis.Go) {
-        await new Promise((resolve, reject) => {
-          const s = document.createElement("script");
-          s.src = new URL("assets/wasm_exec.js", document.baseURI).href;
-          s.onload = resolve;
-          s.onerror = () => reject(new Error("wasm_exec.js failed to load"));
-          document.head.appendChild(s);
-        });
-      }
-      const go = new Go();
-      const url = new URL("assets/slop-chop.wasm", document.baseURI).href;
-      let result;
-      try {
-        result = await WebAssembly.instantiateStreaming(fetch(url), go.importObject);
-      } catch {
-        const buf = await (await fetch(url)).arrayBuffer();
-        result = await WebAssembly.instantiate(buf, go.importObject);
-      }
-      go.run(result.instance);
-      await new Promise((r) => setTimeout(r, 0));
-      defaults = JSON.parse(globalThis.slopDefaults());
-      presetNames = JSON.parse(globalThis.slopPresets());
-    })();
-    return wasmReady;
+  /* callEngine sends one call to the worker and resolves with its raw result. */
+  function callEngine(fn, arg) {
+    return new Promise((resolve, reject) => {
+      const id = ++callSeq;
+      pendingCalls.set(id, { resolve, reject });
+      worker.postMessage({ id, fn, arg });
+    });
+  }
+
+  /* loadEngine boots the engine in a Web Worker, so a giant paste chops off the main
+     thread and typing never freezes. Resolves once the worker reports its globals. */
+  function loadEngine() {
+    if (engineReady) return engineReady;
+    engineReady = new Promise((resolve, reject) => {
+      worker = new Worker(new URL("assets/worker.js", document.baseURI));
+      worker.onmessage = (e) => {
+        const m = e.data;
+        if (m.type === "ready") {
+          defaults = JSON.parse(m.defaults);
+          presetNames = JSON.parse(m.presets);
+          engineVersion = m.version;
+          resolve();
+          return;
+        }
+        if (m.type === "fail") {
+          reject(new Error(m.error));
+          return;
+        }
+        const call = pendingCalls.get(m.id);
+        if (!call) return;
+        pendingCalls.delete(m.id);
+        if (m.error) call.reject(new Error(m.error));
+        else call.resolve(m.result);
+      };
+      worker.onerror = (e) => reject(new Error(e.message || "engine worker failed to start"));
+    });
+    return engineReady;
   }
 
   /* emptyProfile is the shape used when the built-in defaults are switched off. */
@@ -80,6 +93,33 @@
 
   function dedupe(arr) {
     return [...new Set(arr)];
+  }
+
+  /* encodeShare packs a settings object into a URL-safe base64 string. */
+  function encodeShare(state) {
+    const bytes = new TextEncoder().encode(JSON.stringify(state));
+    let bin = "";
+    for (const b of bytes) bin += String.fromCharCode(b);
+    return btoa(bin).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+  }
+
+  /* decodeShare unpacks a shared settings string, or returns null when it does not
+     parse, so a mangled link degrades to a normal visit. */
+  function decodeShare(encoded) {
+    try {
+      const bin = atob(encoded.replaceAll("-", "+").replaceAll("_", "/"));
+      const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+      const state = JSON.parse(new TextDecoder().decode(bytes));
+      return state && typeof state === "object" ? state : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /* readShareHash returns the settings carried in the page URL, if any. */
+  function readShareHash() {
+    const m = /[#&]s=([A-Za-z0-9_-]+)/.exec(location.hash);
+    return m ? decodeShare(m[1]) : null;
   }
 
   /* App wires one #sc-app element to the engine. */
@@ -307,8 +347,8 @@
        rules first, then the model pass on the rules output. */
     async function rewrite() {
       const text = output.value.trim();
-      if (!text || !rewriteReady()) return;
-      const promptRes = JSON.parse(globalThis.slopRewritePrompt(JSON.stringify(buildProfile())));
+      if (!text || !rewriteReady() || !defaults) return;
+      const promptRes = JSON.parse(await callEngine("slopRewritePrompt", JSON.stringify(buildProfile())));
       if (promptRes.error) {
         setStatus(promptRes.error, true);
         return;
@@ -426,9 +466,12 @@
       marks.appendChild(document.createTextNode(dec.decode(bytes.subarray(prev))));
     }
 
-    /* chop runs the engine over the current input and paints the result. */
-    function chop() {
-      if (!globalThis.slopChop) return;
+    /* chop runs the engine over the current input and paints the result. It runs in
+       the worker, so only the newest call paints and slow chops show a status line
+       instead of freezing the page. */
+    let chopTicket = 0;
+    async function chop() {
+      if (!defaults) return;
       const text = input.value;
       if (!text.trim()) {
         output.value = "";
@@ -439,7 +482,18 @@
         return;
       }
       const req = { text, profile: buildProfile(), presets: selectedPresets() };
-      const res = JSON.parse(globalThis.slopChop(JSON.stringify(req)));
+      const ticket = ++chopTicket;
+      const slow = setTimeout(() => setStatus("Chopping..."), 300);
+      let res;
+      try {
+        res = JSON.parse(await callEngine("slopChop", JSON.stringify(req)));
+      } catch (err) {
+        clearTimeout(slow);
+        if (ticket === chopTicket) setStatus("Engine error: " + err.message, true);
+        return;
+      }
+      clearTimeout(slow);
+      if (ticket !== chopTicket) return;
       if (res.error) {
         setStatus(res.error, true);
         return;
@@ -535,6 +589,15 @@
       const json = JSON.stringify(buildProfile(), null, 2);
       if (await toClipboard(json)) flash($("sc-export"), "Copied");
     });
+    $("sc-share").addEventListener("click", async () => {
+      // Keys never ride in a link. Everything else about the setup does.
+      const state = settingsState();
+      delete state.rwKey;
+      delete state.rwOKey;
+      const url = new URL(document.baseURI);
+      url.hash = "s=" + encodeShare(state);
+      if (await toClipboard(url.href)) flash($("sc-share"), "Copied");
+    });
     $("sc-reset").addEventListener("click", () => {
       try {
         localStorage.removeItem(STORE_KEY);
@@ -548,15 +611,20 @@
     if (!input.value) input.value = SAMPLE;
     setStatus("Loading the chopper...");
 
-    loadWasm()
+    loadEngine()
       .then(() => {
         renderPresets();
-        applySettings(loadSettings() || {});
-        if (engineTag && globalThis.slopVersion) {
-          engineTag.textContent = "engine " + globalThis.slopVersion();
+        const shared = readShareHash();
+        applySettings(shared || loadSettings() || {});
+        if (shared) {
+          saveSettings();
+          history.replaceState(null, "", location.pathname + location.search);
         }
+        if (engineTag) engineTag.textContent = "engine " + engineVersion;
         setStatus("");
-        chop();
+        chop().then(() => {
+          if (shared) setStatus("Settings loaded from the shared link.");
+        });
       })
       .catch((err) => {
         setStatus("Engine failed to load: " + err.message, true);

@@ -38,43 +38,45 @@
   color: var(--sc-lime);
 }
 
-/* Hero on the landing page. */
+/* Hero on the landing page. Compact so the chopper sits above the fold. */
 .sc-hero {
   position: relative;
   text-align: center;
-  padding: 3rem 1rem 1.5rem;
+  padding: 1.4rem 1rem 0.9rem;
 }
 
 .sc-hero img.hero-logo {
-  width: 128px;
+  width: 64px;
   height: auto;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.2rem;
   filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.35));
 }
 
 .sc-hero h1 {
-  font-size: 3.1rem;
+  font-size: 2.1rem;
   font-weight: 800;
   letter-spacing: -0.03em;
-  margin: 0.2rem 0 0.1rem;
+  margin: 0.1rem 0 0;
 }
 
 .sc-hero .tagline {
-  font-size: 1.25rem;
+  font-size: 1.05rem;
   font-weight: 600;
   color: var(--sc-lime-bright);
-  margin: 0.2rem 0;
+  margin: 0.1rem 0;
 }
 
 .sc-hero .subtitle {
-  font-size: 1.05rem;
+  font-size: 0.92rem;
   opacity: 0.82;
-  max-width: 40rem;
-  margin: 0.4rem auto 1.2rem;
+  max-width: 44rem;
+  margin: 0.25rem auto 0.7rem;
 }
 
 .sc-hero .md-button {
-  margin: 0.3rem 0.35rem 0;
+  margin: 0.1rem 0.35rem 0;
+  padding: 0.4em 1.4em;
+  font-size: 0.72rem;
 }
 
 /* Green glow behind the hero. */
@@ -82,7 +84,7 @@
   content: "";
   position: absolute;
   inset: -25% 0 auto 0;
-  height: 340px;
+  height: 220px;
   background: radial-gradient(55% 100% at 50% 0%, rgba(155, 207, 26, 0.16), transparent 70%);
   pointer-events: none;
   z-index: -1;
