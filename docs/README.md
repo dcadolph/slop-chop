@@ -1,3 +1,9 @@
+---
+hide:
+  - navigation
+  - toc
+---
+
 <div class="sc-hero" markdown>
 
 ![slop-chop](assets/icon.png){ .hero-logo }
@@ -11,6 +17,67 @@
 [Get started](quickstart.md){ .md-button .md-button--primary }
 [View on GitHub](https://github.com/dcadolph/slop-chop){ .md-button }
 
+</div>
+
+<div id="sc-app" class="sc-app">
+<div class="sc-app-head">
+<div class="sc-app-title"><strong>Chop it right here</strong><span class="sc-app-note">Runs in your browser. Your text never leaves the page.</span></div>
+<div class="sc-app-actions">
+<span id="sc-score" class="sc-score" hidden></span>
+<button id="sc-settings-btn" class="sc-iconbtn" type="button" aria-label="Settings" aria-expanded="false" aria-controls="sc-drawer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+</div>
+</div>
+<div class="sc-panes">
+<div class="sc-pane">
+<div class="sc-pane-bar"><span>Slop in</span><button id="sc-clear" type="button">Clear</button></div>
+<textarea id="sc-in" spellcheck="false" placeholder="Paste your slop..."></textarea>
+</div>
+<div class="sc-pane">
+<div class="sc-pane-bar"><span>Chopped</span><button id="sc-copy" type="button">Copy</button></div>
+<textarea id="sc-out" readonly spellcheck="false" placeholder="Clean text lands here."></textarea>
+</div>
+</div>
+<p id="sc-status" class="sc-status" hidden></p>
+<details id="sc-findings" class="sc-findings" hidden>
+<summary><span id="sc-findings-count"></span></summary>
+<ul id="sc-findings-list"></ul>
+</details>
+<div id="sc-drawer" class="sc-drawer" hidden>
+<div class="sc-drawer-head"><strong>Settings</strong><button id="sc-drawer-close" type="button">Close</button></div>
+<section>
+<h3>Rules</h3>
+<label><input type="checkbox" id="sc-use-defaults" checked> Built-in default rules</label>
+<label><input type="checkbox" id="sc-split-semicolons" checked> Split semicolons into sentences</label>
+<label><input type="checkbox" id="sc-collapse-spaces" checked> Collapse doubled spaces</label>
+</section>
+<section>
+<h3>Spelling dialect</h3>
+<div class="sc-inline">
+<label><input type="radio" name="sc-dialect" value="" checked> Off</label>
+<label><input type="radio" name="sc-dialect" value="american"> American</label>
+<label><input type="radio" name="sc-dialect" value="british"> British</label>
+</div>
+</section>
+<section>
+<h3>Presets</h3>
+<div id="sc-presets" class="sc-inline"></div>
+</section>
+<section>
+<h3>Your rules</h3>
+<label class="sc-field">Block words<small>One per line. Flagged, never rewritten.</small><textarea id="sc-block-words" placeholder="synergy&#10;deep dive"></textarea></label>
+<label class="sc-field">Word swaps<small>One per line, from =&gt; to.</small><textarea id="sc-word-swaps" placeholder="utilize =&gt; use"></textarea></label>
+<label class="sc-field">Phrase rewrites<small>One per line, from =&gt; to. An empty to deletes the phrase.</small><textarea id="sc-phrase-swaps" placeholder="going forward, =&gt;"></textarea></label>
+<label class="sc-field">Character swaps<small>One per line, from =&gt; to.</small><textarea id="sc-char-swaps" placeholder="&#8594; =&gt; -&gt;"></textarea></label>
+<label class="sc-field">Regex rewrites<small>One per line, pattern =&gt; replacement. $1 expands.</small><textarea id="sc-regex-swaps" placeholder="\bvery (\w+) =&gt; $1"></textarea></label>
+<label class="sc-field">Flag patterns<small>One per line, name =&gt; pattern. Flag only, never rewrite.</small><textarea id="sc-flag-patterns" placeholder="hedge =&gt; (?i)\bit seems\b"></textarea></label>
+<label class="sc-field">Allow list<small>One per line. Never flag or rewrite these.</small><textarea id="sc-allow" placeholder="delve"></textarea></label>
+</section>
+<div class="sc-drawer-foot">
+<button id="sc-reset" type="button">Reset</button>
+<button id="sc-export" type="button">Copy profile JSON</button>
+<span id="sc-engine" class="sc-engine"></span>
+</div>
+</div>
 </div>
 
 <div class="sc-terminal">
