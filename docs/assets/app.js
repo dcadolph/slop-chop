@@ -204,8 +204,8 @@
     }
 
     function renderScore(res) {
-      score.textContent = "slop " + res.scoreIn.value + " → " + res.scoreOut.value;
-      score.className = "sc-score " + scoreClass(res.scoreIn.value);
+      score.textContent = "slop " + res.score.value;
+      score.className = "sc-score " + scoreClass(res.score.value);
       score.hidden = false;
     }
 

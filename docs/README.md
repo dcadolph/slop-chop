@@ -23,7 +23,7 @@ hide:
 <div class="sc-app-head">
 <div class="sc-app-title"><strong>Chop it right here</strong><span class="sc-app-note">Runs in your browser. Your text never leaves the page.</span></div>
 <div class="sc-app-actions">
-<span id="sc-score" class="sc-score" hidden></span>
+<span id="sc-score" class="sc-score" title="How much the input reads like AI wrote it, from 0 for clean to 100 for heavy slop." hidden></span>
 <button id="sc-settings-btn" class="sc-iconbtn" type="button" aria-label="Settings" aria-expanded="false" aria-controls="sc-drawer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
 </div>
 </div>
