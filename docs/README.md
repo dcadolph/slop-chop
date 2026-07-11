@@ -12,7 +12,7 @@ hide:
 
 <p class="tagline">Chop the slop.</p>
 
-<p class="subtitle">Paste in text and get back something that reads like a person wrote it. A fast, deterministic rules pass pulls the AI tells in one go, with an optional model rewrite for the work rules cannot do.</p>
+<p class="subtitle">Paste text that sounds like a bot, get back text that sounds like you. Em-dashes, buzzwords, and stock phrases all get chopped in one pass, right in your browser. Plug in a model when you want a deeper rewrite.</p>
 
 [Get started](quickstart.md){ .md-button .md-button--primary }
 [View on GitHub](https://github.com/dcadolph/slop-chop){ .md-button }
@@ -99,6 +99,7 @@ hide:
 <div class="sc-drawer-foot">
 <button id="sc-reset" type="button">Reset</button>
 <button id="sc-export" type="button">Copy profile JSON</button>
+<button id="sc-share" type="button" title="Copy a link that opens this page with these settings. API keys stay out of it.">Copy link</button>
 <span id="sc-engine" class="sc-engine"></span>
 </div>
 </div>

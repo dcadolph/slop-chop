@@ -1,6 +1,7 @@
 # Quickstart
 
-Zero to a cleaned file in a couple of minutes.
+Zero to a cleaned file in a couple of minutes. No install needed to try it first:
+[slop-chop.com](https://slop-chop.com/) chops in your browser with the same engine.
 
 ## Install
 
@@ -83,5 +84,7 @@ slop-chop fix --rewrite --verify notes.md
 
 ## Next
 
-- [Profiles](PROFILE.md): say what to cut and what to put in its place.
-- [Claude plugin](PLUGIN.md): run it from Claude Code with a skill and a command.
+| Guide                      | What's inside                                                |
+| -------------------------- | ------------------------------------------------------------ |
+| [Profiles](PROFILE.md)     | Say what to cut and what to put in its place.&nbsp;&nbsp;    |
+| [Claude plugin](PLUGIN.md) | Run it from Claude Code with a skill and a command.          |
