@@ -1,9 +1,29 @@
-// Package prompt builds the instruction the rewrite pass sends the model. It lives
-// apart from the rewrite package so the WASM build can share the exact prompt the CLI
-// sends without pulling the HTTP client into the binary.
+// Package prompt builds the instructions the rewrite and verify passes send the model.
+// It lives apart from the rewrite package so the WASM build can share the exact prompts
+// the CLI sends without pulling the HTTP client into the binary.
 package prompt
 
 import "strings"
+
+// Judge returns the instruction that tells the model to compare an original text with
+// its rewrite and report meaning changes as a JSON verdict.
+func Judge() string {
+	return judgeSystem
+}
+
+// judgeSystem instructs the model to compare meaning and return only a JSON verdict.
+const judgeSystem = `You compare an ORIGINAL text with a REWRITE meant to remove AI ` +
+	`writing tells while preserving meaning exactly. Report only genuine changes in ` +
+	`meaning: facts, numbers, names, claims, logic, or negation that were added, ` +
+	`removed, or altered. Ignore wording, style, tone, punctuation, and sentence ` +
+	`structure.
+
+Return only a JSON object, with no prose and no code fences:
+{"faithful": true, "issues": [{"kind": "changed", "was": "...", "now": "...", "note": "..."}]}
+
+faithful is true when meaning is preserved. kind is "added", "removed", or "changed". ` +
+	`For an addition, was is empty; for a removal, now is empty. note is a short reason. ` +
+	`When meaning is preserved, return {"faithful": true, "issues": []}.`
 
 // System assembles the instruction that tells the model how to clean the text. Tone
 // notes shape the voice to aim for. Feedback notes name facts a prior attempt changed,
