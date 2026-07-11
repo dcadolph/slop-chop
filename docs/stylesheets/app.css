@@ -355,6 +355,30 @@ body:has(#sc-app) .md-grid {
   font-size: 0.74rem;
 }
 
+.sc-drawer input[type="text"],
+.sc-drawer input[type="password"],
+.sc-drawer select {
+  width: 100%;
+  padding: 0.35rem 0.55rem;
+  font: inherit;
+  font-size: 0.76rem;
+  color: var(--md-default-fg-color);
+  background: var(--md-code-bg-color);
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.4rem;
+  outline: none;
+}
+
+.sc-drawer input:focus,
+.sc-drawer select:focus {
+  border-color: var(--md-accent-fg-color);
+}
+
+.sc-pane-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
 .sc-drawer-foot {
   display: flex;
   align-items: center;

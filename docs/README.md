@@ -36,7 +36,7 @@ hide:
 </div>
 </div>
 <div class="sc-pane">
-<div class="sc-pane-bar"><span>Chopped</span><button id="sc-copy" type="button">Copy</button></div>
+<div class="sc-pane-bar"><span>Chopped</span><span class="sc-pane-actions"><button id="sc-rewrite" type="button" hidden>Rewrite</button><button id="sc-copy" type="button">Copy</button></span></div>
 <textarea id="sc-out" readonly spellcheck="false" placeholder="Clean text lands here."></textarea>
 </div>
 </div>
@@ -74,6 +74,27 @@ hide:
 <label class="sc-field">Regex rewrites<small>One per line, pattern =&gt; replacement. $1 expands.</small><textarea id="sc-regex-swaps" placeholder="\bvery (\w+) =&gt; $1"></textarea></label>
 <label class="sc-field">Flag patterns<small>One per line, name =&gt; pattern. Flag only, never rewrite.</small><textarea id="sc-flag-patterns" placeholder="hedge =&gt; (?i)\bit seems\b"></textarea></label>
 <label class="sc-field">Allow list<small>One per line. Never flag or rewrite these.</small><textarea id="sc-allow" placeholder="delve"></textarea></label>
+</section>
+<section>
+<h3>Model rewrite</h3>
+<label class="sc-field">Provider<small>Adds a Rewrite button that sends the chopped text to a model for the work rules cannot do. Off by default.</small>
+<select id="sc-rw-provider">
+<option value="" selected>Off</option>
+<option value="anthropic">Anthropic API</option>
+<option value="openai">OpenAI-compatible (Ollama, LM Studio, vLLM)</option>
+</select></label>
+<div id="sc-rw-anthropic" hidden>
+<label class="sc-field">API key<small>Stays in this browser. Sent only to api.anthropic.com.</small><input type="password" id="sc-rw-key" placeholder="sk-ant-..." autocomplete="off"></label>
+<label class="sc-field">Model<input type="text" id="sc-rw-model" placeholder="claude-opus-4-8"></label>
+</div>
+<div id="sc-rw-openai" hidden>
+<label class="sc-field">Base URL<small>Ollama runs at http://localhost:11434 and needs OLLAMA_ORIGINS set to this site's origin.</small><input type="text" id="sc-rw-url" placeholder="http://localhost:11434"></label>
+<label class="sc-field">Model<input type="text" id="sc-rw-omodel" placeholder="llama3.3"></label>
+<label class="sc-field">API key<small>Optional. Sent as a bearer token to the base URL only.</small><input type="password" id="sc-rw-okey" autocomplete="off"></label>
+</div>
+<div id="sc-rw-tone-wrap" hidden>
+<label class="sc-field">Tone notes<small>One per line. Steers the model's voice. The rules pass ignores them.</small><textarea id="sc-rw-tone" placeholder="dry and direct&#10;no marketing voice"></textarea></label>
+</div>
 </section>
 <div class="sc-drawer-foot">
 <button id="sc-reset" type="button">Reset</button>
@@ -144,6 +165,9 @@ brew install dcadolph/tap/slop-chop
 
 ## Start here
 
-- [Quickstart](quickstart.md): install and clean your first file in a couple of minutes.
-- [Profiles](PROFILE.md): every field, the presets, the spelling dialects, and the allow list.
-- [Claude plugin](PLUGIN.md): install, the skill, the command, backends, and troubleshooting.
+| Guide                        | What's inside                                                        |
+| ---------------------------- | -------------------------------------------------------------------- |
+| [Quickstart](quickstart.md)  | Install and clean your first file in a couple of minutes.&nbsp;&nbsp; |
+| [Profiles](PROFILE.md)       | Every field, the presets, the spelling dialects, and the allow list. |
+| [Engine](ENGINE.md)          | How the rules pass works under the hood.                             |
+| [Claude plugin](PLUGIN.md)   | Install, the skill, the command, backends, and troubleshooting.      |
