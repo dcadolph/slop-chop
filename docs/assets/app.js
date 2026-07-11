@@ -111,7 +111,15 @@
       regexSwaps: $("sc-regex-swaps"),
       flagPatterns: $("sc-flag-patterns"),
       allow: $("sc-allow"),
+      rwProvider: $("sc-rw-provider"),
+      rwKey: $("sc-rw-key"),
+      rwModel: $("sc-rw-model"),
+      rwURL: $("sc-rw-url"),
+      rwOModel: $("sc-rw-omodel"),
+      rwOKey: $("sc-rw-okey"),
+      rwTone: $("sc-rw-tone"),
     };
+    const rewriteBtn = $("sc-rewrite");
 
     function dialectValue() {
       const checked = root.querySelector('input[name="sc-dialect"]:checked');
@@ -137,6 +145,13 @@
         regexSwaps: controls.regexSwaps.value,
         flagPatterns: controls.flagPatterns.value,
         allow: controls.allow.value,
+        rwProvider: controls.rwProvider.value,
+        rwKey: controls.rwKey.value,
+        rwModel: controls.rwModel.value,
+        rwURL: controls.rwURL.value,
+        rwOModel: controls.rwOModel.value,
+        rwOKey: controls.rwOKey.value,
+        rwTone: controls.rwTone.value,
       };
     }
 
@@ -170,6 +185,14 @@
       controls.regexSwaps.value = s.regexSwaps || "";
       controls.flagPatterns.value = s.flagPatterns || "";
       controls.allow.value = s.allow || "";
+      controls.rwProvider.value = s.rwProvider || "";
+      controls.rwKey.value = s.rwKey || "";
+      controls.rwModel.value = s.rwModel || "";
+      controls.rwURL.value = s.rwURL || "";
+      controls.rwOModel.value = s.rwOModel || "";
+      controls.rwOKey.value = s.rwOKey || "";
+      controls.rwTone.value = s.rwTone || "";
+      syncRewriteUI();
       const radio = root.querySelector('input[name="sc-dialect"][value="' + (s.dialect || "") + '"]');
       if (radio) radio.checked = true;
       for (const el of root.querySelectorAll(".sc-preset")) {
@@ -192,7 +215,118 @@
         collapseSpaces: controls.collapseSpaces.checked,
         splitSemicolons: controls.splitSemicolons.checked,
         dialect: dialectValue(),
+        tone: parseLines(controls.rwTone.value),
       };
+    }
+
+    /* syncRewriteUI shows the fields for the picked provider and the Rewrite button
+       once the provider is usable. */
+    function syncRewriteUI() {
+      const p = controls.rwProvider.value;
+      $("sc-rw-anthropic").hidden = p !== "anthropic";
+      $("sc-rw-openai").hidden = p !== "openai";
+      $("sc-rw-tone-wrap").hidden = p === "";
+      rewriteBtn.hidden = !rewriteReady();
+    }
+
+    /* rewriteReady reports whether the picked provider has what it needs to be called. */
+    function rewriteReady() {
+      switch (controls.rwProvider.value) {
+        case "anthropic":
+          return controls.rwKey.value.trim() !== "";
+        case "openai":
+          return controls.rwURL.value.trim() !== "" && controls.rwOModel.value.trim() !== "";
+        default:
+          return false;
+      }
+    }
+
+    /* rewriteAnthropic sends the text to the Anthropic Messages API straight from the
+       browser. The dangerous-direct-browser-access header opts into CORS; the key is
+       the user's own and goes nowhere but Anthropic. */
+    async function rewriteAnthropic(text, system) {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": controls.rwKey.value.trim(),
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
+        },
+        body: JSON.stringify({
+          model: controls.rwModel.value.trim() || "claude-opus-4-8",
+          max_tokens: 16000,
+          system,
+          messages: [{ role: "user", content: text }],
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error && data.error.message ? data.error.message : "HTTP " + res.status);
+      }
+      if (data.stop_reason === "max_tokens") throw new Error("reply hit the token cap and is truncated");
+      if (data.stop_reason === "refusal") throw new Error("the model declined to rewrite the text");
+      const out = (data.content || [])
+        .filter((b) => b.type === "text")
+        .map((b) => b.text)
+        .join("");
+      if (!out) throw new Error("reply had no text content");
+      return out.trim();
+    }
+
+    /* rewriteOpenAI sends the text to any OpenAI-compatible chat completions endpoint,
+       which covers Ollama, LM Studio, vLLM, and most gateways. */
+    async function rewriteOpenAI(text, system) {
+      const url = controls.rwURL.value.trim().replace(/\/+$/, "") + "/v1/chat/completions";
+      const headers = { "content-type": "application/json" };
+      const key = controls.rwOKey.value.trim();
+      if (key) headers.authorization = "Bearer " + key;
+      const res = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: controls.rwOModel.value.trim(),
+          stream: false,
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: text },
+          ],
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = data.error && data.error.message ? data.error.message : "HTTP " + res.status;
+        throw new Error(msg);
+      }
+      const out = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+      if (!out) throw new Error("reply had no text content");
+      return out.trim();
+    }
+
+    /* rewrite sends the chopped text through the configured model, mirroring the CLI:
+       rules first, then the model pass on the rules output. */
+    async function rewrite() {
+      const text = output.value.trim();
+      if (!text || !rewriteReady()) return;
+      const promptRes = JSON.parse(globalThis.slopRewritePrompt(JSON.stringify(buildProfile())));
+      if (promptRes.error) {
+        setStatus(promptRes.error, true);
+        return;
+      }
+      rewriteBtn.disabled = true;
+      const old = rewriteBtn.textContent;
+      rewriteBtn.textContent = "Rewriting...";
+      setStatus("");
+      try {
+        const send = controls.rwProvider.value === "anthropic" ? rewriteAnthropic : rewriteOpenAI;
+        output.value = await send(text, promptRes.system);
+        setStatus("Rewritten. The panes now differ: left is your input, right is the model's rewrite.");
+      } catch (err) {
+        setStatus("Rewrite failed: " + err.message, true);
+      } finally {
+        rewriteBtn.disabled = false;
+        rewriteBtn.textContent = old;
+      }
     }
 
     function setStatus(text, isError) {
@@ -380,15 +514,20 @@
     copyBtn.addEventListener("click", async () => {
       if (await toClipboard(output.value)) flash(copyBtn, "Copied");
     });
+    rewriteBtn.addEventListener("click", rewrite);
     burger.addEventListener("click", () => setDrawer(drawer.hidden));
     closeBtn.addEventListener("click", () => setDrawer(false));
     root.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && !drawer.hidden) setDrawer(false);
     });
-    drawer.addEventListener("change", chopNow);
+    drawer.addEventListener("change", () => {
+      syncRewriteUI();
+      chopNow();
+    });
     drawer.addEventListener("input", (e) => {
-      if (e.target.tagName === "TEXTAREA") {
+      if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") {
         saveSettings();
+        syncRewriteUI();
         chopSoon();
       }
     });
