@@ -21,6 +21,14 @@ func TestPresetBehavior(t *testing.T) {
 		{Preset: "corporate", In: "Let's circle back.", Want: "Let's follow up."},
 		{Preset: "academic", In: "We utilize a demonstrate step.", Want: "We use a show step."},
 		{Preset: "marketing", In: "A bespoke, curated kit.", Want: "A custom, chosen kit."},
+		{Preset: "cleaver", In: "We leverage robust, seamless workflows.", Want: "We use solid, smooth workflows."},
+		{
+			Preset: "cleaver",
+			In:     "This empowers teams to deep-dive into actionable insights.",
+			Want:   "This helps teams to dig into useful findings.",
+		},
+		{Preset: "cleaver", In: "In today's digital-first landscape, delve deeper.", Want: "Dig deeper."},
+		{Preset: "cleaver", In: "Leveraging it unlocks the full potential of the team.", Want: "Using it gets the most from the team."},
 	}
 
 	for testNum, test := range tests {

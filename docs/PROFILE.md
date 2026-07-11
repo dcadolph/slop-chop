@@ -269,13 +269,18 @@ any entry it also sets, so a preset never overwrites a decision you made.
 
 The packs that ship:
 
-| Preset  | What it adds                                                             |
-| ------- | ----------------------------------------------------------------------- |
-| `plain` | A corporate-to-plain phrase and word map, plus a jargon blacklist.      |
+| Preset      | What it adds                                                                  |
+| ----------- | ----------------------------------------------------------------------------- |
+| `academic`  | Swaps for the padded verbs papers lean on, like `utilize` and `demonstrate`.  |
+| `cleaver`   | Rewrites for the buzzwords the default profile only flags: `leverage` to `use`, `robust` to `solid`, `meticulously` to `carefully`, and dozens more. The strongest cut. |
+| `corporate` | A corporate-to-plain phrase and word map, plus a jargon blacklist.            |
+| `marketing` | Swaps for launch-copy words like `bespoke` and `curated`.                     |
+| `plain`     | A general jargon-to-plain map for everyday prose.                             |
 
-With `plain`, a line like `we utilize synergy to leverage bandwidth` comes back as `we use
-synergy to use bandwidth`, with `synergy` and `bandwidth` flagged since a swap for those
-depends on what you meant.
+The default profile flags words like `leverage` and `robust` but leaves them in place,
+since the right swap depends on context. `cleaver` takes a position on each one and
+rewrites it. With `cleaver`, `we leverage robust workflows` comes back as `we use solid
+workflows`. The web app at [slop-chop.com](https://slop-chop.com/) ships with `cleaver` on.
 
 ## Ignore directives
 
