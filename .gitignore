@@ -19,6 +19,10 @@ coverage.out
 # MkDocs build output
 /site/
 
+# Built browser engine, produced by make wasm
+/docs/assets/slop-chop.wasm
+/docs/assets/wasm_exec.js
+
 # Go
 go.work
 go.work.sum
