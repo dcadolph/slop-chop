@@ -147,10 +147,52 @@ body:has(#sc-app) .md-grid {
   border: 1px solid var(--md-default-fg-color--lightest);
   border-radius: 0.5rem;
   outline: none;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
 }
 
 .sc-app textarea:focus {
   border-color: var(--md-accent-fg-color);
+}
+
+/* The input sits on a mirror layer that paints finding highlights behind the text.
+   The mirror must match the textarea's box and font metrics exactly so the marks
+   line up with the characters above them. */
+.sc-editor {
+  position: relative;
+}
+
+.sc-marks {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: var(--md-code-bg-color);
+  font-family: var(--md-code-font, monospace);
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: transparent;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.sc-editor textarea {
+  position: relative;
+  background: transparent;
+}
+
+.sc-marks mark {
+  background: rgba(155, 207, 26, 0.3);
+  color: transparent;
+  padding: 0;
+  border-radius: 0.15rem;
+}
+
+[data-md-color-scheme="default"] .sc-marks mark {
+  background: rgba(155, 207, 26, 0.45);
 }
 
 .sc-status {
