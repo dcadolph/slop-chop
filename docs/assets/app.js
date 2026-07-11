@@ -122,12 +122,88 @@
     return m ? decodeShare(m[1]) : null;
   }
 
+  /* diffOps runs a Myers diff over two token lists. It returns [op, token] pairs where
+     0 keeps a token, 1 adds one, and -1 drops one, or null when the lists diverge past
+     the cap and a diff would not help anyone. */
+  function diffOps(a, b) {
+    const N = a.length;
+    const M = b.length;
+    const MAX = Math.min(N + M, 1500);
+    const OFF = MAX;
+    const V = new Int32Array(2 * MAX + 2);
+    const trace = [];
+    let D = 0;
+    found: {
+      for (; D <= MAX; D++) {
+        trace.push(V.slice());
+        for (let k = -D; k <= D; k += 2) {
+          let x;
+          if (k === -D || (k !== D && V[OFF + k - 1] < V[OFF + k + 1])) x = V[OFF + k + 1];
+          else x = V[OFF + k - 1] + 1;
+          let y = x - k;
+          while (x < N && y < M && a[x] === b[y]) {
+            x++;
+            y++;
+          }
+          V[OFF + k] = x;
+          if (x >= N && y >= M) break found;
+        }
+      }
+      return null;
+    }
+    const ops = [];
+    let x = N;
+    let y = M;
+    for (let d = D; d > 0; d--) {
+      const Vp = trace[d];
+      const k = x - y;
+      let prevK;
+      if (k === -d || (k !== d && Vp[OFF + k - 1] < Vp[OFF + k + 1])) prevK = k + 1;
+      else prevK = k - 1;
+      const prevX = Vp[OFF + prevK];
+      const prevY = prevX - prevK;
+      while (x > prevX && y > prevY) {
+        x--;
+        y--;
+        ops.push([0, b[y]]);
+      }
+      if (x === prevX) {
+        y--;
+        ops.push([1, b[y]]);
+      } else {
+        x--;
+        ops.push([-1, a[x]]);
+      }
+    }
+    while (x > 0 && y > 0) {
+      x--;
+      y--;
+      ops.push([0, b[y]]);
+    }
+    while (y > 0) {
+      y--;
+      ops.push([1, b[y]]);
+    }
+    while (x > 0) {
+      x--;
+      ops.push([-1, a[x]]);
+    }
+    return ops.reverse();
+  }
+
+  /* tokens splits text into words and whitespace runs, both kept, so a diff rebuilds
+     the text byte for byte. */
+  function tokens(text) {
+    return text.split(/(\s+)/).filter((t) => t !== "");
+  }
+
   /* App wires one #sc-app element to the engine. */
   function boot(root) {
     const $ = (id) => root.querySelector("#" + id);
     const input = $("sc-in");
     const marks = $("sc-marks");
     const output = $("sc-out");
+    const outMarks = $("sc-out-marks");
     const score = $("sc-score");
     const status = $("sc-status");
     const copyBtn = $("sc-copy");
@@ -158,6 +234,7 @@
       rwOModel: $("sc-rw-omodel"),
       rwOKey: $("sc-rw-okey"),
       rwTone: $("sc-rw-tone"),
+      rwVerify: $("sc-rw-verify"),
     };
     const rewriteBtn = $("sc-rewrite");
 
@@ -192,6 +269,7 @@
         rwOModel: controls.rwOModel.value,
         rwOKey: controls.rwOKey.value,
         rwTone: controls.rwTone.value,
+        rwVerify: controls.rwVerify.checked,
       };
     }
 
@@ -232,6 +310,7 @@
       controls.rwOModel.value = s.rwOModel || "";
       controls.rwOKey.value = s.rwOKey || "";
       controls.rwTone.value = s.rwTone || "";
+      controls.rwVerify.checked = s.rwVerify !== false;
       syncRewriteUI();
       const radio = root.querySelector('input[name="sc-dialect"][value="' + (s.dialect || "") + '"]');
       if (radio) radio.checked = true;
@@ -343,8 +422,39 @@
       return out.trim();
     }
 
+    /* jsonObject cuts the first-to-last-brace span out of a model reply, tolerating
+       code fences or stray prose around the verdict, like the CLI judge does. */
+    function jsonObject(text) {
+      const start = text.indexOf("{");
+      const end = text.lastIndexOf("}");
+      return start >= 0 && end > start ? text.slice(start, end + 1) : "";
+    }
+
+    /* verifyRewrite asks the same model whether the rewrite kept the meaning and turns
+       the verdict into a status line. A broken check never takes the rewrite away. */
+    async function verifyRewrite(original, rewritten, send) {
+      setStatus("Checking the rewrite kept your meaning...");
+      const judge = JSON.parse(await callEngine("slopJudgePrompt", ""));
+      const user = "ORIGINAL:\n" + original + "\n\nREWRITE:\n" + rewritten;
+      try {
+        const reply = await send(user, judge.system);
+        const verdict = JSON.parse(jsonObject(reply));
+        if (verdict.faithful) {
+          setStatus("Rewritten. Meaning check passed.");
+          return;
+        }
+        const notes = (verdict.issues || [])
+          .slice(0, 3)
+          .map((i) => i.note || i.kind)
+          .join("; ");
+        setStatus("Rewritten, but the meaning check flagged: " + (notes || "unspecified changes"), true);
+      } catch (err) {
+        setStatus("Rewritten. Meaning check did not run: " + err.message, true);
+      }
+    }
+
     /* rewrite sends the chopped text through the configured model, mirroring the CLI:
-       rules first, then the model pass on the rules output. */
+       rules first, then the model pass on the rules output, then the optional check. */
     async function rewrite() {
       const text = output.value.trim();
       if (!text || !rewriteReady() || !defaults) return;
@@ -359,8 +469,14 @@
       setStatus("");
       try {
         const send = controls.rwProvider.value === "anthropic" ? rewriteAnthropic : rewriteOpenAI;
-        output.value = await send(text, promptRes.system);
-        setStatus("Rewritten. The panes now differ: left is your input, right is the model's rewrite.");
+        const rewritten = await send(text, promptRes.system);
+        output.value = rewritten;
+        renderOutMarks(input.value, rewritten);
+        if (controls.rwVerify.checked) {
+          await verifyRewrite(text, rewritten, send);
+        } else {
+          setStatus("Rewritten. The panes now differ: left is your input, right is the model's rewrite.");
+        }
       } catch (err) {
         setStatus("Rewrite failed: " + err.message, true);
       } finally {
@@ -466,6 +582,32 @@
       marks.appendChild(document.createTextNode(dec.decode(bytes.subarray(prev))));
     }
 
+    /* renderOutMarks paints what changed behind the output text, diffing token by
+       token against the input. Texts too far apart fall back to a plain mirror. */
+    function renderOutMarks(from, to) {
+      outMarks.style.right = Math.max(0, output.offsetWidth - output.clientWidth - 2) + "px";
+      outMarks.textContent = "";
+      if (!to || to.length > MAX_MARK_BYTES) {
+        outMarks.textContent = to;
+        return;
+      }
+      const ops = diffOps(tokens(from), tokens(to));
+      if (!ops) {
+        outMarks.textContent = to;
+        return;
+      }
+      for (const [op, token] of ops) {
+        if (op < 0) continue;
+        if (op === 0 || /^\s+$/.test(token)) {
+          outMarks.appendChild(document.createTextNode(token));
+        } else {
+          const m = document.createElement("mark");
+          m.textContent = token;
+          outMarks.appendChild(m);
+        }
+      }
+    }
+
     /* chop runs the engine over the current input and paints the result. It runs in
        the worker, so only the newest call paints and slow chops show a status line
        instead of freezing the page. */
@@ -476,6 +618,7 @@
       if (!text.trim()) {
         output.value = "";
         marks.textContent = "";
+        outMarks.textContent = "";
         score.hidden = true;
         findingsBox.hidden = true;
         setStatus("");
@@ -501,6 +644,7 @@
       setStatus("");
       output.value = res.output;
       renderMarks(text, res.findings);
+      renderOutMarks(text, res.output);
       renderScore(res);
       renderFindings(res.findings);
     }
@@ -559,6 +703,10 @@
     input.addEventListener("scroll", () => {
       marks.scrollTop = input.scrollTop;
       marks.scrollLeft = input.scrollLeft;
+    });
+    output.addEventListener("scroll", () => {
+      outMarks.scrollTop = output.scrollTop;
+      outMarks.scrollLeft = output.scrollLeft;
     });
     clearBtn.addEventListener("click", () => {
       input.value = "";
