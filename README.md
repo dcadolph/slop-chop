@@ -6,6 +6,9 @@
 
 Chop the slop. Paste in text and get back something that reads like a person wrote it.
 
+Try it without installing anything: [slop-chop.com](https://slop-chop.com/) runs the same
+engine in your browser.
+
 AI writing leaves fingerprints. It runs on em-dashes, drops a semicolon into every other
 sentence, reaches for words like `comprehensive` and `substrate`, and clears its throat
 with openers like "In summary" or "Giving it to you honestly." slop-chop pulls all of
