@@ -32,7 +32,7 @@ WebAssembly.instantiateStreaming(fetch("slop-chop.wasm"), go.importObject)
 onmessage = (e) => {
   const { id, fn, arg } = e.data;
   try {
-    if (fn !== "slopChop" && fn !== "slopRewritePrompt") {
+    if (fn !== "slopChop" && fn !== "slopRewritePrompt" && fn !== "slopJudgePrompt") {
       throw new Error("unknown engine call: " + fn);
     }
     postMessage({ id, result: self[fn](arg) });

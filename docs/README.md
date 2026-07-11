@@ -37,7 +37,10 @@ hide:
 </div>
 <div class="sc-pane">
 <div class="sc-pane-bar"><span>Chopped</span><span class="sc-pane-actions"><button id="sc-rewrite" type="button" hidden>Rewrite</button><button id="sc-copy" type="button">Copy</button></span></div>
+<div class="sc-editor">
+<div id="sc-out-marks" class="sc-marks" aria-hidden="true"></div>
 <textarea id="sc-out" readonly spellcheck="false" placeholder="Clean text lands here."></textarea>
+</div>
 </div>
 </div>
 <p id="sc-status" class="sc-status" hidden></p>
@@ -94,6 +97,7 @@ hide:
 </div>
 <div id="sc-rw-tone-wrap" hidden>
 <label class="sc-field">Tone notes<small>One per line. Steers the model's voice. The rules pass ignores them.</small><textarea id="sc-rw-tone" placeholder="dry and direct&#10;no marketing voice"></textarea></label>
+<label><input type="checkbox" id="sc-rw-verify" checked> Check the rewrite kept your meaning</label>
 </div>
 </section>
 <div class="sc-drawer-foot">
