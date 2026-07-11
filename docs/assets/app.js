@@ -497,10 +497,30 @@
       return "sc-score-high";
     }
 
+    const scorePop = $("sc-score-pop");
+
+    /* renderScore paints the chip and refreshes the breakdown behind it. The engine
+       hands over the raw ingredients, so the popover shows its work. */
     function renderScore(res) {
-      score.textContent = "slop " + res.score.value;
-      score.className = "sc-score " + scoreClass(res.score.value);
+      const s = res.score;
+      score.textContent = "slop " + s.value;
+      score.className = "sc-score " + scoreClass(s.value);
       score.hidden = false;
+      $("sc-pop-value").textContent = s.value;
+      $("sc-pop-tells").textContent = String(s.tells);
+      $("sc-pop-words").textContent = String(s.words);
+      $("sc-pop-density").textContent = s.tellsPer100 + " tells per 100 words";
+      $("sc-pop-cadence").textContent =
+        s.cadenceCv === 0
+          ? "too short to judge"
+          : s.cadenceCv < 0.5
+            ? "flat (cv " + s.cadenceCv + "), even sentence lengths read machine-written"
+            : "varied (cv " + s.cadenceCv + ")";
+    }
+
+    function setScorePop(open) {
+      scorePop.hidden = !open;
+      score.setAttribute("aria-expanded", String(open));
     }
 
     const MAX_ROWS = 400;
@@ -620,6 +640,7 @@
         marks.textContent = "";
         outMarks.textContent = "";
         score.hidden = true;
+        setScorePop(false);
         findingsBox.hidden = true;
         setStatus("");
         return;
@@ -717,10 +738,19 @@
       if (await toClipboard(output.value)) flash(copyBtn, "Copied");
     });
     rewriteBtn.addEventListener("click", rewrite);
+    score.addEventListener("click", () => setScorePop(scorePop.hidden));
+    document.addEventListener("click", (e) => {
+      if (!scorePop.hidden && !scorePop.contains(e.target) && e.target !== score) {
+        setScorePop(false);
+      }
+    });
     burger.addEventListener("click", () => setDrawer(drawer.hidden));
     closeBtn.addEventListener("click", () => setDrawer(false));
     root.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && !drawer.hidden) setDrawer(false);
+      if (e.key === "Escape") {
+        if (!drawer.hidden) setDrawer(false);
+        if (!scorePop.hidden) setScorePop(false);
+      }
     });
     drawer.addEventListener("change", () => {
       syncRewriteUI();
