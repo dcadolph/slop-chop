@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/dcadolph/slop-chop/internal/rewrite/prompt"
 )
 
 // Verdict is the meaning-comparison result from the judge.
@@ -47,7 +49,7 @@ func NewJudge(completer Completer) *Judge {
 // verdict.
 func (j *Judge) Judge(ctx context.Context, original, rewrite string) (Verdict, error) {
 	user := "ORIGINAL:\n" + original + "\n\nREWRITE:\n" + rewrite
-	reply, err := j.completer.Complete(ctx, judgeSystem, user)
+	reply, err := j.completer.Complete(ctx, prompt.Judge(), user)
 	if err != nil {
 		return Verdict{}, fmt.Errorf("judge: %w", err)
 	}
@@ -73,17 +75,3 @@ func jsonObject(text string) string {
 	}
 	return text[start : end+1]
 }
-
-// judgeSystem instructs the model to compare meaning and return only a JSON verdict.
-const judgeSystem = `You compare an ORIGINAL text with a REWRITE meant to remove AI ` +
-	`writing tells while preserving meaning exactly. Report only genuine changes in ` +
-	`meaning: facts, numbers, names, claims, logic, or negation that were added, ` +
-	`removed, or altered. Ignore wording, style, tone, punctuation, and sentence ` +
-	`structure.
-
-Return only a JSON object, with no prose and no code fences:
-{"faithful": true, "issues": [{"kind": "changed", "was": "...", "now": "...", "note": "..."}]}
-
-faithful is true when meaning is preserved. kind is "added", "removed", or "changed". ` +
-	`For an addition, was is empty; for a removal, now is empty. note is a short reason. ` +
-	`When meaning is preserved, return {"faithful": true, "issues": []}.`

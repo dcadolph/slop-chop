@@ -50,6 +50,7 @@ func main() {
 	js.Global().Set("slopDefaults", js.FuncOf(defaults))
 	js.Global().Set("slopPresets", js.FuncOf(presets))
 	js.Global().Set("slopRewritePrompt", js.FuncOf(rewritePrompt))
+	js.Global().Set("slopJudgePrompt", js.FuncOf(judgePrompt))
 	js.Global().Set("slopVersion", js.FuncOf(engineVersion))
 	select {}
 }
@@ -109,6 +110,12 @@ func rewritePrompt(_ js.Value, args []js.Value) any {
 		return errJSON(errors.Join(ErrRequest, err))
 	}
 	return marshal(map[string]string{"system": prompt.System(p.Tone, nil)})
+}
+
+// judgePrompt returns the system prompt for the meaning check as {"system": "..."},
+// the same instruction the CLI's --verify pass sends.
+func judgePrompt(_ js.Value, _ []js.Value) any {
+	return marshal(map[string]string{"system": prompt.Judge()})
 }
 
 // engineVersion returns the stamped build version.
