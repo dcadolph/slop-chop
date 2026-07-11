@@ -10,6 +10,7 @@ import (
 	"errors"
 	"syscall/js"
 
+	"github.com/dcadolph/slop-chop/internal/rewrite/prompt"
 	"github.com/dcadolph/slop-chop/internal/sanitize"
 )
 
@@ -48,6 +49,7 @@ func main() {
 	js.Global().Set("slopChop", js.FuncOf(chop))
 	js.Global().Set("slopDefaults", js.FuncOf(defaults))
 	js.Global().Set("slopPresets", js.FuncOf(presets))
+	js.Global().Set("slopRewritePrompt", js.FuncOf(rewritePrompt))
 	js.Global().Set("slopVersion", js.FuncOf(engineVersion))
 	select {}
 }
@@ -92,6 +94,21 @@ func defaults(_ js.Value, _ []js.Value) any {
 // presets returns the built-in preset names as a JSON array.
 func presets(_ js.Value, _ []js.Value) any {
 	return marshal(sanitize.PresetNames())
+}
+
+// rewritePrompt returns the system prompt for the model rewrite pass as
+// {"system": "..."}. It takes the profile JSON so the profile's tone notes shape the
+// prompt, exactly as they do in the CLI. The page sends the prompt to whichever model
+// backend the user configured.
+func rewritePrompt(_ js.Value, args []js.Value) any {
+	if len(args) != 1 {
+		return errJSON(errors.Join(ErrRequest, errors.New("slopRewritePrompt takes one JSON argument")))
+	}
+	var p sanitize.Profile
+	if err := json.Unmarshal([]byte(args[0].String()), &p); err != nil {
+		return errJSON(errors.Join(ErrRequest, err))
+	}
+	return marshal(map[string]string{"system": prompt.System(p.Tone, nil)})
 }
 
 // engineVersion returns the stamped build version.

@@ -13,6 +13,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/dcadolph/slop-chop/internal/rewrite/prompt"
 )
 
 // DefaultModel is the model used when none is set.
@@ -60,38 +62,10 @@ func (r *Rewriter) Rewrite(ctx context.Context, text string, feedback ...string)
 }
 
 // buildSystem assembles the instruction that tells the model how to clean the text. Any
-// feedback notes are appended so a retry keeps the facts a prior attempt changed.
+// feedback notes are appended so a retry keeps the facts a prior attempt changed. The
+// text lives in the prompt package so the WASM build sends the same instruction.
 func buildSystem(tone, feedback []string) string {
-	var b strings.Builder
-	b.WriteString("You rewrite text so it reads like a person wrote it, not a chatbot. ")
-	b.WriteString("Keep the meaning and the facts unchanged. Do not add or remove ideas.\n\n")
-	b.WriteString("Remove the tells of AI writing:\n")
-	b.WriteString("- No em-dashes. Recast the sentence or use a comma or a period.\n")
-	b.WriteString("- No semicolons joining clauses. Split them into separate sentences.\n")
-	b.WriteString("- Drop filler openers like \"In summary\" and \"To be honest\".\n")
-	b.WriteString("- Cut buzzwords like \"comprehensive\" and \"robust\".\n")
-	b.WriteString("- Vary sentence length. Avoid the flat, even cadence models fall into.\n")
-	b.WriteString("- Use plain words and contractions where they fit.\n\n")
-	if len(tone) > 0 {
-		b.WriteString("Match this voice:\n")
-		for _, t := range tone {
-			b.WriteString("- ")
-			b.WriteString(t)
-			b.WriteString("\n")
-		}
-		b.WriteString("\n")
-	}
-	if len(feedback) > 0 {
-		b.WriteString("A prior rewrite changed the meaning. Keep these facts exactly this time:\n")
-		for _, note := range feedback {
-			b.WriteString("- ")
-			b.WriteString(note)
-			b.WriteString("\n")
-		}
-		b.WriteString("\n")
-	}
-	b.WriteString("Return only the rewritten text. No preamble, no quotes, no notes.")
-	return b.String()
+	return prompt.System(tone, feedback)
 }
 
 // Anthropic Messages API constants.
