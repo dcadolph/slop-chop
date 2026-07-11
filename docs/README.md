@@ -23,8 +23,23 @@ hide:
 <div class="sc-app-head">
 <div class="sc-app-title"><strong>Chop it right here</strong><span class="sc-app-note">Runs in your browser. Your text never leaves the page.</span></div>
 <div class="sc-app-actions">
-<span id="sc-score" class="sc-score" title="How much the input reads like AI wrote it, from 0 for clean to 100 for heavy slop." hidden></span>
+<button id="sc-score" class="sc-score" type="button" title="Click for the breakdown." aria-expanded="false" aria-controls="sc-score-pop" hidden></button>
 <button id="sc-settings-btn" class="sc-iconbtn" type="button" aria-label="Settings" aria-expanded="false" aria-controls="sc-drawer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+<div id="sc-score-pop" class="sc-score-pop" hidden>
+<div class="sc-score-pop-head"><strong>Slop score: <span id="sc-pop-value"></span> of 100</strong></div>
+<p class="sc-score-pop-what">How much the input reads like AI wrote it. It weighs the density of tells against how flat the sentence rhythm is.</p>
+<div class="sc-score-legend">
+<span><i class="dot low"></i>under 25 reads clean</span>
+<span><i class="dot mid"></i>25 to 54 mixed</span>
+<span><i class="dot high"></i>55 and up heavy slop</span>
+</div>
+<dl class="sc-score-stats">
+<div><dt>Tells</dt><dd id="sc-pop-tells"></dd></div>
+<div><dt>Words</dt><dd id="sc-pop-words"></dd></div>
+<div><dt>Density</dt><dd id="sc-pop-density"></dd></div>
+<div><dt>Rhythm</dt><dd id="sc-pop-cadence"></dd></div>
+</dl>
+</div>
 </div>
 </div>
 <div class="sc-panes">
