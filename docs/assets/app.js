@@ -86,6 +86,7 @@
   function boot(root) {
     const $ = (id) => root.querySelector("#" + id);
     const input = $("sc-in");
+    const marks = $("sc-marks");
     const output = $("sc-out");
     const score = $("sc-score");
     const status = $("sc-status");
@@ -156,6 +157,9 @@
     }
 
     function applySettings(s) {
+      // A fresh visit gets the cleaver preset, the pack that rewrites the buzzwords the
+      // default profile only flags. A saved presets array, even an empty one, wins.
+      const presets = s.presets || ["cleaver"];
       controls.useDefaults.checked = s.useDefaults !== false;
       controls.splitSemicolons.checked = s.splitSemicolons !== false;
       controls.collapseSpaces.checked = s.collapseSpaces !== false;
@@ -169,7 +173,7 @@
       const radio = root.querySelector('input[name="sc-dialect"][value="' + (s.dialect || "") + '"]');
       if (radio) radio.checked = true;
       for (const el of root.querySelectorAll(".sc-preset")) {
-        el.checked = (s.presets || []).includes(el.value);
+        el.checked = presets.includes(el.value);
       }
     }
 
@@ -256,12 +260,45 @@
       findingsBox.hidden = false;
     }
 
+    /* MAX_MARK_BYTES stops the highlight mirror from doubling very large pastes. */
+    const MAX_MARK_BYTES = 200000;
+
+    /* renderMarks paints the finding highlights behind the input text. Finding offsets
+       are byte offsets from the engine, so segments are cut on the encoded text. */
+    function renderMarks(text, findings) {
+      // Pull the mirror in by the scrollbar width, if the platform draws one, so both
+      // layers wrap at the same column. The two comes from the textarea borders.
+      marks.style.right = Math.max(0, input.offsetWidth - input.clientWidth - 2) + "px";
+      marks.textContent = "";
+      const enc = new TextEncoder();
+      const bytes = enc.encode(text);
+      if (!findings.length || bytes.length > MAX_MARK_BYTES) {
+        marks.textContent = text;
+        return;
+      }
+      const dec = new TextDecoder();
+      let prev = 0;
+      for (const f of findings) {
+        const end = f.offset + enc.encode(f.match).length;
+        if (f.offset < prev || end > bytes.length) continue;
+        if (f.offset > prev) {
+          marks.appendChild(document.createTextNode(dec.decode(bytes.subarray(prev, f.offset))));
+        }
+        const m = document.createElement("mark");
+        m.textContent = f.match;
+        marks.appendChild(m);
+        prev = end;
+      }
+      marks.appendChild(document.createTextNode(dec.decode(bytes.subarray(prev))));
+    }
+
     /* chop runs the engine over the current input and paints the result. */
     function chop() {
       if (!globalThis.slopChop) return;
       const text = input.value;
       if (!text.trim()) {
         output.value = "";
+        marks.textContent = "";
         score.hidden = true;
         findingsBox.hidden = true;
         setStatus("");
@@ -275,6 +312,7 @@
       }
       setStatus("");
       output.value = res.output;
+      renderMarks(text, res.findings);
       renderScore(res);
       renderFindings(res.findings);
     }
@@ -330,6 +368,10 @@
     /* Wire the static controls. The engine may still be loading; chop is a no-op
        until it lands, and the load path re-chops once ready. */
     input.addEventListener("input", chopSoon);
+    input.addEventListener("scroll", () => {
+      marks.scrollTop = input.scrollTop;
+      marks.scrollLeft = input.scrollLeft;
+    });
     clearBtn.addEventListener("click", () => {
       input.value = "";
       chop();
@@ -370,8 +412,7 @@
     loadWasm()
       .then(() => {
         renderPresets();
-        const saved = loadSettings();
-        if (saved) applySettings(saved);
+        applySettings(loadSettings() || {});
         if (engineTag && globalThis.slopVersion) {
           engineTag.textContent = "engine " + globalThis.slopVersion();
         }
