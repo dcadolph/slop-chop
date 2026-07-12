@@ -226,6 +226,7 @@
     const output = $("sc-out");
     const outMarks = $("sc-out-marks");
     const score = $("sc-score");
+    const scoreAfter = $("sc-score-after");
     const status = $("sc-status");
     const copyBtn = $("sc-copy");
     const downloadBtn = $("sc-download");
@@ -249,6 +250,9 @@
       regexSwaps: $("sc-regex-swaps"),
       flagPatterns: $("sc-flag-patterns"),
       allow: $("sc-allow"),
+      voiceKeep: $("sc-voice-keep"),
+      voicePrefer: $("sc-voice-prefer"),
+      voiceAvoid: $("sc-voice-avoid"),
       rwProvider: $("sc-rw-provider"),
       rwKey: $("sc-rw-key"),
       rwModel: $("sc-rw-model"),
@@ -289,6 +293,9 @@
         regexSwaps: controls.regexSwaps.value,
         flagPatterns: controls.flagPatterns.value,
         allow: controls.allow.value,
+        voiceKeep: controls.voiceKeep.value,
+        voicePrefer: controls.voicePrefer.value,
+        voiceAvoid: controls.voiceAvoid.value,
         rwProvider: controls.rwProvider.value,
         rwKey: controls.rwKey.value,
         rwModel: controls.rwModel.value,
@@ -330,6 +337,9 @@
       controls.regexSwaps.value = s.regexSwaps || "";
       controls.flagPatterns.value = s.flagPatterns || "";
       controls.allow.value = s.allow || "";
+      controls.voiceKeep.value = s.voiceKeep || "";
+      controls.voicePrefer.value = s.voicePrefer || "";
+      controls.voiceAvoid.value = s.voiceAvoid || "";
       controls.rwProvider.value = s.rwProvider || "";
       controls.rwKey.value = s.rwKey || "";
       controls.rwModel.value = s.rwModel || "";
@@ -346,22 +356,55 @@
       }
     }
 
-    /* buildProfile merges the defaults under the user's entries, so an entry in the
-       panel always wins, matching how presets merge in the CLI. */
+    /* buildProfile merges the defaults under the voice under the user's rules, so an entry
+       in the rules panel wins, then the voice, then the defaults, matching how the CLI
+       layers project over voice over preset over default. */
     function buildProfile() {
       const base = controls.useDefaults.checked && defaults ? defaults : emptyProfile();
+      const v = voiceMaps();
       return {
         charReplace: { ...base.charReplace, ...parsePairs(controls.charSwaps.value) },
-        phraseReplace: { ...base.phraseReplace, ...parsePairs(controls.phraseSwaps.value) },
-        wordReplace: { ...(base.wordReplace || {}), ...parsePairs(controls.wordSwaps.value) },
+        phraseReplace: {
+          ...base.phraseReplace,
+          ...v.preferPhrases,
+          ...parsePairs(controls.phraseSwaps.value),
+        },
+        wordReplace: {
+          ...(base.wordReplace || {}),
+          ...v.preferWords,
+          ...parsePairs(controls.wordSwaps.value),
+        },
         regexReplace: { ...(base.regexReplace || {}), ...parsePairs(controls.regexSwaps.value) },
         flagPatterns: { ...(base.flagPatterns || {}), ...parsePairs(controls.flagPatterns.value) },
-        blockWords: dedupe([...(base.blockWords || []), ...parseLines(controls.blockWords.value)]),
-        allow: dedupe([...(base.allow || []), ...parseLines(controls.allow.value)]),
+        blockWords: dedupe([
+          ...(base.blockWords || []),
+          ...v.avoid,
+          ...parseLines(controls.blockWords.value),
+        ]),
+        allow: dedupe([...(base.allow || []), ...v.keep, ...parseLines(controls.allow.value)]),
         collapseSpaces: controls.collapseSpaces.checked,
         splitSemicolons: controls.splitSemicolons.checked,
         dialect: dialectValue(),
         tone: parseLines(controls.rwTone.value),
+      };
+    }
+
+    /* voiceMaps reads the Your voice panel into profile-shaped pieces: keep and avoid as
+       lists, and prefer split into single-word swaps and multi-word phrase rewrites, the
+       same split the CLI voice loader makes. */
+    function voiceMaps() {
+      const prefer = parsePairs(controls.voicePrefer.value);
+      const preferWords = {};
+      const preferPhrases = {};
+      for (const [from, to] of Object.entries(prefer)) {
+        if (from.trim().split(/\s+/).length === 1) preferWords[from] = to;
+        else preferPhrases[from] = to;
+      }
+      return {
+        keep: parseLines(controls.voiceKeep.value),
+        avoid: parseLines(controls.voiceAvoid.value),
+        preferWords,
+        preferPhrases,
       };
     }
 
@@ -620,6 +663,17 @@
           : s.cadenceCv < 0.5
             ? "flat (cv " + s.cadenceCv + "), even sentence lengths read machine-written"
             : "varied (cv " + s.cadenceCv + ")";
+      // The after-chop score sits beside the before score, so the improvement is visible.
+      const after = res.scoreAfter;
+      if (after) {
+        scoreAfter.textContent = "→ " + after.value;
+        scoreAfter.className = "sc-score sc-score-after " + scoreClass(after.value);
+        scoreAfter.title =
+          "Slop score after the chop: " + after.value + " of 100, down from " + s.value + ".";
+        scoreAfter.hidden = false;
+      } else {
+        scoreAfter.hidden = true;
+      }
     }
 
     function setScorePop(open) {
@@ -744,6 +798,7 @@
         marks.textContent = "";
         outMarks.textContent = "";
         score.hidden = true;
+        scoreAfter.hidden = true;
         setScorePop(false);
         findingsBox.hidden = true;
         ruleOutput = null;

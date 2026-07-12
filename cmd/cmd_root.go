@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -11,6 +12,13 @@ import (
 	"github.com/dcadolph/slop-chop/cmd/config"
 	"github.com/dcadolph/slop-chop/internal/jsonutil"
 	"github.com/dcadolph/slop-chop/internal/sanitize"
+)
+
+// voiceDir and voiceFile name the personal voice discovered under the home directory when
+// --voice is not set, so a voice applies to every run without a flag.
+const (
+	voiceDir  = ".slop-chop"
+	voiceFile = "voice.json"
 )
 
 // defaultProfileFile is picked up from the working directory when --profile is not set,
@@ -32,7 +40,7 @@ working directory, that profile is used instead of the built-in one.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	cmd.AddCommand(checkCmd(), fixCmd(), scoreCmd(), tellsCmd())
+	cmd.AddCommand(checkCmd(), fixCmd(), scoreCmd(), tellsCmd(), voiceCmd())
 	return cmd
 }
 
@@ -47,12 +55,16 @@ func newSanitizer() (*sanitize.Sanitizer, sanitize.Profile, error) {
 		}
 	}
 	profile := sanitize.DefaultProfile()
+	var projectProfile sanitize.Profile
+	haveProject := false
 	if profilePath != "" {
 		p, err := sanitize.LoadFile(profilePath)
 		if err != nil {
 			return nil, sanitize.Profile{}, err
 		}
 		profile = p
+		projectProfile = p
+		haveProject = true
 	}
 	// The flag and its env var override the profile's own dialect. Left unset, the
 	// profile's field stands, so a repo can pin a dialect in .slop-chop.json.
@@ -67,11 +79,60 @@ func newSanitizer() (*sanitize.Sanitizer, sanitize.Profile, error) {
 		}
 		profile = merged
 	}
+	// A voice overrides presets: your prefer swaps win and your keep list silences their
+	// cuts. A project profile still outranks a voice, so it is re-applied on top.
+	voice, err := loadVoice()
+	if err != nil {
+		return nil, sanitize.Profile{}, err
+	}
+	if !voice.Empty() {
+		profile = profile.WithVoice(voice)
+		if haveProject {
+			profile = profile.Overlay(projectProfile)
+		}
+	}
 	s, err := sanitize.New(profile)
 	if err != nil {
 		return nil, sanitize.Profile{}, err
 	}
 	return s, profile, nil
+}
+
+// resolveVoicePath returns the voice file to use: the --voice flag when set, else the
+// personal ~/.slop-chop/voice.json when it exists, else empty for no voice.
+func resolveVoicePath() string {
+	if p := config.Voice(); p != "" {
+		return p
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	p := filepath.Join(home, voiceDir, voiceFile)
+	if _, err := os.Stat(p); err != nil {
+		return ""
+	}
+	return p
+}
+
+// loadVoice returns the resolved voice, or the zero Voice when none is set. A missing voice
+// is not an error; callers treat the zero Voice as a no-op.
+func loadVoice() (sanitize.Voice, error) {
+	path := resolveVoicePath()
+	if path == "" {
+		return sanitize.Voice{}, nil
+	}
+	return sanitize.LoadVoiceFile(path)
+}
+
+// defaultVoicePath returns ~/.slop-chop/voice.json, the personal voice location written by
+// `voice init` and discovered when --voice is unset.
+func defaultVoicePath() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("find home dir: %w", err)
+	}
+	return filepath.Join(home, voiceDir, voiceFile), nil
 }
 
 // splitList splits a comma-separated flag value into trimmed, non-empty items.
