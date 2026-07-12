@@ -12,7 +12,7 @@ GOBIN := $(shell $(GO) env GOPATH)/bin
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: build install uninstall test cover vet lint fmt tidy clean wasm help
+.PHONY: build install uninstall test cover vet lint fmt tidy clean wasm extension help
 
 ## build: compile the binary into the repo root with the version stamped
 build:
@@ -56,9 +56,16 @@ wasm:
 	GOOS=js GOARCH=wasm $(GO) build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o docs/assets/slop-chop.wasm ./wasm
 	cp "$(shell $(GO) env GOROOT)/lib/wasm/wasm_exec.js" docs/assets/wasm_exec.js
 
+## extension: build the wasm engine and stage it into the browser extension
+extension: wasm
+	mkdir -p extension/engine
+	cp docs/assets/slop-chop.wasm extension/engine/slop-chop.wasm
+	cp docs/assets/wasm_exec.js extension/engine/wasm_exec.js
+
 ## clean: remove the built binary, wasm artifacts, and coverage profile
 clean:
-	rm -f $(BINARY) coverage.out docs/assets/slop-chop.wasm docs/assets/wasm_exec.js
+	rm -f $(BINARY) coverage.out docs/assets/slop-chop.wasm docs/assets/wasm_exec.js \
+		extension/engine/slop-chop.wasm extension/engine/wasm_exec.js
 
 ## help: list available targets
 help:

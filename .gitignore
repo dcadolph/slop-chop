@@ -23,6 +23,9 @@ coverage.out
 /docs/assets/slop-chop.wasm
 /docs/assets/wasm_exec.js
 
+# Staged engine for the browser extension, produced by make extension
+/extension/engine/
+
 # Browser test suite dependencies
 /e2e/node_modules/
 
