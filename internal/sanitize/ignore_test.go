@@ -66,3 +66,19 @@ func TestLineRanges(t *testing.T) {
 		})
 	}
 }
+
+// TestIgnoreDirectiveWithLaterCode checks that an ignore directive still protects its line
+// when a code block sits later in the document. This once failed because the protected
+// ranges were concatenated unsorted, so overlapsAny short-circuited before reaching the
+// ignored line.
+func TestIgnoreDirectiveWithLaterCode(t *testing.T) {
+	t.Parallel()
+	s := mustSanitizer(t)
+	in := "a robust plan <!-- slop-chop-ignore -->\n\n```\nx := 1\n```\n"
+	if got := s.Check(in); len(got) != 0 {
+		t.Errorf("ignored line flagged despite a later code block: %v", got)
+	}
+	if got, _ := s.Fix(in); got != in {
+		t.Errorf("Fix changed protected text:\n got %q\nwant %q", got, in)
+	}
+}

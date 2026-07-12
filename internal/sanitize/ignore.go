@@ -9,10 +9,14 @@ const (
 	ignoreNextToken = "slop-chop-ignore-next-line"
 )
 
-// skipRanges returns every byte range the rules must leave alone: protected code spans and
-// lines silenced by an inline ignore directive.
+// skipRanges returns every byte range the rules must leave alone: protected code spans,
+// Markdown structure and front matter, and lines silenced by an inline ignore directive. The
+// sources are merged so the result is sorted and disjoint, which overlapsAny relies on to
+// decide whether a match is protected.
 func skipRanges(text string) [][2]int {
-	return append(codeRanges(text), ignoredRanges(text)...)
+	ranges := append(codeRanges(text), ignoredRanges(text)...)
+	ranges = append(ranges, structuralRanges(text)...)
+	return mergeRanges(ranges)
 }
 
 // ignoredRanges returns the byte ranges of lines silenced by an ignore directive. A line

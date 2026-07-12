@@ -9,12 +9,14 @@ profile acts on, generated straight from the profile the engine compiles, so wha
 read here is exactly what gets chopped. Rebuild it any time with
 `slop-chop tells --markdown`.
 
-## Character swaps (7)
+## Character swaps (12)
 
 Rewritten in place. The usual suspects: the em-dash, smart quotes, the ellipsis.
 
 | From | To |
 | ---- | -- |
+| ` ` | ` ` |
+| `​` | dropped |
 | `–` | `-` |
 | `—` | `, ` |
 | `‘` | `'` |
@@ -22,18 +24,25 @@ Rewritten in place. The usual suspects: the em-dash, smart quotes, the ellipsis.
 | `“` | `"` |
 | `”` | `"` |
 | `…` | `...` |
+| ` ` | ` ` |
+| `⁠` | dropped |
+| `﻿` | dropped |
 
-## Stock phrases (21)
+## Stock phrases (33)
 
 Openers and filler that add words but no meaning. Each is dropped with its trailing
 comma and space, and when it opened the sentence the next word gets its capital back.
 
 | Phrase | Fate |
 | ------ | ---- |
+| `additionally,` | dropped |
 | `at its core,` | dropped |
 | `at the end of the day,` | dropped |
+| `consequently,` | dropped |
 | `first and foremost,` | dropped |
+| `furthermore,` | dropped |
 | `giving it to you honestly,` | dropped |
+| `importantly,` | dropped |
 | `in a nutshell,` | dropped |
 | `in conclusion,` | dropped |
 | `in essence,` | dropped |
@@ -41,15 +50,23 @@ comma and space, and when it opened the sentence the next word gets its capital 
 | `in today's digital age,` | dropped |
 | `in today's fast-paced world,` | dropped |
 | `it goes without saying that` | dropped |
+| `it is important to note that` | dropped |
 | `it is worth noting that` | dropped |
+| `it's important to note that` | dropped |
 | `it's worth noting that` | dropped |
 | `last but not least,` | dropped |
+| `more importantly,` | dropped |
+| `moreover,` | dropped |
 | `needless to say,` | dropped |
+| `notably,` | dropped |
 | `overall,` | dropped |
+| `rest assured,` | dropped |
 | `simply put,` | dropped |
+| `that being said,` | dropped |
 | `to be honest,` | dropped |
 | `to put it simply,` | dropped |
 | `to recap,` | dropped |
+| `with that said,` | dropped |
 | `without further ado,` | dropped |
 
 ## Buzzwords (77)
@@ -60,16 +77,18 @@ that done for you.
 
 `best-in-class` `blast radius` `comprehensive` `cutting edge` `cutting-edge` `delve` `delved` `delves` `delving` `effortless` `effortlessly` `elegant` `empower` `empowering` `empowers` `ever-evolving` `facilitate` `facilitates` `facilitating` `fast-paced` `frictionless` `game-changer` `game-changing` `groundbreaking` `harness the power` `holistic` `in the realm of` `innovative` `invaluable` `leverage` `leveraged` `leverages` `leveraging` `meticulous` `meticulously` `myriad` `paradigm shift` `pivotal` `plethora` `powerful` `revolutionize` `revolutionized` `revolutionizes` `revolutionizing` `robust` `seamless` `seamlessly` `showcase` `showcased` `showcases` `showcasing` `state-of-the-art` `streamline` `streamlined` `streamlines` `streamlining` `substrate` `supercharge` `supercharged` `synergies` `synergy` `tapestry` `testament to` `top-notch` `transformative` `unleash` `unleashed` `unleashes` `unleashing` `unlock the full potential` `unlock the potential` `unparalleled` `utilize` `utilized` `utilizes` `utilizing` `world-class`
 
-## Structural patterns (5)
+## Structural patterns (7)
 
 Sentence shapes a word list cannot catch, like the setup-and-reveal cadence. Flag
 only: the fix depends on the whole sentence, so it is left to you or the rewrite pass.
 
 | Name | Pattern |
 | ---- | ------- |
+| `assistant-opener` | `(?im)^\s{0,3}(?:certainly\|absolutely\|great question\|i'?d be happy to\|happy to help\|i hope this helps)\b` |
 | `heres-the-thing` | `(?i)\bhere'?s the (thing\|kicker\|deal\|catch\|secret\|problem)\b` |
-| `its-not-x-its-y` | `(?i)\b(it\|this\|that)'?s (not\|isn'?t)\b[^.!?\n]{1,40}[,;]\s*it'?s\b` |
+| `its-not-x-its-y` | `(?i)\b(?:it\|this\|that)(?:'?s\|\s+(?:is\|was\|are\|were))(?:\s+not\|n'?t)\b[^.!?\n]{1,40}[,;]\s*it'?s\b` |
 | `lets-dive-in` | `(?i)\blet'?s (dive\|delve\|jump) in(to)?\b` |
+| `lets-take-a-look` | `(?i)\blet'?s (?:take a (?:closer )?look\|explore\|unpack\|break (?:it\|this) down)\b` |
 | `not-just-but-also` | `(?i)\bnot (just\|only)\b[^.!?\n]{1,60}\bbut\b[^.!?\n]{0,25}\balso\b` |
 | `thats-where-comes-in` | `(?i)\bthat'?s where\b[^.!?\n]{1,30}\bcomes? in\b` |
 
@@ -129,11 +148,15 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 
 ### cleaver
 
-#### Word swaps (73)
+#### Word swaps (81)
 
 | From | To |
 | ---- | -- |
 | `best-in-class` | `top` |
+| `bolster` | `strengthen` |
+| `bolstered` | `strengthened` |
+| `bolstering` | `strengthening` |
+| `bolsters` | `strengthens` |
 | `comprehensive` | `thorough` |
 | `comprehensively` | `thoroughly` |
 | `cutting-edge` | `modern` |
@@ -190,6 +213,10 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 | `showcased` | `showed` |
 | `showcases` | `shows` |
 | `showcasing` | `showing` |
+| `spearhead` | `lead` |
+| `spearheaded` | `led` |
+| `spearheading` | `leading` |
+| `spearheads` | `leads` |
 | `state-of-the-art` | `modern` |
 | `streamline` | `simplify` |
 | `streamlined` | `simplified` |
@@ -207,13 +234,14 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 | `value-added` | `useful` |
 | `world-class` | `top` |
 
-#### Phrase swaps (31)
+#### Phrase swaps (34)
 
 | From | To |
 | ---- | -- |
 | `a myriad of` | `many` |
 | `a variety of` | `several` |
 | `a wide range of` | `many` |
+| `a wide variety of` | `many` |
 | `actionable insights` | `useful findings` |
 | `at the end of the day, ` | dropped |
 | `core competencies` | `strengths` |
@@ -225,6 +253,7 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 | `harness the power of` | `use` |
 | `harnesses the power of` | `uses` |
 | `harnessing the power of` | `using` |
+| `in order to ` | `to ` |
 | `in the realm of` | `in` |
 | `in today's digital-first landscape, ` | dropped |
 | `in today's ever-evolving landscape, ` | dropped |
@@ -242,6 +271,7 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 | `unlock the full potential of` | `get the most from` |
 | `unlocking the full potential of` | `getting the most from` |
 | `unlocks the full potential of` | `gets the most from` |
+| `when it comes to ` | `for ` |
 
 Adds 5 buzzwords: `ai-driven` `digital-first` `paradigm-shifting` `proactively` `ultra-efficient`
 
