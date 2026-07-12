@@ -75,8 +75,8 @@ func TestBenchmark(t *testing.T) {
 
 	const scoreThreshold = 25 // the "reads clean under 25" boundary
 
-	var aiCount, aiTellHits, aiScored int
-	var humanCount, humanFlagged int
+	var aiCount, aiTellHits, aiScored, aiScoreSum int
+	var humanCount, humanFlagged, humanScoreSum int
 	var techCount, techClean int
 	for _, p := range corpus {
 		findings := def.Check(p.Text)
@@ -84,6 +84,7 @@ func TestBenchmark(t *testing.T) {
 		switch p.Label {
 		case "ai":
 			aiCount++
+			aiScoreSum += score
 			if tellCount(findings) > 0 {
 				aiTellHits++
 			}
@@ -92,6 +93,7 @@ func TestBenchmark(t *testing.T) {
 			}
 		case "human":
 			humanCount++
+			humanScoreSum += score
 			if score >= scoreThreshold {
 				humanFlagged++
 			}
@@ -121,12 +123,16 @@ func TestBenchmark(t *testing.T) {
 	t.Logf("score>=%d human false-positives:      %d/%d", scoreThreshold, humanFlagged, humanCount)
 	t.Logf("score>=%d precision / f1:             %.2f / %.2f", scoreThreshold, scorePrecision, scoreF1)
 
+	meanAI, meanHuman := ratio(aiScoreSum, aiCount), ratio(humanScoreSum, humanCount)
+	t.Logf("mean score ai / human / margin:      %.1f / %.1f / %.1f", meanAI, meanHuman, meanAI-meanHuman)
+
 	// Floors are set below the current numbers, so an ordinary change passes while a real
 	// regression fails. Raise them as the engine and the corpus improve.
 	assertFloor(t, "tell recall", tellRecall, 0.90)
 	assertFloor(t, "technical precision", techPrecision, 0.95)
 	assertFloor(t, "score recall", scoreRecall, 0.90)
 	assertFloor(t, "score precision", scorePrecision, 0.95)
+	assertFloor(t, "score margin", meanAI-meanHuman, 40)
 }
 
 // ratio returns n/d as a float, or 0 when d is zero.
