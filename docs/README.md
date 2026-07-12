@@ -12,6 +12,8 @@ hide:
 
 <p class="tagline">Chop the slop.</p>
 
+<p class="sc-artifacts">Emails. Resumes. Blog posts. Docs. LinkedIn. READMEs.</p>
+
 <p class="subtitle">Paste text that sounds like a bot, get back text that sounds like you. Em-dashes, buzzwords, and stock phrases all get chopped in one pass, right in your browser. Plug in a model when you want a deeper rewrite.</p>
 
 [Get started](quickstart.md){ .md-button .md-button--primary }
