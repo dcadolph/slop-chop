@@ -1,0 +1,11 @@
+{
+  "name": "slop-chop-e2e",
+  "private": true,
+  "description": "Browser test suite for the slop-chop web app.",
+  "scripts": {
+    "test": "node base.e2e.js && node rewrite.e2e.js && node features.e2e.js && node cross.e2e.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}
