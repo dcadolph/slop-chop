@@ -30,7 +30,10 @@
     "navigate the complexities of": "handle",
     "embark on": "start",
     "at the end of the day, ": "",
-    "empowered to": "able to"
+    "empowered to": "able to",
+    "in order to ": "to ",
+    "when it comes to ": "for ",
+    "a wide variety of": "many"
   },
   "wordReplace": {
     "leverage": "use",
@@ -105,7 +108,15 @@
     "forward-thinking": "modern",
     "future-proof": "lasting",
     "game-changer": "breakthrough",
-    "game-changing": "major"
+    "game-changing": "major",
+    "spearhead": "lead",
+    "spearheads": "leads",
+    "spearheaded": "led",
+    "spearheading": "leading",
+    "bolster": "strengthen",
+    "bolsters": "strengthens",
+    "bolstered": "strengthened",
+    "bolstering": "strengthening"
   },
   "blockWords": [
     "digital-first", "ai-driven", "proactively", "paradigm-shifting", "ultra-efficient"

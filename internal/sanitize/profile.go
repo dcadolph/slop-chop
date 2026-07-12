@@ -60,15 +60,32 @@ type Profile struct {
 func DefaultProfile() Profile {
 	return Profile{
 		CharReplace: map[string]string{
-			"—": ", ",  // em-dash
-			"–": "-",   // en-dash
-			"‘": "'",   // left single quote
-			"’": "'",   // right single quote
-			"“": `"`,   // left double quote
-			"”": `"`,   // right double quote
-			"…": "...", // ellipsis
+			"\u00a0": " ",   // non-breaking space to a normal space
+			"\u202f": " ",   // narrow non-breaking space to a normal space
+			"\u200b": "",    // zero-width space, usually paste cruft
+			"\u2060": "",    // word joiner, usually paste cruft
+			"\ufeff": "",    // zero-width no-break space or a stray byte-order mark
+			"—":      ", ",  // em-dash
+			"–":      "-",   // en-dash
+			"‘":      "'",   // left single quote
+			"’":      "'",   // right single quote
+			"“":      `"`,   // left double quote
+			"”":      `"`,   // right double quote
+			"…":      "...", // ellipsis
 		},
 		PhraseReplace: map[string]string{
+			"additionally, ":                "",
+			"consequently, ":                "",
+			"furthermore, ":                 "",
+			"importantly, ":                 "",
+			"it is important to note that ": "",
+			"it's important to note that ":  "",
+			"more importantly, ":            "",
+			"moreover, ":                    "",
+			"notably, ":                     "",
+			"rest assured, ":                "",
+			"that being said, ":             "",
+			"with that said, ":              "",
 			"at its core, ":                 "",
 			"at the end of the day, ":       "",
 			"first and foremost, ":          "",
@@ -110,14 +127,18 @@ func DefaultProfile() Profile {
 			"utilize", "utilized", "utilizes", "utilizing", "world-class",
 		},
 		FlagPatterns: map[string]string{
-			// "It's not just X, it's Y" and its "this is not X, it's Y" cousin.
-			"its-not-x-its-y": `(?i)\b(it|this|that)'?s (not|isn'?t)\b[^.!?\n]{1,40}[,;]\s*it'?s\b`,
+			// "It's not just X, it's Y" and its "this is not X, it's Y" cousin, matched in
+			// the contracted "it's" and the spelled-out "this is not" forms alike.
+			"its-not-x-its-y": `(?i)\b(?:it|this|that)(?:'?s|\s+(?:is|was|are|were))(?:\s+not|n'?t)\b[^.!?\n]{1,40}[,;]\s*it'?s\b`,
 			// "not just X but also Y" and "not only X but also Y".
 			"not-just-but-also": `(?i)\bnot (just|only)\b[^.!?\n]{1,60}\bbut\b[^.!?\n]{0,25}\balso\b`,
 			// Throat-clearing openers that promise a payoff.
 			"heres-the-thing": `(?i)\bhere'?s the (thing|kicker|deal|catch|secret|problem)\b`,
-			// The "let's dive in" invitation.
-			"lets-dive-in": `(?i)\blet'?s (dive|delve|jump) in(to)?\b`,
+			// The "let's dive in" invitation and its "let's take a closer look" cousins.
+			"lets-dive-in":     `(?i)\blet'?s (dive|delve|jump) in(to)?\b`,
+			"lets-take-a-look": `(?i)\blet'?s (?:take a (?:closer )?look|explore|unpack|break (?:it|this) down)\b`,
+			// Chatbot reply openers and sign-offs.
+			"assistant-opener": `(?im)^\s{0,3}(?:certainly|absolutely|great question|i'?d be happy to|happy to help|i hope this helps)\b`,
 			// "That's where X comes in", the setup-and-reveal move.
 			"thats-where-comes-in": `(?i)\bthat'?s where\b[^.!?\n]{1,30}\bcomes? in\b`,
 		},
@@ -204,16 +225,12 @@ func (p Profile) compile() ([]Rule, error) {
 		rules = append(rules, r)
 	}
 
-	for _, w := range p.BlockWords {
-		re, err := regexp.Compile(`(?i)\b` + flexSpaces(regexp.QuoteMeta(w)) + `\b`)
-		if err != nil {
-			return nil, fmt.Errorf("%w: block word %q: %w", ErrCompile, w, err)
-		}
-		rules = append(rules, Rule{
-			Name:    "word:" + w,
-			re:      re,
-			rewrite: false,
-		})
+	block, ok, err := blockWordRule(p.BlockWords)
+	if err != nil {
+		return nil, err
+	}
+	if ok {
+		rules = append(rules, block)
 	}
 
 	for _, name := range slices.Sorted(maps.Keys(p.FlagPatterns)) {
@@ -370,6 +387,37 @@ const wsGap = `(?:[ \t]+(?:\n[ \t]*)?|\n[ \t]*)`
 // around it still match when a line wrap sits between them.
 func flexSpaces(quoted string) string {
 	return strings.ReplaceAll(quoted, " ", wsGap)
+}
+
+// blockWordRule compiles every block word into one flag-only rule. Folding them into a
+// single alternation turns a full-text scan per word into one scan, and nameByMatch keeps
+// each finding named for the word it caught. Longer words sort first so a longer term wins
+// over a shorter one it contains at the same spot. It returns ok false for an empty list.
+func blockWordRule(words []string) (Rule, bool, error) {
+	alts := make([]string, 0, len(words))
+	for _, w := range words {
+		if w != "" {
+			alts = append(alts, w)
+		}
+	}
+	if len(alts) == 0 {
+		return Rule{}, false, nil
+	}
+	slices.SortFunc(alts, func(a, b string) int {
+		if d := len(b) - len(a); d != 0 {
+			return d
+		}
+		return strings.Compare(a, b)
+	})
+	parts := make([]string, len(alts))
+	for i, w := range alts {
+		parts[i] = `\b` + flexSpaces(regexp.QuoteMeta(w)) + `\b`
+	}
+	re, err := regexp.Compile(`(?i)(?:` + strings.Join(parts, "|") + `)`)
+	if err != nil {
+		return Rule{}, false, fmt.Errorf("%w: block words: %w", ErrCompile, err)
+	}
+	return Rule{Name: "word", re: re, rewrite: false, nameByMatch: true}, true, nil
 }
 
 // endsWithWordChar reports whether s ends in an ASCII word character, the set the \b

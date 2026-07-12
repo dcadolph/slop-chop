@@ -159,9 +159,9 @@ brew install dcadolph/tap/slop-chop
 
 ## "Can't my AI just do this?"
 
-Ask the model that wrote the slop to take the slop back out and you get the same model, guessing a second time. It cuts a phrase on this run and keeps it on the next, forgets half your rules, and nudges your meaning while you look away. There is nothing to pin down and nothing to diff.
+A model has the brains for it. Point one at your draft and it will spot the buzzwords and fix a clumsy line better than any fixed list can. What it will not do is behave the same way twice. It cuts a phrase on this run and keeps it on the next, forgets half your rules by the third paragraph, and nudges your meaning while you look away. Ask the model that wrote the slop to take it back out and you get the same model guessing a second time. Nothing to pin down, nothing to diff.
 
-slop-chop is a fixed list, not a mood. The same text gives the same result every run, so you hold the model to one standard instead of hoping for it. Run it after your AI to keep the output honest, gate a build on the score, or hand the binary to the agent so it cleans its own work the way you would. The rules do the tireless part for free, and the model is left with only what rules cannot reach.
+slop-chop is a fixed list, not a mood. The same text gives the same result every run, with or without a model in the loop. On its own it is a deterministic clean that costs nothing. Paired with your AI it becomes the rails: it runs after the model to catch what drifted, gates a build on the score, and bosses the agent into cleaning its own work to your standard, not its whim. You keep the model's brains and add the bumpers that hold it honest.
 
 ## Why slop-chop
 
@@ -171,7 +171,7 @@ slop-chop is a fixed list, not a mood. The same text gives the same result every
 
     ---
 
-    The rules pass runs with no model and no cost, and gives the same output on every run. It knows markdown, so fenced code and inline backticks come through untouched.
+    The rules pass runs with no model and no cost, and gives the exact same output on every run. Predictable enough to diff in review and trust in a pipeline. It knows markdown, so code, links, and front matter come through untouched while your prose gets cleaned.
 
 -   :material-source-branch:{ .lg .middle } __Drop it in CI__
 

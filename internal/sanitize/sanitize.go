@@ -27,7 +27,6 @@ func New(p Profile) (*Sanitizer, error) {
 // order rather than rule order.
 func (s *Sanitizer) Check(text string) []Finding {
 	var findings []Finding
-	newlines := newlineOffsets(text)
 	protected := skipRanges(text)
 	for _, r := range s.rules {
 		for _, loc := range r.matches(text, protected) {
@@ -37,20 +36,18 @@ func (s *Sanitizer) Check(text string) []Finding {
 				v := r.replacement(text, loc)
 				repl = &v
 			}
-			line, col := lineColAt(text, newlines, loc[0])
 			findings = append(findings, Finding{
-				Rule:        r.Name,
+				Rule:        r.findingName(match),
 				Match:       match,
 				Replacement: repl,
 				Offset:      loc[0],
-				Line:        line,
-				Col:         col,
 			})
 		}
 	}
 	slices.SortFunc(findings, func(a, b Finding) int {
 		return cmp.Or(cmp.Compare(a.Offset, b.Offset), cmp.Compare(a.Rule, b.Rule))
 	})
+	assignLineCol(text, findings)
 	return dedupeFindings(findings)
 }
 
@@ -115,27 +112,21 @@ func (s *Sanitizer) applyAll(text string) string {
 	return out
 }
 
-// newlineOffsets returns the byte offset of every newline in text, in order. Computing
-// this once lets lineColAt find a match's line without rescanning from the start.
-func newlineOffsets(text string) []int {
-	var offs []int
-	for i := range len(text) {
-		if text[i] == '\n' {
-			offs = append(offs, i)
+// assignLineCol fills the one-based Line and rune Col of each finding in a single forward
+// pass over text. The findings must already be sorted by offset. Walking one cursor keeps
+// the pass linear, where computing each position by rescanning from its line start turns
+// quadratic on a long line packed with findings, such as a minified file.
+func assignLineCol(text string, findings []Finding) {
+	pos, line, col := 0, 1, 1
+	for i := range findings {
+		for pos < findings[i].Offset {
+			if text[pos] == '\n' {
+				line, col, pos = line+1, 1, pos+1
+				continue
+			}
+			_, n := utf8.DecodeRuneInString(text[pos:])
+			pos, col = pos+n, col+1
 		}
+		findings[i].Line, findings[i].Col = line, col
 	}
-	return offs
-}
-
-// lineColAt converts a byte offset into a one-based line and rune column, using a
-// precomputed list of newline offsets.
-func lineColAt(text string, newlines []int, offset int) (line, col int) {
-	n, _ := slices.BinarySearch(newlines, offset)
-	line = n + 1
-	lineStart := 0
-	if n > 0 {
-		lineStart = newlines[n-1] + 1
-	}
-	col = 1 + utf8.RuneCountInString(text[lineStart:offset])
-	return line, col
 }

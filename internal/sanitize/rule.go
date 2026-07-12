@@ -24,6 +24,9 @@ type Rule struct {
 	// allow is the shared set of matched texts to skip, lower-cased. A nil set skips
 	// nothing. It lets a profile exempt a word every rule would otherwise act on.
 	allow map[string]bool
+	// nameByMatch reports that a finding's rule name is Name plus the matched text, so one
+	// combined rule can flag many words while each finding still names the word it caught.
+	nameByMatch bool
 	// rewrite reports whether the rule changes text. When false the rule only flags.
 	rewrite bool
 }
@@ -54,6 +57,16 @@ func (r Rule) replacement(text string, loc []int) string {
 		return r.replFunc(text, loc)
 	}
 	return r.repl
+}
+
+// findingName returns the name to record for a match. A plain rule uses Name. A rule that
+// sets nameByMatch appends the matched text, whitespace collapsed and lower-cased, so a
+// combined block-word rule reports "word:<the word>" rather than a bare "word".
+func (r Rule) findingName(match string) string {
+	if !r.nameByMatch {
+		return r.Name
+	}
+	return r.Name + ":" + strings.ToLower(strings.Join(strings.Fields(match), " "))
 }
 
 // apply rewrites every kept match in text and returns the result. It honors keep and

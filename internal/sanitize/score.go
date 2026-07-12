@@ -31,7 +31,10 @@ var sentenceSplit = regexp.MustCompile(`[.!?]+`)
 // Score rates text from 0 to 100 by tell density and cadence flatness.
 func (s *Sanitizer) Score(text string) Score {
 	tells := len(s.Check(text))
-	words := len(strings.Fields(text))
+	// Weigh density and cadence against prose only. Code is blanked so a large fenced block
+	// cannot dilute the word count the tells are measured against.
+	prose := maskCode(text)
+	words := len(strings.Fields(prose))
 	perHundred := 0.0
 	if words > 0 {
 		perHundred = float64(tells) / float64(words) * 100
@@ -40,11 +43,12 @@ func (s *Sanitizer) Score(text string) Score {
 	// the density term near eighty and leaves room for the cadence penalty on top.
 	base := math.Min(80, perHundred*8)
 
-	cv := cadenceCV(text)
-	// A coefficient of variation under 0.5 reads as flat. The flatter it is, the larger
-	// the penalty, up to twenty points, and only when there are enough sentences to judge.
+	cv := cadenceCV(prose)
+	// A coefficient of variation under 0.5 reads as flat, and cv == 0, every sentence the
+	// same length, is the flattest, most machine-like cadence, so it earns the full penalty.
+	// A negative cv means too few sentences to judge and earns none.
 	cadence := 0.0
-	if cv > 0 {
+	if cv >= 0 {
 		cadence = math.Max(0, math.Min(1, (0.5-cv)/0.5)) * 20
 	}
 
@@ -54,12 +58,13 @@ func (s *Sanitizer) Score(text string) Score {
 		Tells:       tells,
 		Words:       words,
 		TellsPer100: math.Round(perHundred*100) / 100,
-		CadenceCV:   math.Round(cv*1000) / 1000,
+		CadenceCV:   math.Round(math.Max(0, cv)*1000) / 1000,
 	}
 }
 
-// cadenceCV returns the coefficient of variation of sentence length in words, or zero when
-// there are too few sentences to judge a rhythm.
+// cadenceCV returns the coefficient of variation of sentence length in words, or -1 when
+// there are too few sentences to judge a rhythm. A returned 0 is a real reading: every
+// sentence is the same length, the flattest cadence there is, distinct from the -1 sentinel.
 func cadenceCV(text string) float64 {
 	var lengths []float64
 	for _, sentence := range sentenceSplit.Split(text, -1) {
@@ -68,7 +73,7 @@ func cadenceCV(text string) float64 {
 		}
 	}
 	if len(lengths) < 3 {
-		return 0
+		return -1
 	}
 	var sum float64
 	for _, n := range lengths {
@@ -76,7 +81,7 @@ func cadenceCV(text string) float64 {
 	}
 	mean := sum / float64(len(lengths))
 	if mean == 0 {
-		return 0
+		return -1
 	}
 	var variance float64
 	for _, n := range lengths {
