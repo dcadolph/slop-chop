@@ -10,6 +10,12 @@
     "a tool, it's a paradigm shift; teams leverage it to unlock the full potential of " +
     "their content. Needless to say, the results are unparalleled.";
 
+  /* The service worker caches the page and the engine, so the chopper keeps working
+     with no network. Best-effort: without it the online site is unchanged. */
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register(new URL("sw.js", document.baseURI)).catch(() => {});
+  }
+
   let engineReady = null;
   let engineVersion = "";
   let defaults = null;

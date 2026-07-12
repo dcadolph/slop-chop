@@ -169,6 +169,30 @@ async function main() {
   if (!inputKept.includes("In summary")) throw new Error("binary drop clobbered the input");
   log("binary drop refused, input kept: ok");
 
+  // Step 12: the service worker takes control and precaches the engine.
+  await page.waitForFunction(
+    () => navigator.serviceWorker && Boolean(navigator.serviceWorker.controller),
+    { timeout: 15000 },
+  );
+  const cachedWasm = await page.evaluate(async () => {
+    const cache = await caches.open("slop-chop-shell-v1");
+    return Boolean(await cache.match("assets/slop-chop.wasm"));
+  });
+  if (!cachedWasm) throw new Error("wasm not precached");
+  log("service worker controls page, wasm precached: ok");
+
+  // Step 13: the whole app boots and chops with the network gone.
+  await page.context().setOffline(true);
+  await page.reload({ waitUntil: "load" });
+  await waitForApp(page);
+  await page.fill("#sc-in", "In summary, offline chops are robust.");
+  await page.waitForFunction(
+    () => document.getElementById("sc-out").value === "Offline chops are solid.",
+    { timeout: 30000 },
+  );
+  await page.context().setOffline(false);
+  log("offline reload chopped with no network: ok");
+
   if (errors.length) throw new Error("page errors: " + errors.join(" | "));
   await browser.close();
   console.log("FEATURES SUITE PASS");
