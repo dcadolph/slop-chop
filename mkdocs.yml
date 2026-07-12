@@ -52,6 +52,7 @@ nav:
   - Engine: ENGINE.md
   - The tells: TELLS.md
   - Web app: WEB.md
+  - Extension: EXTENSION.md
   - Claude plugin: PLUGIN.md
 
 markdown_extensions:
@@ -70,9 +71,11 @@ markdown_extensions:
 extra_css:
   - stylesheets/extra.css
   - stylesheets/app.css
+  - stylesheets/extdemo.css
 
 extra_javascript:
   - assets/app.js
+  - assets/extdemo.js
 
 extra:
   social:
