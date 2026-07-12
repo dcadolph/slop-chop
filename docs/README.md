@@ -61,6 +61,7 @@ hide:
 </div>
 </div>
 </div>
+<p class="sc-legend" aria-hidden="true"><span class="sc-swatch sc-swatch-slop"></span>Amber is slop found.<span class="sc-swatch sc-swatch-fix"></span>Green is what changed.</p>
 <p id="sc-status" class="sc-status" hidden></p>
 <details id="sc-findings" class="sc-findings" hidden>
 <summary><span id="sc-findings-count"></span></summary>
@@ -155,6 +156,12 @@ brew install dcadolph/tap/slop-chop
 <div class="step"><span class="num">2</span><strong>Score</strong>One number from 0 for clean to 100 for heavy slop. It weighs rule tells against flat, machine-like sentence cadence. Pass <code>--max</code> to gate a build.</div>
 <div class="step"><span class="num">3</span><strong>Rewrite</strong>Optional. Hands the text to a model for the things rules cannot manage, like reworking a sentence so it no longer needs a semicolon, or bending the writing toward your voice.</div>
 </div>
+
+## "Can't my AI just do this?"
+
+Ask the model that wrote the slop to take the slop back out and you get the same model, guessing a second time. It cuts a phrase on this run and keeps it on the next, forgets half your rules, and nudges your meaning while you look away. There is nothing to pin down and nothing to diff.
+
+slop-chop is a fixed list, not a mood. The same text gives the same result every run, so you hold the model to one standard instead of hoping for it. Run it after your AI to keep the output honest, gate a build on the score, or hand the binary to the agent so it cleans its own work the way you would. The rules do the tireless part for free, and the model is left with only what rules cannot reach.
 
 ## Why slop-chop
 

@@ -258,15 +258,58 @@ body:has(#sc-app) .md-grid {
   background: transparent;
 }
 
-.sc-marks mark {
-  background: rgba(155, 207, 26, 0.3);
+/* Two mark colors carry the meaning. Input slop is amber, a flag on the junk found.
+   Output changes are brand lime, the fixes the engine made, so green reads as good and
+   the chopped pane never looks like it still holds slop. */
+#sc-marks mark {
+  background: rgba(232, 154, 42, 0.34);
   color: transparent;
   padding: 0;
   border-radius: 0.15rem;
 }
 
-[data-md-color-scheme="default"] .sc-marks mark {
+[data-md-color-scheme="default"] #sc-marks mark {
+  background: rgba(214, 126, 12, 0.42);
+}
+
+#sc-out-marks mark {
+  background: rgba(155, 207, 26, 0.32);
+  color: transparent;
+  padding: 0;
+  border-radius: 0.15rem;
+}
+
+[data-md-color-scheme="default"] #sc-out-marks mark {
   background: rgba(155, 207, 26, 0.45);
+}
+
+/* Legend that names the two mark colors, so the amber and green are read right the
+   first time. Muted and small so it sits under the panes without pulling focus. */
+.sc-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.55rem;
+  margin: 0.55rem 0 0;
+  font-size: 0.72rem;
+  opacity: 0.7;
+}
+
+.sc-swatch {
+  display: inline-block;
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 0.2rem;
+  vertical-align: -0.06rem;
+  margin-right: 0.1rem;
+}
+
+.sc-swatch-slop {
+  background: rgba(232, 154, 42, 0.7);
+}
+
+.sc-swatch-fix {
+  background: rgba(155, 207, 26, 0.7);
 }
 
 /* File drop: the hint floats over the input pane while a file hovers it. It takes no
