@@ -226,6 +226,7 @@ func (p Profile) compile() ([]Rule, error) {
 		return nil, err
 	}
 	if ok {
+		replace.keep = notProperNoun
 		rules = append(rules, replace)
 	}
 	for _, w := range drops {
@@ -249,6 +250,7 @@ func (p Profile) compile() ([]Rule, error) {
 		return nil, err
 	}
 	if ok {
+		block.keep = notProperNoun
 		rules = append(rules, block)
 	}
 
@@ -655,6 +657,22 @@ func fixArticle(text string, loc []int) string {
 		corrected = "A" + corrected[1:]
 	}
 	return corrected + gap + word
+}
+
+// notProperNoun reports whether a match should be acted on rather than skipped as a likely
+// proper noun. A Title-case word mid-sentence, like a brand name, is skipped, while the same
+// word at a sentence start is ordinary capitalization and still counts. A lower-case or an
+// all-caps match always counts.
+func notProperNoun(text string, start, end int) bool {
+	match := text[start:end]
+	r := []rune(match)
+	if len(r) == 0 || !unicode.IsUpper(r[0]) {
+		return true
+	}
+	if match == strings.ToUpper(match) {
+		return true
+	}
+	return sentenceStart(text, start)
 }
 
 // articleNeedsFix reports whether the article in the match disagrees with the sound of the

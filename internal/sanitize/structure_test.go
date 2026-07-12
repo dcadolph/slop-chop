@@ -158,6 +158,25 @@ func TestProtectQuotes(t *testing.T) {
 	}
 }
 
+// TestProperNounGuard checks that a Title-case word mid-sentence, like a brand, is left
+// alone, while the same word at a sentence start and the lower-case form are still deslopped.
+func TestProperNounGuard(t *testing.T) {
+	t.Parallel()
+	p, err := ApplyPresets(DefaultProfile(), "cleaver")
+	if err != nil {
+		t.Fatalf("ApplyPresets: %v", err)
+	}
+	s, err := New(p)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	got, _ := s.Fix("I ordered on Seamless. Ask Delve about it. Seamless helps. We use seamless tools.")
+	want := "I ordered on Seamless. Ask Delve about it. Smooth helps. We use smooth tools."
+	if got != want {
+		t.Errorf("Fix = %q, want %q", got, want)
+	}
+}
+
 // TestArticleAgreement checks that a and an are corrected to the sound of the following word,
 // including the tricky exceptions, and that a correct article is left alone.
 func TestArticleAgreement(t *testing.T) {

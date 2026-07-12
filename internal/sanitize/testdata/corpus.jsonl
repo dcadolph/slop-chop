@@ -39,3 +39,5 @@
 {"label":"technical","note":"scheduler critical path","text":"The scheduler puts the slow tasks on a separate queue so they never block the critical path."}
 {"label":"technical","note":"b-tree index","text":"The primary key index is a B-tree, so range scans on it stay on the fast path."}
 {"label":"technical","note":"robust control","text":"Robust control keeps the loop stable when the plant model is only approximately right."}
+{"label":"human","note":"brand name matching a buzzword","text":"I ordered dinner on Seamless and split the check with a friend."}
+{"label":"human","note":"capitalized product name mid-sentence","text":"The Robust release shipped on Friday, a week behind schedule."}
