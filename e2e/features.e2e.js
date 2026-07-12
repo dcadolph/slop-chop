@@ -175,8 +175,11 @@ async function main() {
     { timeout: 15000 },
   );
   const cachedWasm = await page.evaluate(async () => {
-    const cache = await caches.open("slop-chop-shell-v1");
-    return Boolean(await cache.match("assets/slop-chop.wasm"));
+    for (const name of await caches.keys()) {
+      const cache = await caches.open(name);
+      if (await cache.match("assets/slop-chop.wasm")) return true;
+    }
+    return false;
   });
   if (!cachedWasm) throw new Error("wasm not precached");
   log("service worker controls page, wasm precached: ok");
