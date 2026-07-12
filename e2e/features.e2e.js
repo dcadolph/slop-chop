@@ -193,6 +193,29 @@ async function main() {
   await page.context().setOffline(false);
   log("offline reload chopped with no network: ok");
 
+  // Step 14: phone-width layout: no sideways scroll, drawer and score breakdown fit
+  // the viewport as fixed sheets.
+  const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await phone.goto(BASE, { waitUntil: "load" });
+  await waitForApp(phone);
+  const sideways = await phone.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  if (sideways > 0) throw new Error("horizontal overflow at 390px: " + sideways);
+  await phone.click("#sc-settings-btn");
+  const drawerBox = await phone.locator("#sc-drawer").boundingBox();
+  if (!drawerBox || drawerBox.y < 0 || drawerBox.y + drawerBox.height > 844) {
+    throw new Error("drawer does not fit the phone viewport: " + JSON.stringify(drawerBox));
+  }
+  await phone.click("#sc-drawer-close");
+  await phone.click("#sc-score");
+  const popBox = await phone.locator("#sc-score-pop").boundingBox();
+  if (!popBox || popBox.y < 0 || popBox.y + popBox.height > 844) {
+    throw new Error("score popover does not fit the phone viewport: " + JSON.stringify(popBox));
+  }
+  await phone.close();
+  log("phone layout: drawer and score sheet fit 390x844: ok");
+
   if (errors.length) throw new Error("page errors: " + errors.join(" | "));
   await browser.close();
   console.log("FEATURES SUITE PASS");

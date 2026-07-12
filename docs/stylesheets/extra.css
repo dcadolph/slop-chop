@@ -87,6 +87,30 @@
   font-size: 0.72rem;
 }
 
+/* Small screens: shrink the hero so the chopper is one short scroll away. */
+@media (max-width: 600px) {
+  .sc-hero {
+    padding: 0.9rem 0.8rem 0.6rem;
+  }
+  .sc-hero img.hero-logo {
+    width: 44px;
+  }
+  .sc-hero h1 {
+    font-size: 1.55rem;
+  }
+  .sc-hero .tagline {
+    font-size: 0.92rem;
+  }
+  .sc-hero .sc-artifacts {
+    font-size: 0.66rem;
+    letter-spacing: 0.03em;
+  }
+  .sc-hero .subtitle {
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+  }
+}
+
 /* Green glow behind the hero. */
 .sc-hero::before {
   content: "";
