@@ -78,6 +78,27 @@ func TestScoreFlatCadence(t *testing.T) {
 	}
 }
 
+// TestScoreBreakdown checks that the score reports named contributions and that a hedge-heavy
+// register adds to the hedging signal, while clean prose does not.
+func TestScoreBreakdown(t *testing.T) {
+	t.Parallel()
+	s, err := New(DefaultProfile())
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	got := s.Score("This might possibly work and could arguably help, though results may generally vary.")
+	if got.Hedging == 0 {
+		t.Errorf("hedge-heavy text scored 0 hedging (%+v)", got)
+	}
+	if got.Value < got.Density {
+		t.Errorf("value %d below its density contribution (%+v)", got.Value, got)
+	}
+	clean := s.Score("The cat sat. A dog ran far across the wide field. She left before dawn broke.")
+	if clean.Hedging != 0 {
+		t.Errorf("clean prose reported hedging %d (%+v)", clean.Hedging, clean)
+	}
+}
+
 // TestScoreExcludesCode checks that words inside a code block do not dilute the tell density,
 // so wrapping slop in a large fenced block cannot tank the score.
 func TestScoreExcludesCode(t *testing.T) {
