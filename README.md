@@ -2,6 +2,12 @@
   <img src="assets/banner.png" alt="slop-chop" width="420">
 </p>
 
+<p align="center">
+  <a href="https://slop-chop.com"><img src="https://img.shields.io/badge/try_it-slop--chop.com-9bcf1a" alt="Try it at slop-chop.com"></a>
+  <a href="https://github.com/dcadolph/slop-chop/releases/latest"><img src="https://img.shields.io/github/v/release/dcadolph/slop-chop?color=9bcf1a" alt="Latest release"></a>
+  <a href="https://github.com/dcadolph/slop-chop/actions/workflows/ci.yml"><img src="https://github.com/dcadolph/slop-chop/actions/workflows/ci.yml/badge.svg" alt="ci status"></a>
+</p>
+
 # slop-chop
 
 Chop the slop. Paste in text and get back something that reads like a person wrote it.

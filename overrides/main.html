@@ -14,4 +14,9 @@
   <meta name="twitter:title" content="slop-chop">
   <meta name="twitter:description" content="Chop the slop. Paste text that sounds like a bot, get back text that sounds like you. Runs in your browser, nothing uploaded.">
   <meta name="twitter:image" content="https://slop-chop.com/assets/card.png">
+  {% if page.is_homepage %}
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebApplication","name":"slop-chop","url":"https://slop-chop.com/","description":"Chop the slop. Paste text that sounds like a bot, get back text that sounds like you. Runs in your browser, nothing uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/dcadolph/slop-chop"]}
+  </script>
+  {% endif %}
 {% endblock %}
