@@ -20,13 +20,24 @@ This builds the wasm engine and stages it into `extension/engine/`.
 2. Turn on Developer mode.
 3. Choose "Load unpacked" and pick the `extension/` folder.
 
+Firefox: open `about:debugging`, choose This Firefox, then Load Temporary Add-on and pick
+`extension/manifest.json`.
+
 ## Use it
 
-Focus any text field and press the hotkey: `Ctrl+Shift+U`, or `Command+Shift+U` on a Mac.
-The field is rewritten in place and a badge shows the slop score before and after. Set or
-change the shortcut at `chrome://extensions/shortcuts`.
+- Focus any text field. A small chop button appears in its corner, or press the hotkey
+  (`Ctrl+Shift+U`, or `Command+Shift+U` on a Mac). The field is rewritten in place and a badge
+  shows the slop score before and after.
+- The toolbar icon opens a paste-and-chop popup.
+- Options (the popup's Settings link) hold your voice: keep, prefer, and avoid, plus which
+  presets to apply. You can import a `voice.json` there too. Settings apply to every chop.
 
-## What it does today
+Change the shortcut at `chrome://extensions/shortcuts`.
 
-It applies the built-in default rules and the cleaver preset, the same as the site's default.
-Your voice and per-site options come next.
+## Package
+
+```
+make extension-package
+```
+
+Writes `slop-chop-extension.zip` for a store upload.

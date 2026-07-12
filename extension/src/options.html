@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>slop-chop options</title>
+    <style>
+      body {
+        font: 14px/1.5 system-ui, sans-serif;
+        max-width: 640px;
+        margin: 24px auto;
+        padding: 0 16px;
+        color: #111;
+        background: #fff;
+      }
+      h1 { font-size: 18px; }
+      h2 { font-size: 14px; margin: 20px 0 4px; }
+      small { color: #666; display: block; margin-bottom: 4px; }
+      textarea {
+        width: 100%;
+        min-height: 68px;
+        box-sizing: border-box;
+        font: 13px/1.4 ui-monospace, monospace;
+      }
+      .presets label { margin-right: 14px; white-space: nowrap; }
+      button {
+        background: #111;
+        color: #9bcf1a;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 14px;
+        font: 600 13px system-ui;
+        cursor: pointer;
+      }
+      #status { margin-left: 10px; color: #3a7d00; }
+      @media (prefers-color-scheme: dark) {
+        body { background: #111; color: #eee; }
+        textarea { background: #1c1c1c; color: #eee; border: 1px solid #333; }
+        small { color: #999; }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>slop-chop</h1>
+    <p>Your voice applies to every chop. Keep protects words, prefer swaps them, avoid flags them.</p>
+    <h2>Keep</h2>
+    <small>One per line. Never cut these.</small>
+    <textarea id="keep" placeholder="gnarly&#10;ship it"></textarea>
+    <h2>Prefer</h2>
+    <small>One per line, from =&gt; to. An empty to drops the word.</small>
+    <textarea id="prefer" placeholder="utilize =&gt; use&#10;a myriad of =&gt; a bunch of"></textarea>
+    <h2>Avoid</h2>
+    <small>One per line. Flag these wherever they appear.</small>
+    <textarea id="avoid" placeholder="synergy&#10;circle back"></textarea>
+    <h2>Presets</h2>
+    <div class="presets" id="presets"></div>
+    <h2>Import</h2>
+    <small>Load a voice.json file into the fields above.</small>
+    <input type="file" id="import" accept="application/json,.json" />
+    <p><button id="save">Save</button><span id="status"></span></p>
+    <script src="options.js"></script>
+  </body>
+</html>
