@@ -9,6 +9,7 @@ var flags = map[string]*pflag.Flag{
 	KeyProfile:      &FlagProfile,
 	KeyDialect:      &FlagDialect,
 	KeyPreset:       &FlagPreset,
+	KeyVoice:        &FlagVoice,
 	KeyJSON:         &FlagJSON,
 	KeyPretty:       &FlagPretty,
 	KeyMarkdown:     &FlagMarkdown,

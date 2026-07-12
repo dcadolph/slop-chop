@@ -26,6 +26,7 @@ hide:
 <div class="sc-app-title"><strong>Chop it right here</strong><span class="sc-app-note">Runs in your browser. Your text never leaves the page.</span></div>
 <div class="sc-app-actions">
 <button id="sc-score" class="sc-score" type="button" title="Click for the breakdown." aria-expanded="false" aria-controls="sc-score-pop" hidden></button>
+<span id="sc-score-after" class="sc-score sc-score-after" title="Slop score after the chop." hidden></span>
 <button id="sc-settings-btn" class="sc-iconbtn" type="button" aria-label="Settings" aria-expanded="false" aria-controls="sc-drawer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
 <div id="sc-score-pop" class="sc-score-pop" hidden>
 <div class="sc-score-pop-head"><strong>Slop score: <span id="sc-pop-value"></span> of 100</strong></div>
@@ -86,6 +87,12 @@ hide:
 <section>
 <h3>Presets</h3>
 <div id="sc-presets" class="sc-inline"></div>
+</section>
+<section>
+<h3>Your voice</h3>
+<label class="sc-field">Keep<small>One per line. Words and phrases to never flag or cut. Wins over the presets.</small><textarea id="sc-voice-keep" placeholder="gnarly&#10;ship it"></textarea></label>
+<label class="sc-field">Prefer<small>One per line, from =&gt; to. Your swap wins over a preset. An empty to drops the word.</small><textarea id="sc-voice-prefer" placeholder="utilize =&gt; use&#10;a myriad of =&gt; a bunch of"></textarea></label>
+<label class="sc-field">Avoid<small>One per line. Your own words to flag wherever they appear.</small><textarea id="sc-voice-avoid" placeholder="synergy&#10;circle back"></textarea></label>
 </section>
 <section>
 <h3>Your rules</h3>

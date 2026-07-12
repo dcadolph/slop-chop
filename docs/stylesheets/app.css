@@ -54,6 +54,12 @@ body:has(#sc-app) .md-grid {
   cursor: pointer;
 }
 
+/* The after-chop score sits beside the before score to show the improvement. It is not
+   clickable, so it drops the pointer cursor. */
+.sc-app .sc-score-after {
+  cursor: default;
+}
+
 /* The breakdown behind the chip. */
 .sc-app-actions {
   position: relative;

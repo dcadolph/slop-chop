@@ -29,6 +29,7 @@ func checkCmd() *cobra.Command {
 	f.AddFlag(&config.FlagProfile)
 	f.AddFlag(&config.FlagDialect)
 	f.AddFlag(&config.FlagPreset)
+	f.AddFlag(&config.FlagVoice)
 	f.AddFlag(&config.FlagJSON)
 	f.AddFlag(&config.FlagPretty)
 	return cmd
