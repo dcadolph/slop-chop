@@ -41,6 +41,14 @@ input and output and marks what changed, bailing to a plain mirror past 1,500 ed
 The mirrors match the textarea's font metrics and compensate for scrollbar width, so
 marks line up with characters on every platform.
 
+## Files in and out
+
+A text file dropped on the input pane loads and chops in place, and the Download
+button saves the output pane under the dropped file's name, so a file round-trips
+through the chopper without a copy and paste. Text with no file behind it downloads
+as `chopped.txt`. A file past two megabytes, or one that looks binary, is refused
+with a message and the panes keep what they had.
+
 ## Model connectors
 
 The rewrite pass is optional and browser-direct. Anthropic calls go straight from the

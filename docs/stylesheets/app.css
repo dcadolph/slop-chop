@@ -269,6 +269,32 @@ body:has(#sc-app) .md-grid {
   background: rgba(155, 207, 26, 0.45);
 }
 
+/* File drop: the hint floats over the input pane while a file hovers it. It takes no
+   pointer events, so the drag counter under it never flickers. */
+.sc-editor.sc-dropping textarea {
+  border-style: dashed;
+  border-color: var(--md-accent-fg-color);
+}
+
+.sc-drop-hint {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  border-radius: 0.5rem;
+  background: rgba(155, 207, 26, 0.12);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+}
+
+.sc-editor.sc-dropping .sc-drop-hint {
+  display: flex;
+}
+
 .sc-status {
   margin-top: 0.55rem;
   font-family: var(--md-code-font, monospace);

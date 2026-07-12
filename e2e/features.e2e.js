@@ -1,6 +1,8 @@
-// Drives the worker engine, share links, the compact hero fold, the output diff, and
-// the score breakdown in Chromium.
+// Drives the worker engine, share links, the compact hero fold, the output diff, the
+// score breakdown, and file drop plus download in Chromium.
 "use strict";
+
+const fs = require("fs");
 
 const { chromium } = require("playwright");
 
@@ -118,6 +120,54 @@ async function main() {
   await waitForApp(page3);
   await page3.close();
   log("mangled share hash still boots: ok");
+
+  // Step 9: a dropped file shows the hint, loads, chops, and reports its name.
+  await page.click("#sc-drawer-close");
+  await page.evaluate(() => {
+    const editor = document.getElementById("sc-in").closest(".sc-editor");
+    const dt = new DataTransfer();
+    dt.items.add(new File(["In summary, it is robust—very robust."], "notes.md", { type: "text/markdown" }));
+    editor.dispatchEvent(new DragEvent("dragenter", { bubbles: true, cancelable: true, dataTransfer: dt }));
+    if (!editor.classList.contains("sc-dropping")) throw new Error("drop hint missing on dragenter");
+    editor.dispatchEvent(new DragEvent("drop", { bubbles: true, cancelable: true, dataTransfer: dt }));
+    if (editor.classList.contains("sc-dropping")) throw new Error("drop hint stuck after drop");
+  });
+  await page.waitForFunction(
+    () => document.getElementById("sc-out").value === "It is solid, very solid.",
+    { timeout: 30000 },
+  );
+  const dropStatus = await page.textContent("#sc-status");
+  if (!dropStatus.includes("notes.md")) throw new Error("drop status missing name: " + dropStatus);
+  log("file drop chopped notes.md: ok");
+
+  // Step 10: Download saves the chopped pane under the dropped file's name.
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.click("#sc-download"),
+  ]);
+  if (download.suggestedFilename() !== "notes.md") {
+    throw new Error("download name: " + download.suggestedFilename());
+  }
+  const saved = fs.readFileSync(await download.path(), "utf8");
+  if (saved !== "It is solid, very solid.") {
+    throw new Error("download content mismatch: " + JSON.stringify(saved));
+  }
+  log("download saved as notes.md with chopped text: ok");
+
+  // Step 11 (probe): a binary file is turned away and the panes keep what they had.
+  await page.evaluate(() => {
+    const editor = document.getElementById("sc-in").closest(".sc-editor");
+    const dt = new DataTransfer();
+    dt.items.add(new File([new Uint8Array([0, 159, 146, 150])], "photo.png", { type: "image/png" }));
+    editor.dispatchEvent(new DragEvent("drop", { bubbles: true, cancelable: true, dataTransfer: dt }));
+  });
+  await page.waitForFunction(
+    () => (document.getElementById("sc-status").textContent || "").includes("binary"),
+    { timeout: 5000 },
+  );
+  const inputKept = await page.inputValue("#sc-in");
+  if (!inputKept.includes("In summary")) throw new Error("binary drop clobbered the input");
+  log("binary drop refused, input kept: ok");
 
   if (errors.length) throw new Error("page errors: " + errors.join(" | "));
   await browser.close();

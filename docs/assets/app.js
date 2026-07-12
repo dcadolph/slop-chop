@@ -197,6 +197,21 @@
     return text.split(/(\s+)/).filter((t) => t !== "");
   }
 
+  /* hasFiles reports whether a drag carries files, as opposed to dragged text, which
+     the textarea already handles on its own. */
+  function hasFiles(e) {
+    return Boolean(e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.includes("Files"));
+  }
+
+  /* A file dropped outside the pane would replace the page with the file. Swallow the
+     default anywhere the chopper is present, so a near miss costs nothing. */
+  document.addEventListener("dragover", (e) => {
+    if (hasFiles(e) && document.getElementById("sc-app")) e.preventDefault();
+  });
+  document.addEventListener("drop", (e) => {
+    if (hasFiles(e) && document.getElementById("sc-app")) e.preventDefault();
+  });
+
   /* App wires one #sc-app element to the engine. */
   function boot(root) {
     const $ = (id) => root.querySelector("#" + id);
@@ -207,6 +222,7 @@
     const score = $("sc-score");
     const status = $("sc-status");
     const copyBtn = $("sc-copy");
+    const downloadBtn = $("sc-download");
     const clearBtn = $("sc-clear");
     const findingsBox = $("sc-findings");
     const findingsCount = $("sc-findings-count");
@@ -699,6 +715,39 @@
       }
     }
 
+    /* MAX_FILE_BYTES caps a dropped file at what the panes hold comfortably. */
+    const MAX_FILE_BYTES = 2 * 1024 * 1024;
+
+    /* droppedName remembers the last loaded file, so Download saves the chopped text
+       under the same name and the result drops back in place of the original. */
+    let droppedName = "";
+
+    /* loadFile reads a dropped file into the input pane and chops it. */
+    async function loadFile(file) {
+      if (!file) return;
+      if (file.size > MAX_FILE_BYTES) {
+        const mb = (file.size / 1048576).toFixed(1);
+        setStatus(file.name + " is " + mb + " MB. The pane takes up to 2 MB.", true);
+        return;
+      }
+      let text;
+      try {
+        text = await file.text();
+      } catch (err) {
+        setStatus("Could not read " + file.name + ": " + err.message, true);
+        return;
+      }
+      if (text.includes("\u0000")) {
+        setStatus(file.name + " looks like binary, not text.", true);
+        return;
+      }
+      droppedName = file.name;
+      clearTimeout(timer);
+      input.value = text;
+      await chop();
+      setStatus("Loaded " + file.name + ". Download saves the chopped copy.");
+    }
+
     function renderPresets() {
       const box = $("sc-presets");
       box.textContent = "";
@@ -731,11 +780,47 @@
     });
     clearBtn.addEventListener("click", () => {
       input.value = "";
+      droppedName = "";
       chop();
       input.focus();
     });
     copyBtn.addEventListener("click", async () => {
       if (await toClipboard(output.value)) flash(copyBtn, "Copied");
+    });
+    downloadBtn.addEventListener("click", () => {
+      if (!output.value) return;
+      const blob = new Blob([output.value], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = droppedName || "chopped.txt";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      flash(downloadBtn, "Saved");
+    });
+
+    /* File drop: the input pane takes a text file. Dragged text is not intercepted,
+       so selection drops still land the way the textarea handles them natively. */
+    const editor = input.closest(".sc-editor");
+    let dragDepth = 0;
+    editor.addEventListener("dragenter", (e) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      dragDepth++;
+      editor.classList.add("sc-dropping");
+    });
+    editor.addEventListener("dragover", (e) => {
+      if (hasFiles(e)) e.preventDefault();
+    });
+    editor.addEventListener("dragleave", () => {
+      if (dragDepth > 0 && --dragDepth === 0) editor.classList.remove("sc-dropping");
+    });
+    editor.addEventListener("drop", (e) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      dragDepth = 0;
+      editor.classList.remove("sc-dropping");
+      loadFile(e.dataTransfer.files[0]);
     });
     rewriteBtn.addEventListener("click", rewrite);
     score.addEventListener("click", () => setScorePop(scorePop.hidden));
