@@ -41,6 +41,9 @@ type chopResult struct {
 	Findings []sanitize.Finding `json:"findings"`
 	// Score rates the original text from 0 for clean to 100 for heavy slop.
 	Score sanitize.Score `json:"score"`
+	// ScoreAfter rates the cleaned output on the same scale, so the page can show how far
+	// the chop moved the needle.
+	ScoreAfter sanitize.Score `json:"scoreAfter"`
 }
 
 // main registers the engine functions on the JavaScript global object and blocks
@@ -80,9 +83,10 @@ func chop(_ js.Value, args []js.Value) any {
 	}
 	out, findings := s.Fix(req.Text)
 	return marshal(chopResult{
-		Output:   out,
-		Findings: orEmpty(findings),
-		Score:    s.Score(req.Text),
+		Output:     out,
+		Findings:   orEmpty(findings),
+		Score:      s.Score(req.Text),
+		ScoreAfter: s.Score(out),
 	})
 }
 

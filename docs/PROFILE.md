@@ -5,6 +5,9 @@ Every rule the rules pass runs comes from a profile. This page is the full refer
 the format. For the order the rules run in and how each one works, see
 [the engine reference](ENGINE.md).
 
+For a friendlier personal layer of keep, prefer, and avoid lists that rides on top of a
+profile, see [Your voice](VOICE.md).
+
 ## Contents
 
 - [Pointing at a profile](#pointing-at-a-profile)
