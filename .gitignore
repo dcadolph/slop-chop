@@ -23,6 +23,9 @@ coverage.out
 /docs/assets/slop-chop.wasm
 /docs/assets/wasm_exec.js
 
+# Browser test suite dependencies
+/e2e/node_modules/
+
 # Go
 go.work
 go.work.sum

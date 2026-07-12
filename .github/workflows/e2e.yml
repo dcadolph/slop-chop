@@ -1,0 +1,64 @@
+name: e2e
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - docs/**
+      - overrides/**
+      - mkdocs.yml
+      - internal/**
+      - wasm/**
+      - go.mod
+      - go.sum
+      - Makefile
+      - e2e/**
+      - .github/workflows/e2e.yml
+  pull_request:
+    paths:
+      - docs/**
+      - overrides/**
+      - mkdocs.yml
+      - internal/**
+      - wasm/**
+      - go.mod
+      - go.sum
+      - Makefile
+      - e2e/**
+      - .github/workflows/e2e.yml
+  workflow_dispatch:
+
+jobs:
+  browsers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: make wasm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: pip install mkdocs-material
+      - run: mkdocs build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      - run: npm ci
+        working-directory: e2e
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('e2e/package-lock.json') }}
+      - run: npx playwright install --with-deps chromium firefox webkit
+        working-directory: e2e
+      - name: Serve the built site
+        run: python3 -m http.server 4173 --bind 127.0.0.1 --directory site &
+      - run: npm test
+        working-directory: e2e
