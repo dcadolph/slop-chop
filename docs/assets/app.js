@@ -5,10 +5,9 @@
 
   const STORE_KEY = "slop-chop-settings-v1";
   const SAMPLE =
-    "In summary, this comprehensive guide will delve into our robust, cutting-edge " +
-    "platform—a game-changer that seamlessly empowers your workflow. It's not just " +
-    "a tool, it's a paradigm shift; teams leverage it to unlock the full potential of " +
-    "their content. Needless to say, the results are unparalleled.";
+    "In summary, this comprehensive guide will delve into how we leverage cutting-edge " +
+    "technology. Our robust platform utilizes a myriad of tools—all in one place—to empower " +
+    "your team and streamline your workflow. Needless to say, the results speak for themselves.";
 
   /* The service worker caches the page and the engine, so the chopper keeps working
      with no network. Best-effort: without it the online site is unchanged. */
