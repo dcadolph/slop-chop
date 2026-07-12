@@ -112,7 +112,9 @@ func runFix(cmd *cobra.Command, args []string) error {
 
 // fixOne cleans one input and writes it to stdout, back into its file with --write, or
 // as JSON. With --rewrite it runs the model pass on the rules output first, then verifies
-// the reply against the deterministic guarantees.
+// the reply against the deterministic guarantees. A rewrite that fails the meaning check is
+// dropped for the rules output, so the text written is always either a confirmed rewrite or
+// the safe deterministic clean.
 func fixOne(ctx context.Context, s *sanitize.Sanitizer, tone []string, text, path string,
 	stdout, stderr io.Writer) error {
 	out, findings := s.Fix(text)
@@ -136,8 +138,9 @@ func fixOne(ctx context.Context, s *sanitize.Sanitizer, tone []string, text, pat
 	} else if _, err := io.WriteString(stdout, out); err != nil {
 		return err
 	}
-	// Gate after the output is written so --verify-strict still hands back the rewrite and
-	// only then fails with a non-zero exit.
+	// The output written above is already the safe text: a confirmed rewrite, or the rules
+	// output when the check did not pass. --verify-strict adds a non-zero exit on that
+	// failure so a pipeline can gate on it, after the safe output is in hand.
 	if config.VerifyStrict() && verdict != nil && !verdict.Faithful {
 		return fmt.Errorf("meaning check flagged the rewrite")
 	}
@@ -145,10 +148,11 @@ func fixOne(ctx context.Context, s *sanitize.Sanitizer, tone []string, text, pat
 }
 
 // rewriteAndVerify runs the model rewrite over rulesOut and re-checks it against the
-// deterministic guarantees. When --verify is set it runs the meaning check, and on a
-// flagged change it re-rewrites up to --verify-retry more times, feeding the flagged
-// issues back so the model can preserve them. It returns the final text and the last
-// verdict, which is nil when --verify is off or the check could not run.
+// deterministic guarantees. When --verify is set it runs the meaning check, and on a flagged
+// change it re-rewrites up to --verify-retry more times, feeding the flagged issues back so
+// the model can preserve them. It fails closed: if the rewrite is never confirmed faithful,
+// because the judge flagged it or could not run, the model text is dropped and the safe
+// deterministic rules output is returned instead, with the verdict so the caller can gate.
 func rewriteAndVerify(ctx context.Context, s *sanitize.Sanitizer, tone []string,
 	original, rulesOut string, stderr io.Writer) (string, *rewrite.Verdict, error) {
 	completer, err := newRewriteCompleter()
@@ -177,12 +181,22 @@ func rewriteAndVerify(ctx context.Context, s *sanitize.Sanitizer, tone []string,
 		}
 		verdict, err := judgePass(ctx, completer, original, out)
 		if err != nil {
-			_, _ = fmt.Fprintf(stderr, "slop-chop: the meaning check could not run: %v\n", err)
-			return out, nil, nil
+			// Fail closed: a meaning check we asked for could not run, so keep the safe
+			// deterministic rules output rather than ship an unverified rewrite.
+			_, _ = fmt.Fprintf(stderr, "slop-chop: the meaning check could not run: %v; kept the rules output\n", err)
+			v := rewrite.Verdict{Issues: []rewrite.Issue{{Note: fmt.Sprintf("meaning check could not run: %v", err)}}}
+			return rulesOut, &v, nil
 		}
-		if verdict.Faithful || attempt+1 == tries {
+		if verdict.Faithful {
 			reportVerdict(verdict, stderr)
 			return out, &verdict, nil
+		}
+		if attempt+1 == tries {
+			// Out of retries and still not faithful. Fail closed: drop the rewrite that
+			// changed meaning and return the rules output for the caller to gate on.
+			reportVerdict(verdict, stderr)
+			_, _ = fmt.Fprintln(stderr, "slop-chop: kept the rules output because the rewrite changed meaning")
+			return rulesOut, &verdict, nil
 		}
 		feedback = feedbackNotes(verdict.Issues)
 		_, _ = fmt.Fprintf(stderr, "slop-chop: the meaning check flagged the rewrite; retrying (%d of %d)\n",
