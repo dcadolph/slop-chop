@@ -1,10 +1,11 @@
 /* slop-chop service worker: caches the page and the engine so the chopper keeps
-   working with no network. Same-origin GETs are served stale-while-revalidate, so a
-   deploy reaches a returning visitor one load later. Cross-origin traffic, like the
-   model connectors, is never touched. */
+   working with no network. Pages and stylesheets are network-first so a deploy shows
+   up on the next load, with the cache as the offline fallback. Everything else is
+   stale-while-revalidate. Cross-origin traffic, like the model connectors, is never
+   touched. */
 "use strict";
 
-const NAME = "slop-chop-shell-v1";
+const NAME = "slop-chop-shell-v2";
 
 /* CORE is everything the chopper itself needs. The theme's hashed bundles are
    discovered from the built page at install time, since their names change. */
@@ -54,8 +55,15 @@ self.addEventListener("activate", (e) => {
   );
 });
 
-/* respond serves from the cache first and refreshes the entry in the background. A
-   miss goes to the network, and an offline navigation falls back to the app page. */
+/* freshFirst answers pages and stylesheets from the network so a deploy is visible
+   on the next load, keeping the cached copy for offline. */
+function freshFirst(req) {
+  return req.mode === "navigate" || new URL(req.url).pathname.endsWith(".css");
+}
+
+/* respond picks network-first or cache-first per request, refreshes the cache with
+   whatever the network returns, and falls back to the cached app page when an
+   offline navigation misses. */
 async function respond(req) {
   const cache = await caches.open(NAME);
   const cached = await cache.match(req);
@@ -65,9 +73,15 @@ async function respond(req) {
       return res;
     })
     .catch(() => null);
-  if (cached) return cached;
-  const res = await refresh;
-  if (res) return res;
+  if (freshFirst(req)) {
+    const res = await refresh;
+    if (res) return res;
+    if (cached) return cached;
+  } else {
+    if (cached) return cached;
+    const res = await refresh;
+    if (res) return res;
+  }
   if (req.mode === "navigate") {
     const home = (await cache.match("./")) || (await cache.match("index.html"));
     if (home) return home;

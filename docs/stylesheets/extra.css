@@ -263,24 +263,30 @@
   }
 }
 
-/* Bottom of the landing page: the why cards and the start-here table share a row on
-   wide screens and stack back to one column below 1100px, so phones are unchanged. */
-.md-typeset .sc-bottom {
+/* Why cards: fixed column counts so a row never strands an orphan card. Four across
+   on wide screens, two by two on tablets, one column on phones. */
+.md-typeset .grid.cards > ul {
   display: grid;
-  grid-template-columns: 3fr 2fr;
-  gap: 0 2.2rem;
-  align-items: start;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.1rem;
 }
 
-.md-typeset .sc-bottom table:not([class]) {
-  display: table;
-  width: 100%;
+@media (max-width: 1219px) {
+  .md-typeset .grid.cards > ul {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-@media (max-width: 1100px) {
-  .md-typeset .sc-bottom {
+@media (max-width: 640px) {
+  .md-typeset .grid.cards > ul {
     grid-template-columns: 1fr;
   }
+}
+
+/* Start-here table spans the content column instead of shrinking to its text. */
+.md-typeset .sc-start table:not([class]) {
+  display: table;
+  width: 100%;
 }
 
 /* Slime-themed 404. */
