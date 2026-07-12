@@ -180,12 +180,20 @@ func (p Profile) compile() ([]Rule, error) {
 		rules = append(rules, spelling)
 	}
 
-	replace, ok, err := wordSwapRule("replace", lowerBoth(p.WordReplace))
+	swaps, drops := splitDrops(p.WordReplace)
+	replace, ok, err := wordSwapRule("replace", lowerBoth(swaps))
 	if err != nil {
 		return nil, err
 	}
 	if ok {
 		rules = append(rules, replace)
+	}
+	for _, w := range drops {
+		r, err := deletionRule("drop:"+w, w)
+		if err != nil {
+			return nil, err
+		}
+		rules = append(rules, r)
 	}
 
 	for _, pat := range slices.Sorted(maps.Keys(p.RegexReplace)) {
@@ -236,6 +244,15 @@ func (p Profile) compile() ([]Rule, error) {
 
 	if p.CollapseSpaces {
 		rules = append(rules, Rule{
+			// Runs before space-before-punct so the sentence's separating space is still
+			// there to keep, not eaten as space before a comma.
+			Name:     "orphan-comma",
+			re:       regexp.MustCompile(`,[ \t]*(\p{L})`),
+			replFunc: stripOrphanComma,
+			keep:     commaOpensSentence,
+			rewrite:  true,
+		})
+		rules = append(rules, Rule{
 			Name:     "space-before-punct",
 			re:       regexp.MustCompile(`[ \t]+[,.!?;:]`),
 			replFunc: trimLeadingSpace,
@@ -282,6 +299,25 @@ func allowSet(words []string) map[string]bool {
 		set[strings.ToLower(w)] = true
 	}
 	return set
+}
+
+// splitDrops separates word entries that swap in a new word from those that cut a word.
+// A blank target marks a drop, which deletionRule handles so the cut leaves no double
+// space or orphaned capital. The drops come back sorted for a stable rule order.
+func splitDrops(m map[string]string) (swaps map[string]string, drops []string) {
+	swaps = make(map[string]string, len(m))
+	for k, v := range m {
+		if k == "" {
+			continue
+		}
+		if v == "" {
+			drops = append(drops, k)
+			continue
+		}
+		swaps[k] = v
+	}
+	slices.Sort(drops)
+	return swaps, drops
 }
 
 // lowerBoth returns m with every key and value lower-cased and empty keys dropped, the
@@ -347,12 +383,12 @@ func endsWithWordChar(s string) bool {
 }
 
 // phraseRule builds the rule for one phrase swap. A leading word boundary keeps the
-// phrase from matching inside another word. A deletion also eats the horizontal space
-// after the phrase and captures the letter that follows, so it can restore a sentence's
-// opening capital. It crosses a line break only when a word follows on the next line, so
-// deleting a phrase never merges prose into a code fence or an indented block.
+// phrase from matching inside another word. A deletion is handled by deletionRule, which
+// restores a sentence's opening capital. A non-empty replacement is a plain swap.
 func phraseRule(phrase, repl string) (Rule, error) {
-	name := "phrase:" + strings.TrimSpace(phrase)
+	if repl == "" {
+		return deletionRule("phrase:"+strings.TrimSpace(phrase), phrase)
+	}
 	trimmed := strings.TrimRight(phrase, " ")
 	core := `(?i)\b` + flexSpaces(regexp.QuoteMeta(trimmed))
 	// A phrase ending in a word character gets a closing boundary so a key like "cat"
@@ -361,16 +397,36 @@ func phraseRule(phrase, repl string) (Rule, error) {
 	if endsWithWordChar(trimmed) {
 		core += `\b`
 	}
-	if repl != "" {
-		re, err := regexp.Compile(core)
-		if err != nil {
-			return Rule{}, fmt.Errorf("%w: phrase %q: %w", ErrCompile, phrase, err)
-		}
-		return Rule{Name: name, re: re, repl: repl, rewrite: true}, nil
+	re, err := regexp.Compile(core)
+	if err != nil {
+		return Rule{}, fmt.Errorf("%w: phrase %q: %w", ErrCompile, phrase, err)
+	}
+	return Rule{Name: "phrase:" + strings.TrimSpace(phrase), re: re, replFunc: phraseSwap(repl), rewrite: true}, nil
+}
+
+// phraseSwap returns a replFunc that swaps a matched phrase for repl, carrying the
+// match's capitalization onto it. A phrase opening a sentence keeps the opening capital,
+// so "In order to ship" becomes "To ship" and not "to ship".
+func phraseSwap(repl string) func(text string, loc []int) string {
+	return func(text string, loc []int) string {
+		return matchCase(text[loc[0]:loc[1]], repl)
+	}
+}
+
+// deletionRule builds a rule that cuts text and restores the sentence's opening capital.
+// It eats the horizontal space after the match and captures the letter that follows, so
+// the letter becomes a capital when the cut opened a sentence. It crosses a line break
+// only when a word follows on the next line, so a cut never merges prose into a code
+// fence or an indented block. Used for both stock-phrase openers and dropped words.
+func deletionRule(name, text string) (Rule, error) {
+	trimmed := strings.TrimRight(text, " ")
+	core := `(?i)\b` + flexSpaces(regexp.QuoteMeta(trimmed))
+	if endsWithWordChar(trimmed) {
+		core += `\b`
 	}
 	re, err := regexp.Compile(core + `[ \t]*(?:\n[ \t]*(\p{L})|(\p{L})?)`)
 	if err != nil {
-		return Rule{}, fmt.Errorf("%w: phrase %q: %w", ErrCompile, phrase, err)
+		return Rule{}, fmt.Errorf("%w: %s: %w", ErrCompile, name, err)
 	}
 	return Rule{Name: name, re: re, replFunc: deleteWithRecap(re), rewrite: true}, nil
 }
@@ -436,6 +492,19 @@ func trimLeadingSpace(text string, loc []int) string {
 // against closing punctuation, the debris left when a word between them is cut.
 func keepFinalByte(text string, loc []int) string {
 	return text[loc[1]-1 : loc[1]]
+}
+
+// commaOpensSentence reports whether the comma at start begins a sentence, which marks
+// it as debris left when an opening word was cut. A comma anywhere else is ordinary.
+func commaOpensSentence(text string, start, _ int) bool {
+	return sentenceStart(text, start)
+}
+
+// stripOrphanComma drops a sentence-opening comma and the spaces after it, keeping the
+// next letter as a capital, so cutting an opener like "Seamlessly," leaves a clean start.
+func stripOrphanComma(text string, loc []int) string {
+	r := []rune(text[loc[0]:loc[1]])
+	return string(unicode.ToUpper(r[len(r)-1]))
 }
 
 // notLineStart reports whether the match at start has text before it on the same line.
