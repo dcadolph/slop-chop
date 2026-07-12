@@ -123,9 +123,11 @@ func writeTellsMarkdown(w io.Writer, p sanitize.Profile) error {
 # The tells
 
 AI writing gives itself away with the same characters, stock phrases, and buzzwords,
-over and over. This page lists every tell the default profile acts on, generated
-straight from the profile the engine compiles, so what you read here is exactly what
-gets chopped. Rebuild it any time with ` + "`slop-chop tells --markdown`" + `.
+over and over. If you have wondered why ChatGPT sounds robotic, or which words and
+phrases give AI writing away, this is the list. It covers every tell the default
+profile acts on, generated straight from the profile the engine compiles, so what you
+read here is exactly what gets chopped. Rebuild it any time with
+` + "`slop-chop tells --markdown`" + `.
 
 `)
 	writeMarkdownSwaps(&b, "##", "Character swaps", "Rewritten in place. The usual suspects: the em-dash, smart quotes, the ellipsis.", p.CharReplace)
