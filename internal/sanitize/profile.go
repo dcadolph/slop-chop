@@ -143,6 +143,8 @@ func DefaultProfile() Profile {
 			"lets-take-a-look": `(?i)\blet'?s (?:take a (?:closer )?look|explore|unpack|break (?:it|this) down)\b`,
 			// Chatbot reply openers and sign-offs.
 			"assistant-opener": `(?im)^\s{0,3}(?:certainly|absolutely|great question|i'?d be happy to|happy to help|i hope this helps)\b`,
+			// A stack of hedges in one breath, the noncommittal AI register.
+			"hedge-stack": `(?i)\b(?:may|might|could|possibly|perhaps|arguably|generally|potentially|somewhat|seemingly|presumably|conceivably)\b[^.!?\n]{1,50}\b(?:may|might|could|possibly|perhaps|arguably|generally|potentially|somewhat|seemingly|presumably|conceivably)\b`,
 			// "That's where X comes in", the setup-and-reveal move.
 			"thats-where-comes-in": `(?i)\bthat'?s where\b[^.!?\n]{1,30}\bcomes? in\b`,
 		},
