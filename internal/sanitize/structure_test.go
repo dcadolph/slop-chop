@@ -158,6 +158,35 @@ func TestProtectQuotes(t *testing.T) {
 	}
 }
 
+// TestArticleAgreement checks that a and an are corrected to the sound of the following word,
+// including the tricky exceptions, and that a correct article is left alone.
+func TestArticleAgreement(t *testing.T) {
+	t.Parallel()
+	s, err := New(DefaultProfile())
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	tests := []struct{ In, Want string }{
+		{"an new plan", "a new plan"},
+		{"a apple", "an apple"},
+		{"a hour", "an hour"},
+		{"an user", "a user"},
+		{"a FAQ entry", "an FAQ entry"},
+		{"a unicorn", "a unicorn"},
+		{"an honest broker", "an honest broker"},
+		{"An umbrella", "An umbrella"},
+		{"a locked door and an open window", "a locked door and an open window"},
+	}
+	for i, tt := range tests {
+		t.Run(fmt.Sprintf("test %d", i), func(t *testing.T) {
+			t.Parallel()
+			if got, _ := s.Fix(tt.In); got != tt.Want {
+				t.Errorf("Fix(%q) = %q, want %q", tt.In, got, tt.Want)
+			}
+		})
+	}
+}
+
 // TestCleaverRecallPhrases checks the marketing collocations added to the cleaver preset are
 // rewritten to plain phrasing.
 func TestCleaverRecallPhrases(t *testing.T) {
