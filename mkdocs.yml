@@ -49,6 +49,7 @@ nav:
   - Quickstart: quickstart.md
   - Profiles: PROFILE.md
   - Engine: ENGINE.md
+  - Web app: WEB.md
   - Claude plugin: PLUGIN.md
 
 markdown_extensions:
