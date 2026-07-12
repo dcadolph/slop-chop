@@ -123,10 +123,10 @@ func TestBenchmark(t *testing.T) {
 
 	// Floors are set below the current numbers, so an ordinary change passes while a real
 	// regression fails. Raise them as the engine and the corpus improve.
-	assertFloor(t, "tell recall", tellRecall, 0.75)
-	assertFloor(t, "technical precision", techPrecision, 0.90)
-	assertFloor(t, "score recall", scoreRecall, 0.70)
-	assertFloor(t, "score precision", scorePrecision, 0.90)
+	assertFloor(t, "tell recall", tellRecall, 0.90)
+	assertFloor(t, "technical precision", techPrecision, 0.95)
+	assertFloor(t, "score recall", scoreRecall, 0.90)
+	assertFloor(t, "score precision", scorePrecision, 0.95)
 }
 
 // ratio returns n/d as a float, or 0 when d is zero.
