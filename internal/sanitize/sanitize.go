@@ -2,6 +2,7 @@ package sanitize
 
 import (
 	"cmp"
+	"regexp"
 	"slices"
 	"strings"
 	"unicode/utf8"
@@ -11,6 +12,13 @@ import (
 type Sanitizer struct {
 	// rules are the compiled rules applied in order.
 	rules []Rule
+	// allowPhrases matches allow-listed collocations. Its occurrences are protected from
+	// every rule, so a term of art like "robust regression" keeps its word even when the
+	// bare word is a tell. It is nil when the profile has no multi-word allow entries.
+	allowPhrases *regexp.Regexp
+	// protectQuotes leaves double-quoted spans unedited when set, so a quoted source is not
+	// reworded. It mirrors Profile.ProtectQuotes.
+	protectQuotes bool
 }
 
 // New compiles the profile into a Sanitizer.
@@ -19,7 +27,11 @@ func New(p Profile) (*Sanitizer, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Sanitizer{rules: rules}, nil
+	phrases, err := allowPhraseRe(p.Allow)
+	if err != nil {
+		return nil, err
+	}
+	return &Sanitizer{rules: rules, allowPhrases: phrases, protectQuotes: p.ProtectQuotes}, nil
 }
 
 // Check reports every rule match in text without changing it. Findings are computed
@@ -27,7 +39,7 @@ func New(p Profile) (*Sanitizer, error) {
 // order rather than rule order.
 func (s *Sanitizer) Check(text string) []Finding {
 	var findings []Finding
-	protected := skipRanges(text)
+	protected := s.protectedRanges(text)
 	for _, r := range s.rules {
 		for _, loc := range r.matches(text, protected) {
 			match := text[loc[0]:loc[1]]
@@ -98,7 +110,7 @@ func (s *Sanitizer) fixpoint(text string) string {
 // protected ranges are recomputed after any rule that changed the text.
 func (s *Sanitizer) applyAll(text string) string {
 	out := text
-	protected := skipRanges(out)
+	protected := s.protectedRanges(out)
 	for _, r := range s.rules {
 		if !r.rewrite {
 			continue
@@ -106,10 +118,32 @@ func (s *Sanitizer) applyAll(text string) string {
 		next := r.apply(out, protected)
 		if next != out {
 			out = next
-			protected = skipRanges(out)
+			protected = s.protectedRanges(out)
 		}
 	}
 	return out
+}
+
+// protectedRanges returns every byte range the rules must not touch: code, Markdown
+// structure, ignore lines, and any allow-listed collocation, merged so overlapsAny can rely
+// on the order.
+func (s *Sanitizer) protectedRanges(text string) [][2]int {
+	ranges := skipRanges(text)
+	extra := false
+	if s.allowPhrases != nil {
+		for _, loc := range s.allowPhrases.FindAllStringIndex(text, -1) {
+			ranges = append(ranges, [2]int{loc[0], loc[1]})
+		}
+		extra = true
+	}
+	if s.protectQuotes {
+		ranges = append(ranges, quoteRanges(text)...)
+		extra = true
+	}
+	if extra {
+		ranges = mergeRanges(ranges)
+	}
+	return ranges
 }
 
 // assignLineCol fills the one-based Line and rune Col of each finding in a single forward

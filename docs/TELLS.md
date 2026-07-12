@@ -234,7 +234,7 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 | `value-added` | `useful` |
 | `world-class` | `top` |
 
-#### Phrase swaps (34)
+#### Phrase swaps (42)
 
 | From | To |
 | ---- | -- |
@@ -246,8 +246,11 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 | `at the end of the day, ` | dropped |
 | `core competencies` | `strengths` |
 | `core competency` | `strength` |
+| `curated collection` | `selected collection` |
+| `curated list` | `selected list` |
 | `deep dive into` | `dig into` |
 | `deep-dive into` | `dig into` |
+| `elevate your ` | `improve your ` |
 | `embark on` | `start` |
 | `empowered to` | `able to` |
 | `harness the power of` | `use` |
@@ -266,8 +269,13 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 | `paradigm shift` | `big change` |
 | `plays a crucial role in` | `is key to` |
 | `plays a vital role in` | `is key to` |
+| `resonate with ` | `connect with ` |
+| `resonates with ` | `connects with ` |
 | `stands as a testament to` | `shows` |
 | `ultimately, ` | dropped |
+| `underscores how ` | `shows how ` |
+| `underscores that ` | `shows that ` |
+| `underscores the ` | `shows the ` |
 | `unlock the full potential of` | `get the most from` |
 | `unlocking the full potential of` | `getting the most from` |
 | `unlocks the full potential of` | `gets the most from` |

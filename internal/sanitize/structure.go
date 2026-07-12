@@ -24,7 +24,31 @@ var (
 	// bareURLRe matches a bare http or https URL in prose. It ends on a URL character, so
 	// trailing sentence punctuation is left outside the protected span.
 	bareURLRe = regexp.MustCompile(`https?://[^\s<>()\[\]]*[A-Za-z0-9/=#&%_~+-]`)
+	// attrListRe matches a Markdown attr_list block, "{ .class #id key=val }", so the
+	// leading space before a class or id is not read as prose punctuation. It requires a
+	// class or id token, so an ordinary brace group in prose is left alone.
+	attrListRe = regexp.MustCompile(`\{[ \t]*:?[ \t]*[.#][^{}\n]*\}`)
+	// shortcodeRe matches an icon or emoji shortcode, ":material-flash:" or ":rocket:", so
+	// its colons are not read as prose punctuation. The name must start with a letter, so a
+	// time like "10:30" or a ratio like "16:9" is left alone.
+	shortcodeRe = regexp.MustCompile(`:[a-zA-Z][a-zA-Z0-9_+-]*:`)
 )
+
+// quoteSpanRe matches a double-quoted span, straight or smart, on one line.
+//
+//nolint:gochecknoglobals // Compiled once, never modified.
+var quoteSpanRe = regexp.MustCompile(`"[^"\n]*"|“[^”\n]*”`)
+
+// quoteRanges returns the byte ranges of double-quoted spans, straight or smart, so a profile
+// that protects quotes leaves a quoted source unedited.
+func quoteRanges(text string) [][2]int {
+	locs := quoteSpanRe.FindAllStringIndex(text, -1)
+	ranges := make([][2]int, 0, len(locs))
+	for _, loc := range locs {
+		ranges = append(ranges, [2]int{loc[0], loc[1]})
+	}
+	return ranges
+}
 
 // structuralRanges returns the byte ranges of Markdown structure and front matter that must
 // not be rewritten. The ranges are unsorted and may overlap each other and code, which
@@ -34,7 +58,7 @@ func structuralRanges(text string) [][2]int {
 	for _, loc := range inlineDestRe.FindAllStringSubmatchIndex(text, -1) {
 		ranges = append(ranges, [2]int{loc[2], loc[3]})
 	}
-	for _, re := range []*regexp.Regexp{autolinkRe, refDefRe, bareURLRe} {
+	for _, re := range []*regexp.Regexp{autolinkRe, refDefRe, bareURLRe, attrListRe, shortcodeRe} {
 		for _, loc := range re.FindAllStringIndex(text, -1) {
 			ranges = append(ranges, [2]int{loc[0], loc[1]})
 		}

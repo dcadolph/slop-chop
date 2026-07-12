@@ -47,6 +47,10 @@ type Profile struct {
 	CollapseSpaces bool `json:"collapseSpaces"`
 	// SplitSemicolons turns "; " into ". " and capitalizes the next word.
 	SplitSemicolons bool `json:"splitSemicolons"`
+	// ProtectQuotes leaves text inside double quotation marks unchanged, straight or smart,
+	// so a quoted source is not reworded. Off by default, since cleaning your own draft
+	// should reach inside your own quotes.
+	ProtectQuotes bool `json:"protectQuotes"`
 	// Tone holds optional notes on the voice to aim for. The rules pass ignores it.
 	// The rewrite pass feeds it to the model so output sounds like you.
 	Tone []string `json:"tone"`
@@ -141,6 +145,15 @@ func DefaultProfile() Profile {
 			"assistant-opener": `(?im)^\s{0,3}(?:certainly|absolutely|great question|i'?d be happy to|happy to help|i hope this helps)\b`,
 			// "That's where X comes in", the setup-and-reveal move.
 			"thats-where-comes-in": `(?i)\bthat'?s where\b[^.!?\n]{1,30}\bcomes? in\b`,
+		},
+		Allow: []string{
+			// Technical collocations where a flagged word is a term of art, protected so a
+			// swap never turns "robust regression" into "solid regression".
+			"robust regression", "robust standard errors", "robust estimator",
+			"robust estimation", "robust statistics", "robust control",
+			"optimal substructure", "optimal control", "optimal transport",
+			"optimal policy", "optimal stopping",
+			"comprehensive exam", "comprehensive examination",
 		},
 		CollapseSpaces:  true,
 		SplitSemicolons: true,
@@ -273,7 +286,7 @@ func (p Profile) compile() ([]Rule, error) {
 			Name:     "space-before-punct",
 			re:       regexp.MustCompile(`[ \t]+[,.!?;:]`),
 			replFunc: trimLeadingSpace,
-			keep:     notLineStart,
+			keep:     spaceBeforePunctKeep,
 			rewrite:  true,
 		})
 		rules = append(rules, Rule{
@@ -304,6 +317,30 @@ func (p Profile) compile() ([]Rule, error) {
 	}
 
 	return rules, nil
+}
+
+// allowPhraseRe compiles the multi-word entries of an allow list into one alternation whose
+// matches are protected from every rule, so a term of art like "robust regression" keeps its
+// word even when the bare word is a tell. Single-word entries are left to the per-rule allow
+// set. It returns nil when there are no multi-word entries.
+func allowPhraseRe(allow []string) (*regexp.Regexp, error) {
+	var parts []string
+	for _, a := range allow {
+		fields := strings.Fields(a)
+		if len(fields) < 2 {
+			continue
+		}
+		parts = append(parts, flexSpaces(regexp.QuoteMeta(strings.Join(fields, " "))))
+	}
+	if len(parts) == 0 {
+		return nil, nil
+	}
+	slices.Sort(parts)
+	re, err := regexp.Compile(`(?i)\b(?:` + strings.Join(parts, "|") + `)\b`)
+	if err != nil {
+		return nil, fmt.Errorf("%w: allow phrases: %w", ErrCompile, err)
+	}
+	return re, nil
 }
 
 // allowSet turns the allow list into a lower-cased lookup, or nil when it is empty.
@@ -560,6 +597,16 @@ func stripOrphanComma(text string, loc []int) string {
 // the punctuation cleanup.
 func notLineStart(text string, start, _ int) bool {
 	return start > 0 && text[start-1] != '\n' && text[start-1] != '\r'
+}
+
+// spaceBeforePunctKeep reports whether a space-before-punctuation match is real cleanup and
+// not Markdown structure. It keeps indentation out of reach like notLineStart, and skips the
+// "!" that opens an inline image, where the space belongs before the image.
+func spaceBeforePunctKeep(text string, start, end int) bool {
+	if !notLineStart(text, start, end) {
+		return false
+	}
+	return text[end-1] != '!' || end >= len(text) || text[end] != '['
 }
 
 // collapsibleRun reports whether a run of spaces should collapse. A run at the start of
