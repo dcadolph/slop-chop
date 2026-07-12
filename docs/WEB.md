@@ -66,6 +66,15 @@ Copy link packs the settings into the URL hash as base64 JSON. API keys are stri
 before encoding. On load, a valid hash applies the settings and cleans itself from the
 URL. A mangled hash degrades to a normal visit.
 
+## Offline
+
+A service worker caches the page, the engine, and the theme's hashed bundles on the
+first visit, so the chopper works with no network at all. Same-origin requests are
+served from the cache and refreshed in the background, which means a deploy reaches a
+returning visitor one load later. Calls to model providers never touch the worker. A
+small manifest makes the page installable as an app. This is the privacy pitch made
+literal: after the first load, nothing requires the network but the optional rewrite.
+
 ## Verifying changes
 
 `make wasm` builds the engine into `docs/assets`, `mkdocs build` assembles the site,

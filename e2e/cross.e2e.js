@@ -9,7 +9,10 @@ const { BASE, launch, waitForApp } = require("./helpers");
 
 async function smoke(name, browserType) {
   const browser = await launch(browserType);
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  // The service worker is blocked here: on a controlled page outside Chromium the
+  // provider mock below never sees the request. Offline and caching behavior is
+  // covered by the Chromium features suite.
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, serviceWorkers: "block" });
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
 
@@ -72,7 +75,7 @@ async function smoke(name, browserType) {
     for (const c of bytes) bin += String.fromCharCode(c);
     return location.origin + location.pathname + "#s=" + btoa(bin).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
   });
-  const p2 = await browser.newPage();
+  const p2 = await browser.newPage({ serviceWorkers: "block" });
   await p2.goto(href, { waitUntil: "load" });
   await waitForApp(p2);
   if ((await p2.inputValue("#sc-block-words")) !== "crossbrowser") {

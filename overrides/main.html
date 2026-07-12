@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block extrahead %}
+  <link rel="manifest" href="manifest.json">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="slop-chop">
   <meta property="og:title" content="{{ page.title | default('slop-chop') }} - slop-chop">

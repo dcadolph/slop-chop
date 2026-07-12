@@ -1,0 +1,10 @@
+{
+  "name": "slop-chop",
+  "short_name": "slop-chop",
+  "description": "Chop the slop. Text that reads like a person wrote it.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#141414",
+  "theme_color": "#191919",
+  "icons": [{ "src": "assets/icon.png", "sizes": "256x256", "type": "image/png" }]
+}
