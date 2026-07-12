@@ -22,6 +22,6 @@ Point the suite somewhere else with `E2E_BASE_URL`, which defaults to
 | Suite             | Covers                                                              |
 | ----------------- | -------------------------------------------------------------------- |
 | `base.e2e.js`     | Boot, chop, drawer, presets, dialect, errors, persistence, big paste.&nbsp; |
-| `rewrite.e2e.js`  | Model connectors, meaning check, error recovery, gating.              |
+| `rewrite.e2e.js`  | Model connectors, streaming, restore, meaning check, error recovery, gating. |
 | `features.e2e.js` | Worker responsiveness, share links, fold, output diff, score panel, file drop, download. |
 | `cross.e2e.js`    | The core flows again in Firefox and WebKit.                           |

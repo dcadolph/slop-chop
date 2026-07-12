@@ -54,9 +54,11 @@ with a message and the panes keep what they had.
 The rewrite pass is optional and browser-direct. Anthropic calls go straight from the
 page with the user's own key and the CORS opt-in header. Any OpenAI-compatible endpoint
 works for local models: Ollama, LM Studio, vLLM. Keys live in localStorage and are sent
-only to the chosen endpoint. After a rewrite, the same provider judges the result
-against the original with the CLI's verify prompt and the page reports whether meaning
-held.
+only to the chosen endpoint. The reply streams into the output pane as the model writes
+it, and a stream that dies puts the rules output back instead of leaving half a reply.
+After a rewrite, the same provider judges the result against the original with the
+CLI's verify prompt, the page reports whether meaning held, and a Restore button
+returns the pane to the rules output when the model's version loses.
 
 ## Share links
 

@@ -253,6 +253,11 @@
       rwVerify: $("sc-rw-verify"),
     };
     const rewriteBtn = $("sc-rewrite");
+    const restoreBtn = $("sc-restore");
+
+    /* ruleOutput stashes the rules output across a model rewrite, so Restore can put
+       it back when the model's version loses. */
+    let ruleOutput = null;
 
     function dialectValue() {
       const checked = root.querySelector('input[name="sc-dialect"]:checked');
@@ -376,10 +381,32 @@
       }
     }
 
+    /* readSSE consumes a text/event-stream body, handing each data payload to onData
+       until the stream ends. Payloads split across network chunks are reassembled. */
+    async function readSSE(res, onData) {
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let buf = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true }).replaceAll("\r\n", "\n");
+        let i;
+        while ((i = buf.indexOf("\n\n")) >= 0) {
+          const chunk = buf.slice(0, i);
+          buf = buf.slice(i + 2);
+          for (const line of chunk.split("\n")) {
+            if (line.startsWith("data:")) onData(line.slice(5).trim());
+          }
+        }
+      }
+    }
+
     /* rewriteAnthropic sends the text to the Anthropic Messages API straight from the
        browser. The dangerous-direct-browser-access header opts into CORS; the key is
-       the user's own and goes nowhere but Anthropic. */
-    async function rewriteAnthropic(text, system) {
+       the user's own and goes nowhere but Anthropic. With onDelta the reply streams,
+       and onDelta gets the text accumulated so far after each chunk. */
+    async function rewriteAnthropic(text, system, onDelta) {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
@@ -391,27 +418,54 @@
         body: JSON.stringify({
           model: controls.rwModel.value.trim() || "claude-opus-4-8",
           max_tokens: 16000,
+          stream: Boolean(onDelta),
           system,
           messages: [{ role: "user", content: text }],
         }),
       });
-      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
         throw new Error(data.error && data.error.message ? data.error.message : "HTTP " + res.status);
       }
-      if (data.stop_reason === "max_tokens") throw new Error("reply hit the token cap and is truncated");
-      if (data.stop_reason === "refusal") throw new Error("the model declined to rewrite the text");
-      const out = (data.content || [])
-        .filter((b) => b.type === "text")
-        .map((b) => b.text)
-        .join("");
+      let out = "";
+      let stop = "";
+      if (onDelta) {
+        await readSSE(res, (data) => {
+          let ev;
+          try {
+            ev = JSON.parse(data);
+          } catch {
+            return;
+          }
+          if (ev.type === "error") {
+            throw new Error(ev.error && ev.error.message ? ev.error.message : "stream error");
+          }
+          if (ev.type === "content_block_delta" && ev.delta && ev.delta.type === "text_delta") {
+            out += ev.delta.text;
+            onDelta(out);
+          }
+          if (ev.type === "message_delta" && ev.delta && ev.delta.stop_reason) {
+            stop = ev.delta.stop_reason;
+          }
+        });
+      } else {
+        const data = await res.json().catch(() => ({}));
+        stop = data.stop_reason;
+        out = (data.content || [])
+          .filter((b) => b.type === "text")
+          .map((b) => b.text)
+          .join("");
+      }
+      if (stop === "max_tokens") throw new Error("reply hit the token cap and is truncated");
+      if (stop === "refusal") throw new Error("the model declined to rewrite the text");
       if (!out) throw new Error("reply had no text content");
       return out.trim();
     }
 
     /* rewriteOpenAI sends the text to any OpenAI-compatible chat completions endpoint,
-       which covers Ollama, LM Studio, vLLM, and most gateways. */
-    async function rewriteOpenAI(text, system) {
+       which covers Ollama, LM Studio, vLLM, and most gateways. Streams like
+       rewriteAnthropic when onDelta is given. */
+    async function rewriteOpenAI(text, system, onDelta) {
       const url = controls.rwURL.value.trim().replace(/\/+$/, "") + "/v1/chat/completions";
       const headers = { "content-type": "application/json" };
       const key = controls.rwOKey.value.trim();
@@ -421,19 +475,37 @@
         headers,
         body: JSON.stringify({
           model: controls.rwOModel.value.trim(),
-          stream: false,
+          stream: Boolean(onDelta),
           messages: [
             { role: "system", content: system },
             { role: "user", content: text },
           ],
         }),
       });
-      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const msg = data.error && data.error.message ? data.error.message : "HTTP " + res.status;
-        throw new Error(msg);
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error && data.error.message ? data.error.message : "HTTP " + res.status);
       }
-      const out = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+      let out = "";
+      if (onDelta) {
+        await readSSE(res, (data) => {
+          if (data === "[DONE]") return;
+          let ev;
+          try {
+            ev = JSON.parse(data);
+          } catch {
+            return;
+          }
+          const piece = ev.choices && ev.choices[0] && ev.choices[0].delta && ev.choices[0].delta.content;
+          if (piece) {
+            out += piece;
+            onDelta(out);
+          }
+        });
+      } else {
+        const data = await res.json().catch(() => ({}));
+        out = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "";
+      }
       if (!out) throw new Error("reply had no text content");
       return out.trim();
     }
@@ -470,7 +542,9 @@
     }
 
     /* rewrite sends the chopped text through the configured model, mirroring the CLI:
-       rules first, then the model pass on the rules output, then the optional check. */
+       rules first, then the model pass on the rules output, then the optional check.
+       The reply streams into the output pane as it arrives; the finished text gets the
+       usual diff marks, and a failed stream rolls the pane back to the rules output. */
     async function rewrite() {
       const text = output.value.trim();
       if (!text || !rewriteReady() || !defaults) return;
@@ -485,15 +559,23 @@
       setStatus("");
       try {
         const send = controls.rwProvider.value === "anthropic" ? rewriteAnthropic : rewriteOpenAI;
-        const rewritten = await send(text, promptRes.system);
+        const rewritten = await send(text, promptRes.system, (partial) => {
+          output.value = partial;
+          outMarks.textContent = partial;
+          output.scrollTop = output.scrollHeight;
+        });
         output.value = rewritten;
         renderOutMarks(input.value, rewritten);
+        ruleOutput = text;
+        restoreBtn.hidden = false;
         if (controls.rwVerify.checked) {
           await verifyRewrite(text, rewritten, send);
         } else {
           setStatus("Rewritten. The panes now differ: left is your input, right is the model's rewrite.");
         }
       } catch (err) {
+        output.value = text;
+        renderOutMarks(input.value, text);
         setStatus("Rewrite failed: " + err.message, true);
       } finally {
         rewriteBtn.disabled = false;
@@ -658,6 +740,8 @@
         score.hidden = true;
         setScorePop(false);
         findingsBox.hidden = true;
+        ruleOutput = null;
+        restoreBtn.hidden = true;
         setStatus("");
         return;
       }
@@ -680,6 +764,9 @@
       }
       setStatus("");
       output.value = res.output;
+      // A fresh chop replaces whatever a model rewrite left, so the stash dies.
+      ruleOutput = null;
+      restoreBtn.hidden = true;
       renderMarks(text, res.findings);
       renderOutMarks(text, res.output);
       renderScore(res);
@@ -823,6 +910,14 @@
       loadFile(e.dataTransfer.files[0]);
     });
     rewriteBtn.addEventListener("click", rewrite);
+    restoreBtn.addEventListener("click", () => {
+      if (ruleOutput === null) return;
+      output.value = ruleOutput;
+      renderOutMarks(input.value, ruleOutput);
+      restoreBtn.hidden = true;
+      ruleOutput = null;
+      setStatus("Rules output restored.");
+    });
     score.addEventListener("click", () => setScorePop(scorePop.hidden));
     document.addEventListener("click", (e) => {
       if (!scorePop.hidden && !scorePop.contains(e.target) && e.target !== score) {
