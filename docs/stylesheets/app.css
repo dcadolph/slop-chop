@@ -492,3 +492,35 @@ body:has(#sc-app) .md-grid {
   font-size: 0.66rem;
   opacity: 0.55;
 }
+
+/* Small screens: the drawer and the score breakdown become fixed sheets pinned under
+   the site header, since anchoring them to the card puts them below the fold. */
+@media (max-width: 720px) {
+  .sc-app {
+    padding: 0.8rem 0.7rem 0.9rem;
+  }
+  .sc-app-note {
+    font-size: 0.66rem;
+  }
+  .sc-pane-bar {
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+  .sc-drawer {
+    position: fixed;
+    top: 3.6rem;
+    left: 0.7rem;
+    right: 0.7rem;
+    width: auto;
+    max-height: calc(100vh - 5rem);
+    z-index: 20;
+  }
+  .sc-score-pop {
+    position: fixed;
+    top: 3.6rem;
+    left: 0.7rem;
+    right: 0.7rem;
+    width: auto;
+    z-index: 20;
+  }
+}

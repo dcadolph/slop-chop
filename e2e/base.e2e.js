@@ -11,7 +11,11 @@ async function main() {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   const consoleErrors = [];
   page.on("console", (m) => {
-    if (m.type() === "error") consoleErrors.push(m.text());
+    // The theme's repo badge polls api.github.com, which rate-limits by IP. That
+    // noise is not the app's, so it does not fail the suite.
+    if (m.type() === "error" && !(m.location().url || "").includes("api.github.com")) {
+      consoleErrors.push(m.text());
+    }
   });
   page.on("pageerror", (e) => consoleErrors.push("pageerror: " + e.message));
 
