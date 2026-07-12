@@ -26,6 +26,9 @@ coverage.out
 # Staged engine for the browser extension, produced by make extension
 /extension/engine/
 
+# Packaged extension zip, produced by make extension-package
+/slop-chop-extension.zip
+
 # Browser test suite dependencies
 /e2e/node_modules/
 

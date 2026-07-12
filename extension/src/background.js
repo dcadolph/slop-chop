@@ -1,6 +1,7 @@
-/* Service worker. The hotkey fires here, so it asks the focused tab's content script to
-   chop what has focus. The engine itself runs in an offscreen document, off the worker,
-   which Chrome is free to stop between events. */
+/* Service worker. The hotkey fires here, so it asks the focused tab's content script to chop
+   what has focus. The engine runs in an offscreen document, off the worker, which Chrome is
+   free to stop between events. Content, popup, and options pages send engine calls here and
+   this relays them to the offscreen document. */
 "use strict";
 
 // OFFSCREEN_URL is the hidden page that loads and runs the wasm engine.
@@ -19,10 +20,20 @@ async function ensureOffscreen() {
   });
 }
 
-// chopText hands text to the offscreen engine and resolves with its result.
-async function chopText(text) {
+// callOffscreen makes sure the engine page exists, then forwards a message to it.
+async function callOffscreen(message) {
   await ensureOffscreen();
-  return chrome.runtime.sendMessage({ target: "offscreen", type: "chop", text });
+  return chrome.runtime.sendMessage({ ...message, target: "offscreen" });
+}
+
+// chopWithSettings reads the saved voice and presets here, where chrome.storage is available,
+// and hands them to the offscreen engine, which cannot read storage itself.
+async function chopWithSettings(text) {
+  const settings = await chrome.storage.local.get({
+    voice: { keep: [], prefer: {}, avoid: [] },
+    presets: ["cleaver"],
+  });
+  return callOffscreen({ type: "chop", text, settings });
 }
 
 // The hotkey lands here. Tell the active tab's content script to chop what has focus.
@@ -34,10 +45,18 @@ chrome.commands.onCommand.addListener(async (command) => {
   }
 });
 
-// The content script asks for a chop. Run it through the offscreen engine and answer.
+// Content, popup, and options ask for engine work. A chop needs the saved settings; a
+// presets query does not. Relay to the offscreen document either way.
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if (msg && msg.type === "chop" && msg.target !== "offscreen") {
-    chopText(msg.text)
+  if (!msg || msg.target === "offscreen") return undefined;
+  if (msg.type === "chop") {
+    chopWithSettings(msg.text)
+      .then((res) => sendResponse(res))
+      .catch((err) => sendResponse({ error: String((err && err.message) || err) }));
+    return true;
+  }
+  if (msg.type === "presets") {
+    callOffscreen(msg)
       .then((res) => sendResponse(res))
       .catch((err) => sendResponse({ error: String((err && err.message) || err) }));
     return true;

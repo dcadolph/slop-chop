@@ -12,7 +12,7 @@ GOBIN := $(shell $(GO) env GOPATH)/bin
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: build install uninstall test cover vet lint fmt tidy clean wasm extension help
+.PHONY: build install uninstall test cover vet lint fmt tidy clean wasm extension extension-package help
 
 ## build: compile the binary into the repo root with the version stamped
 build:
@@ -61,6 +61,11 @@ extension: wasm
 	mkdir -p extension/engine
 	cp docs/assets/slop-chop.wasm extension/engine/slop-chop.wasm
 	cp docs/assets/wasm_exec.js extension/engine/wasm_exec.js
+
+## extension-package: zip the built extension for a store upload
+extension-package: extension
+	rm -f slop-chop-extension.zip
+	cd extension && zip -qr ../slop-chop-extension.zip . -x '.*'
 
 ## clean: remove the built binary, wasm artifacts, and coverage profile
 clean:

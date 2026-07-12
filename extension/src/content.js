@@ -1,7 +1,7 @@
-/* Runs on every page. When the hotkey fires, the service worker sends "do-chop"; this reads
-   the focused text field, sends its text to the engine, writes the cleaned text back, and
-   shows a short before/after badge. The engine runs inside the extension, so the text never
-   leaves the browser. */
+/* Runs on every page. It reads the focused text field, sends the text to the engine, writes
+   the cleaned text back, and shows a short before/after badge. A small chop button floats by
+   the focused field, and the hotkey (relayed by the service worker) does the same thing. The
+   engine runs inside the extension, so the text never leaves the browser. */
 "use strict";
 
 // editableTarget returns the focused element when it is one we can rewrite, else null.
@@ -75,6 +75,66 @@ async function chopFocused() {
     res.before != null && res.after != null ? " (slop " + res.before + " → " + res.after + ")" : "";
   toast("Chopped" + drop);
 }
+
+// The floating chop button sits at the corner of the focused field, so the feature is
+// discoverable without the hotkey. mousedown is swallowed to keep focus on the field.
+let chopBtn = null;
+
+// ensureButton builds the floating button once and wires its click to a chop.
+function ensureButton() {
+  if (chopBtn) return chopBtn;
+  chopBtn = document.createElement("button");
+  chopBtn.type = "button";
+  chopBtn.textContent = "✂"; // scissors
+  chopBtn.setAttribute("aria-label", "Chop the slop");
+  chopBtn.title = "Chop the slop";
+  chopBtn.style.cssText =
+    "position:fixed;z-index:2147483646;width:26px;height:26px;padding:0;border:none;" +
+    "border-radius:7px;background:#111;color:#9bcf1a;font:700 14px/1 system-ui,sans-serif;" +
+    "cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);display:none";
+  chopBtn.addEventListener("mousedown", (e) => e.preventDefault());
+  chopBtn.addEventListener("click", () => chopFocused());
+  document.body.appendChild(chopBtn);
+  return chopBtn;
+}
+
+// placeButton shows the button at the bottom-right corner of a field, or hides it when the
+// field is too small to be worth chopping.
+function placeButton(el) {
+  const b = ensureButton();
+  const r = el.getBoundingClientRect();
+  if (r.width < 80 || r.height < 24 || r.bottom < 0 || r.top > innerHeight) {
+    b.style.display = "none";
+    return;
+  }
+  b.style.top = Math.min(innerHeight - 30, Math.max(4, r.bottom - 30)) + "px";
+  b.style.left = Math.min(innerWidth - 30, Math.max(4, r.right - 30)) + "px";
+  b.style.display = "block";
+}
+
+// hideButton hides the floating button unless a field still has focus.
+function hideButton() {
+  if (chopBtn && !editableTarget()) chopBtn.style.display = "none";
+}
+
+document.addEventListener("focusin", () => {
+  const el = editableTarget();
+  if (el) placeButton(el);
+  else hideButton();
+});
+document.addEventListener("focusout", () => setTimeout(hideButton, 150));
+document.addEventListener(
+  "scroll",
+  () => {
+    const el = editableTarget();
+    if (el) placeButton(el);
+  },
+  true,
+);
+addEventListener("resize", () => {
+  const el = editableTarget();
+  if (el) placeButton(el);
+});
 
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg && msg.type === "do-chop") chopFocused();

@@ -1,7 +1,7 @@
 /* Hosts the slop-chop wasm engine in a hidden extension page. The service worker relays
-   {target:"offscreen", type:"chop", text}; this runs the rules pass and answers with the
-   cleaned text and the before and after slop scores. The wasm boot mirrors the site's
-   worker, since the same binary backs both. */
+   messages tagged {target:"offscreen"}; this runs the rules pass and answers. The wasm boot
+   mirrors the site's worker, since the same binary backs both. Settings (voice and presets)
+   come from chrome.storage.local, so a chop reflects the latest options with no reload. */
 "use strict";
 
 let ready = null;
@@ -28,10 +28,37 @@ function boot() {
   return ready;
 }
 
-// chop runs the engine with the built-in defaults and the cleaver preset, the same setup
-// the web widget ships by default.
-function chop(text) {
-  const req = JSON.stringify({ text, profile: defaults, presets: ["cleaver"] });
+// dedupe returns the array with duplicates dropped, order kept.
+function dedupe(arr) {
+  return [...new Set(arr)];
+}
+
+// voiceProfile folds a voice into the default profile: keep into allow, avoid into
+// blockWords, and each prefer entry into wordReplace when its key is one word or
+// phraseReplace when it is several. Voice wins, and because the engine applies allow to every
+// rule, a kept word survives even a preset that would swap it.
+function voiceProfile(base, voice) {
+  const wordReplace = { ...(base.wordReplace || {}) };
+  const phraseReplace = { ...(base.phraseReplace || {}) };
+  for (const [from, to] of Object.entries(voice.prefer || {})) {
+    if (String(from).trim().split(/\s+/).length === 1) wordReplace[from] = to;
+    else phraseReplace[from] = to;
+  }
+  return {
+    ...base,
+    wordReplace,
+    phraseReplace,
+    allow: dedupe([...(base.allow || []), ...(voice.keep || [])]),
+    blockWords: dedupe([...(base.blockWords || []), ...(voice.avoid || [])]),
+  };
+}
+
+// chop runs the engine with the voice folded in and the presets on top. Settings come from
+// the service worker, since an offscreen document cannot read chrome.storage itself.
+function chop(text, settings) {
+  const s = settings || {};
+  const profile = voiceProfile(defaults, s.voice || {});
+  const req = JSON.stringify({ text, profile, presets: s.presets || ["cleaver"] });
   const res = JSON.parse(self.slopChop(req));
   if (res.error) return { error: res.error };
   return {
@@ -39,15 +66,25 @@ function chop(text) {
     output: res.output,
     before: res.score ? res.score.value : null,
     after: res.scoreAfter ? res.scoreAfter.value : null,
+    findings: res.findings ? res.findings.length : 0,
   };
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if (!msg || msg.target !== "offscreen" || msg.type !== "chop") return undefined;
-  boot()
-    .then(() => sendResponse(chop(msg.text)))
-    .catch((err) => sendResponse({ error: String((err && err.message) || err) }));
-  return true;
+  if (!msg || msg.target !== "offscreen") return undefined;
+  if (msg.type === "chop") {
+    boot()
+      .then(() => sendResponse(chop(msg.text, msg.settings)))
+      .catch((err) => sendResponse({ error: String((err && err.message) || err) }));
+    return true;
+  }
+  if (msg.type === "presets") {
+    boot()
+      .then(() => sendResponse({ ok: true, presets: JSON.parse(self.slopPresets()) }))
+      .catch((err) => sendResponse({ error: String((err && err.message) || err) }));
+    return true;
+  }
+  return undefined;
 });
 
 boot();
