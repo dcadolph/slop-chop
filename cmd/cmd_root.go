@@ -32,7 +32,7 @@ working directory, that profile is used instead of the built-in one.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	cmd.AddCommand(checkCmd(), fixCmd(), scoreCmd())
+	cmd.AddCommand(checkCmd(), fixCmd(), scoreCmd(), tellsCmd())
 	return cmd
 }
 

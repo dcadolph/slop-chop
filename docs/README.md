@@ -193,4 +193,5 @@ brew install dcadolph/tap/slop-chop
 | [Quickstart](quickstart.md)  | Install and clean your first file in a couple of minutes.&nbsp;&nbsp; |
 | [Profiles](PROFILE.md)       | Every field, the presets, the spelling dialects, and the allow list. |
 | [Engine](ENGINE.md)          | How the rules pass works under the hood.                             |
+| [The tells](TELLS.md)        | The full catalog of what gets chopped or flagged, and why.           |
 | [Claude plugin](PLUGIN.md)   | Install, the skill, the command, backends, and troubleshooting.      |

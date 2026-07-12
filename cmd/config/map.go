@@ -11,6 +11,7 @@ var flags = map[string]*pflag.Flag{
 	KeyPreset:       &FlagPreset,
 	KeyJSON:         &FlagJSON,
 	KeyPretty:       &FlagPretty,
+	KeyMarkdown:     &FlagMarkdown,
 	KeyWrite:        &FlagWrite,
 	KeyRewrite:      &FlagRewrite,
 	KeyProvider:     &FlagProvider,

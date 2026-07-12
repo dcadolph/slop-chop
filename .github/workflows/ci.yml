@@ -18,6 +18,8 @@ jobs:
       - run: go vet ./...
       - run: test -z "$(gofmt -l .)"
       - run: go test ./...
+      - name: The tells page must match the profile it documents
+        run: go run . tells --markdown | diff - docs/TELLS.md
 
   lint:
     runs-on: ubuntu-latest
@@ -68,7 +70,7 @@ jobs:
       - name: The docs must pass slop-chop
         uses: ./
         with:
-          files: README.md ENGINE.md docs/PROFILE.md docs/PLUGIN.md
+          files: README.md ENGINE.md docs/PROFILE.md docs/PLUGIN.md docs/TELLS.md
 
   check-fails-on-slop:
     runs-on: ubuntu-latest
