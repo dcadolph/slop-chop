@@ -263,6 +263,26 @@
   }
 }
 
+/* Bottom of the landing page: the why cards and the start-here table share a row on
+   wide screens and stack back to one column below 1100px, so phones are unchanged. */
+.md-typeset .sc-bottom {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 0 2.2rem;
+  align-items: start;
+}
+
+.md-typeset .sc-bottom table:not([class]) {
+  display: table;
+  width: 100%;
+}
+
+@media (max-width: 1100px) {
+  .md-typeset .sc-bottom {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Slime-themed 404. */
 .sc-404 {
   text-align: center;
