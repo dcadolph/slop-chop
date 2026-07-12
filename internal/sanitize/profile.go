@@ -606,7 +606,7 @@ func spaceBeforePunctKeep(text string, start, end int) bool {
 	if !notLineStart(text, start, end) {
 		return false
 	}
-	return !(text[end-1] == '!' && end < len(text) && text[end] == '[')
+	return text[end-1] != '!' || end >= len(text) || text[end] != '['
 }
 
 // collapsibleRun reports whether a run of spaces should collapse. A run at the start of
