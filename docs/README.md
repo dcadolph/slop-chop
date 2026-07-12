@@ -47,11 +47,12 @@ hide:
 <div class="sc-pane-bar"><span>Slop in</span><button id="sc-clear" type="button">Clear</button></div>
 <div class="sc-editor">
 <div id="sc-marks" class="sc-marks" aria-hidden="true"></div>
-<textarea id="sc-in" spellcheck="false" placeholder="Paste your slop..."></textarea>
+<textarea id="sc-in" spellcheck="false" placeholder="Paste your slop or drop a file..."></textarea>
+<div class="sc-drop-hint" aria-hidden="true">Drop to chop</div>
 </div>
 </div>
 <div class="sc-pane">
-<div class="sc-pane-bar"><span>Chopped</span><span class="sc-pane-actions"><button id="sc-rewrite" type="button" hidden>Rewrite</button><button id="sc-copy" type="button">Copy</button></span></div>
+<div class="sc-pane-bar"><span>Chopped</span><span class="sc-pane-actions"><button id="sc-rewrite" type="button" hidden>Rewrite</button><button id="sc-download" type="button">Download</button><button id="sc-copy" type="button">Copy</button></span></div>
 <div class="sc-editor">
 <div id="sc-out-marks" class="sc-marks" aria-hidden="true"></div>
 <textarea id="sc-out" readonly spellcheck="false" placeholder="Clean text lands here."></textarea>
