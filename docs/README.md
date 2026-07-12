@@ -156,6 +156,10 @@ brew install dcadolph/tap/slop-chop
 <div class="step"><span class="num">3</span><strong>Rewrite</strong>Optional. Hands the text to a model for the things rules cannot manage, like reworking a sentence so it no longer needs a semicolon, or bending the writing toward your voice.</div>
 </div>
 
+<div class="sc-bottom" markdown>
+
+<div markdown>
+
 ## Why slop-chop
 
 <div class="grid cards" markdown>
@@ -186,6 +190,10 @@ brew install dcadolph/tap/slop-chop
 
 </div>
 
+</div>
+
+<div markdown>
+
 ## Start here
 
 | Guide                        | What's inside                                                        |
@@ -195,3 +203,7 @@ brew install dcadolph/tap/slop-chop
 | [Engine](ENGINE.md)          | How the rules pass works under the hood.                             |
 | [The tells](TELLS.md)        | The full catalog of what gets chopped or flagged, and why.           |
 | [Claude plugin](PLUGIN.md)   | Install, the skill, the command, backends, and troubleshooting.      |
+
+</div>
+
+</div>
