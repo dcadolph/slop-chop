@@ -129,11 +129,13 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 
 ### cleaver
 
-#### Word swaps (67)
+#### Word swaps (73)
 
 | From | To |
 | ---- | -- |
 | `best-in-class` | `top` |
+| `comprehensive` | `thorough` |
+| `comprehensively` | `thoroughly` |
 | `cutting-edge` | `modern` |
 | `delve` | `dig` |
 | `delved` | `dug` |
@@ -145,17 +147,18 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 | `empowered` | `helped` |
 | `empowering` | `helping` |
 | `empowers` | `helps` |
+| `ever-evolving` | `changing` |
 | `facilitate` | `help` |
 | `facilitated` | `helped` |
 | `facilitates` | `helps` |
 | `facilitating` | `helping` |
-| `forward-thinking` | `ambitious` |
+| `forward-thinking` | `modern` |
 | `frictionless` | `smooth` |
-| `future-proof` | `durable` |
+| `future-proof` | `lasting` |
 | `game-changer` | `breakthrough` |
 | `game-changing` | `major` |
 | `groundbreaking` | `new` |
-| `holistic` | `broad` |
+| `holistic` | `complete` |
 | `hyper-personalized` | `tailored` |
 | `innovative` | `new` |
 | `leverage` | `use` |
@@ -174,10 +177,12 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 | `paramount` | `critical` |
 | `pivotal` | `key` |
 | `plethora` | `plenty` |
-| `revolutionize` | `reshape` |
-| `revolutionized` | `reshaped` |
-| `revolutionizes` | `reshapes` |
-| `revolutionizing` | `reshaping` |
+| `powerful` | `strong` |
+| `powerfully` | `strongly` |
+| `revolutionize` | `change` |
+| `revolutionized` | `changed` |
+| `revolutionizes` | `changes` |
+| `revolutionizing` | `changing` |
 | `robust` | `solid` |
 | `seamless` | `smooth` |
 | `seamlessly` | dropped |
@@ -193,6 +198,7 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 | `supercharge` | `boost` |
 | `supercharged` | `boosted` |
 | `top-notch` | `top` |
+| `transformative` | `major` |
 | `unparalleled` | `unmatched` |
 | `utilize` | `use` |
 | `utilized` | `used` |
@@ -201,15 +207,21 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 | `value-added` | `useful` |
 | `world-class` | `top` |
 
-#### Phrase swaps (22)
+#### Phrase swaps (31)
 
 | From | To |
 | ---- | -- |
+| `a myriad of` | `many` |
+| `a variety of` | `several` |
+| `a wide range of` | `many` |
 | `actionable insights` | `useful findings` |
+| `at the end of the day, ` | dropped |
 | `core competencies` | `strengths` |
 | `core competency` | `strength` |
 | `deep dive into` | `dig into` |
 | `deep-dive into` | `dig into` |
+| `embark on` | `start` |
+| `empowered to` | `able to` |
 | `harness the power of` | `use` |
 | `harnesses the power of` | `uses` |
 | `harnessing the power of` | `using` |
@@ -221,7 +233,10 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 | `is a testament to` | `shows` |
 | `move the needle` | `make a difference` |
 | `moves the needle` | `makes a difference` |
+| `navigate the complexities of` | `handle` |
 | `paradigm shift` | `big change` |
+| `plays a crucial role in` | `is key to` |
+| `plays a vital role in` | `is key to` |
 | `stands as a testament to` | `shows` |
 | `ultimately, ` | dropped |
 | `unlock the full potential of` | `get the most from` |
