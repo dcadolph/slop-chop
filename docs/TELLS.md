@@ -180,7 +180,7 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 | `revolutionizing` | `reshaping` |
 | `robust` | `solid` |
 | `seamless` | `smooth` |
-| `seamlessly` | `smoothly` |
+| `seamlessly` | dropped |
 | `showcase` | `show` |
 | `showcased` | `showed` |
 | `showcases` | `shows` |

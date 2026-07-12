@@ -41,8 +41,9 @@ type Profile struct {
 	// against the exact text a rule matched. It silences false positives.
 	Allow []string `json:"allow"`
 	// CollapseSpaces collapses runs of two or more spaces into one and removes spaces
-	// left before closing punctuation, like the debris an em-dash swap leaves behind.
-	// Runs at the start of a line are indentation and stay as they are.
+	// and stray commas left before closing punctuation, like the debris an em-dash swap
+	// or a dropped word leaves behind. Runs at the start of a line are indentation and
+	// stay as they are.
 	CollapseSpaces bool `json:"collapseSpaces"`
 	// SplitSemicolons turns "; " into ". " and capitalizes the next word.
 	SplitSemicolons bool `json:"splitSemicolons"`
@@ -242,6 +243,18 @@ func (p Profile) compile() ([]Rule, error) {
 			rewrite:  true,
 		})
 		rules = append(rules, Rule{
+			Name:     "comma-before-stop",
+			re:       regexp.MustCompile(`,+[.!?;:]`),
+			replFunc: keepFinalByte,
+			rewrite:  true,
+		})
+		rules = append(rules, Rule{
+			Name:    "comma-run",
+			re:      regexp.MustCompile(`,{2,}`),
+			repl:    ",",
+			rewrite: true,
+		})
+		rules = append(rules, Rule{
 			Name:    "double-space",
 			re:      regexp.MustCompile(`  +`),
 			repl:    " ",
@@ -417,6 +430,12 @@ func sentenceStart(text string, offset int) bool {
 // the punctuation.
 func trimLeadingSpace(text string, loc []int) string {
 	return strings.TrimLeft(text[loc[0]:loc[1]], " \t")
+}
+
+// keepFinalByte rewrites a match to its final byte. It drops a comma run pressed
+// against closing punctuation, the debris left when a word between them is cut.
+func keepFinalByte(text string, loc []int) string {
+	return text[loc[1]-1 : loc[1]]
 }
 
 // notLineStart reports whether the match at start has text before it on the same line.
