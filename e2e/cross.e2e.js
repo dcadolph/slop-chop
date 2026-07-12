@@ -14,7 +14,21 @@ async function smoke(name, browserType) {
   page.on("pageerror", (e) => errors.push(e.message));
 
   await page.route("https://api.anthropic.com/v1/messages", (route) => {
-    const isJudge = JSON.parse(route.request().postData()).messages[0].content.startsWith("ORIGINAL:");
+    const body = JSON.parse(route.request().postData());
+    const isJudge = body.messages[0].content.startsWith("ORIGINAL:");
+    if (body.stream) {
+      route.fulfill({
+        status: 200,
+        contentType: "text/event-stream",
+        body: [
+          'data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"Rewritten "}}',
+          'data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"fine."}}',
+          'data: {"type":"message_delta","delta":{"stop_reason":"end_turn"}}',
+          "",
+        ].join("\n\n"),
+      });
+      return;
+    }
     route.fulfill({
       status: 200,
       contentType: "application/json",

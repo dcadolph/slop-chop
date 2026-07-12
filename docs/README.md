@@ -52,7 +52,7 @@ hide:
 </div>
 </div>
 <div class="sc-pane">
-<div class="sc-pane-bar"><span>Chopped</span><span class="sc-pane-actions"><button id="sc-rewrite" type="button" hidden>Rewrite</button><button id="sc-download" type="button">Download</button><button id="sc-copy" type="button">Copy</button></span></div>
+<div class="sc-pane-bar"><span>Chopped</span><span class="sc-pane-actions"><button id="sc-restore" type="button" hidden title="Put the rules output back in the pane.">Restore</button><button id="sc-rewrite" type="button" hidden>Rewrite</button><button id="sc-download" type="button">Download</button><button id="sc-copy" type="button">Copy</button></span></div>
 <div class="sc-editor">
 <div id="sc-out-marks" class="sc-marks" aria-hidden="true"></div>
 <textarea id="sc-out" readonly spellcheck="false" placeholder="Clean text lands here."></textarea>
