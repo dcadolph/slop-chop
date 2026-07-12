@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>slop-chop</title>
+    <style>
+      body {
+        width: 320px;
+        font: 13px/1.4 system-ui, sans-serif;
+        margin: 0;
+        padding: 12px;
+        color: #111;
+        background: #fff;
+      }
+      textarea {
+        width: 100%;
+        height: 88px;
+        box-sizing: border-box;
+        font: 12px/1.4 ui-monospace, monospace;
+      }
+      .row { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+      button {
+        background: #111;
+        color: #9bcf1a;
+        border: none;
+        border-radius: 8px;
+        padding: 7px 12px;
+        font: 600 12px system-ui;
+        cursor: pointer;
+      }
+      #score { font-weight: 700; }
+      a { color: #3a7d00; cursor: pointer; margin-left: auto; }
+      @media (prefers-color-scheme: dark) {
+        body { background: #111; color: #eee; }
+        textarea { background: #1c1c1c; color: #eee; border: 1px solid #333; }
+      }
+    </style>
+  </head>
+  <body>
+    <textarea id="in" placeholder="Paste text to chop..."></textarea>
+    <div class="row">
+      <button id="chop">Chop</button>
+      <span id="score"></span>
+      <a id="opts">Settings</a>
+    </div>
+    <textarea id="out" readonly placeholder="Clean text lands here..."></textarea>
+    <script src="popup.js"></script>
+  </body>
+</html>
