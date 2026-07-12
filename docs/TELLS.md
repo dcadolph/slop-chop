@@ -77,7 +77,7 @@ that done for you.
 
 `best-in-class` `blast radius` `comprehensive` `cutting edge` `cutting-edge` `delve` `delved` `delves` `delving` `effortless` `effortlessly` `elegant` `empower` `empowering` `empowers` `ever-evolving` `facilitate` `facilitates` `facilitating` `fast-paced` `frictionless` `game-changer` `game-changing` `groundbreaking` `harness the power` `holistic` `in the realm of` `innovative` `invaluable` `leverage` `leveraged` `leverages` `leveraging` `meticulous` `meticulously` `myriad` `paradigm shift` `pivotal` `plethora` `powerful` `revolutionize` `revolutionized` `revolutionizes` `revolutionizing` `robust` `seamless` `seamlessly` `showcase` `showcased` `showcases` `showcasing` `state-of-the-art` `streamline` `streamlined` `streamlines` `streamlining` `substrate` `supercharge` `supercharged` `synergies` `synergy` `tapestry` `testament to` `top-notch` `transformative` `unleash` `unleashed` `unleashes` `unleashing` `unlock the full potential` `unlock the potential` `unparalleled` `utilize` `utilized` `utilizes` `utilizing` `world-class`
 
-## Structural patterns (7)
+## Structural patterns (8)
 
 Sentence shapes a word list cannot catch, like the setup-and-reveal cadence. Flag
 only: the fix depends on the whole sentence, so it is left to you or the rewrite pass.
@@ -85,6 +85,7 @@ only: the fix depends on the whole sentence, so it is left to you or the rewrite
 | Name | Pattern |
 | ---- | ------- |
 | `assistant-opener` | `(?im)^\s{0,3}(?:certainly\|absolutely\|great question\|i'?d be happy to\|happy to help\|i hope this helps)\b` |
+| `hedge-stack` | `(?i)\b(?:may\|might\|could\|possibly\|perhaps\|arguably\|generally\|potentially\|somewhat\|seemingly\|presumably\|conceivably)\b[^.!?\n]{1,50}\b(?:may\|might\|could\|possibly\|perhaps\|arguably\|generally\|potentially\|somewhat\|seemingly\|presumably\|conceivably)\b` |
 | `heres-the-thing` | `(?i)\bhere'?s the (thing\|kicker\|deal\|catch\|secret\|problem)\b` |
 | `its-not-x-its-y` | `(?i)\b(?:it\|this\|that)(?:'?s\|\s+(?:is\|was\|are\|were))(?:\s+not\|n'?t)\b[^.!?\n]{1,40}[,;]\s*it'?s\b` |
 | `lets-dive-in` | `(?i)\blet'?s (dive\|delve\|jump) in(to)?\b` |

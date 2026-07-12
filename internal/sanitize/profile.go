@@ -47,6 +47,9 @@ type Profile struct {
 	CollapseSpaces bool `json:"collapseSpaces"`
 	// SplitSemicolons turns "; " into ". " and capitalizes the next word.
 	SplitSemicolons bool `json:"splitSemicolons"`
+	// FixArticles corrects "a" and "an" to the sound of the word that follows, so a swap that
+	// changes a word's first sound never leaves "an new". On by default.
+	FixArticles bool `json:"fixArticles"`
 	// ProtectQuotes leaves text inside double quotation marks unchanged, straight or smart,
 	// so a quoted source is not reworded. Off by default, since cleaning your own draft
 	// should reach inside your own quotes.
@@ -143,6 +146,8 @@ func DefaultProfile() Profile {
 			"lets-take-a-look": `(?i)\blet'?s (?:take a (?:closer )?look|explore|unpack|break (?:it|this) down)\b`,
 			// Chatbot reply openers and sign-offs.
 			"assistant-opener": `(?im)^\s{0,3}(?:certainly|absolutely|great question|i'?d be happy to|happy to help|i hope this helps)\b`,
+			// A stack of hedges in one breath, the noncommittal AI register.
+			"hedge-stack": `(?i)\b(?:may|might|could|possibly|perhaps|arguably|generally|potentially|somewhat|seemingly|presumably|conceivably)\b[^.!?\n]{1,50}\b(?:may|might|could|possibly|perhaps|arguably|generally|potentially|somewhat|seemingly|presumably|conceivably)\b`,
 			// "That's where X comes in", the setup-and-reveal move.
 			"thats-where-comes-in": `(?i)\bthat'?s where\b[^.!?\n]{1,30}\bcomes? in\b`,
 		},
@@ -157,6 +162,7 @@ func DefaultProfile() Profile {
 		},
 		CollapseSpaces:  true,
 		SplitSemicolons: true,
+		FixArticles:     true,
 	}
 }
 
@@ -220,6 +226,7 @@ func (p Profile) compile() ([]Rule, error) {
 		return nil, err
 	}
 	if ok {
+		replace.keep = notProperNoun
 		rules = append(rules, replace)
 	}
 	for _, w := range drops {
@@ -243,6 +250,7 @@ func (p Profile) compile() ([]Rule, error) {
 		return nil, err
 	}
 	if ok {
+		block.keep = notProperNoun
 		rules = append(rules, block)
 	}
 
@@ -308,6 +316,10 @@ func (p Profile) compile() ([]Rule, error) {
 			keep:    collapsibleRun,
 			rewrite: true,
 		})
+	}
+
+	if p.FixArticles {
+		rules = append(rules, Rule{Name: "article", re: articleRe, replFunc: fixArticle, keep: articleNeedsFix, rewrite: true})
 	}
 
 	if allow := allowSet(p.Allow); allow != nil {
@@ -607,6 +619,100 @@ func spaceBeforePunctKeep(text string, start, end int) bool {
 		return false
 	}
 	return text[end-1] != '!' || end >= len(text) || text[end] != '['
+}
+
+// articleRe matches an "a" or "an" article and the word that follows, so the article can be
+// corrected to the sound of that word.
+//
+//nolint:gochecknoglobals // Compiled once, never modified.
+var articleRe = regexp.MustCompile(`\b([Aa]n?)\b([ \t]+)([A-Za-z][A-Za-z.'-]*)`)
+
+// silentH lists words whose leading h is silent, so they take "an" despite the consonant.
+//
+//nolint:gochecknoglobals // Immutable lookup.
+var silentH = []string{"honest", "honor", "honour", "hour", "heir"}
+
+// consonantVowel lists vowel-spelled prefixes that open on a consonant sound, the "you" of
+// "user" and the "wun" of "one", so they take "a" despite the leading vowel.
+//
+//nolint:gochecknoglobals // Immutable lookup.
+var consonantVowel = []string{
+	"use", "user", "usu", "uni", "unit", "uniqu", "unif", "unio", "util",
+	"euro", "eu", "ubiq", "ukulele", "one", "once", "ewe",
+}
+
+// fixArticle rewrites an "a"/"an" match so the article matches the sound of the next word,
+// keeping the article's capitalization and the original spacing.
+func fixArticle(text string, loc []int) string {
+	m := articleRe.FindStringSubmatch(text[loc[0]:loc[1]])
+	if m == nil {
+		return text[loc[0]:loc[1]]
+	}
+	article, gap, word := m[1], m[2], m[3]
+	corrected := "a"
+	if startsWithVowelSound(word) {
+		corrected = "an"
+	}
+	if article[0] == 'A' {
+		corrected = "A" + corrected[1:]
+	}
+	return corrected + gap + word
+}
+
+// notProperNoun reports whether a match should be acted on rather than skipped as a likely
+// proper noun. A Title-case word mid-sentence, like a brand name, is skipped, while the same
+// word at a sentence start is ordinary capitalization and still counts. A lower-case or an
+// all-caps match always counts.
+func notProperNoun(text string, start, end int) bool {
+	match := text[start:end]
+	r := []rune(match)
+	if len(r) == 0 || !unicode.IsUpper(r[0]) {
+		return true
+	}
+	if match == strings.ToUpper(match) {
+		return true
+	}
+	return sentenceStart(text, start)
+}
+
+// articleNeedsFix reports whether the article in the match disagrees with the sound of the
+// word that follows, so the rule fires, and reports a finding, only when a correction is
+// actually needed and never on an already-correct "a" or "an".
+func articleNeedsFix(text string, start, end int) bool {
+	m := articleRe.FindStringSubmatch(text[start:end])
+	if m == nil {
+		return false
+	}
+	return startsWithVowelSound(m[3]) != (len(m[1]) == 2)
+}
+
+// startsWithVowelSound reports whether word begins with a vowel sound, which decides between
+// "a" and "an". It handles the common exceptions: silent-h words take "an", "you"-sound and
+// "one"-sound words take "a" despite a leading vowel, and an all-caps acronym opening on a
+// letter whose name starts with a vowel (A, E, F, H, I, L, M, N, O, R, S, X) takes "an".
+func startsWithVowelSound(word string) bool {
+	lw := strings.ToLower(strings.Trim(word, "'"))
+	if lw == "" {
+		return false
+	}
+	if word == strings.ToUpper(word) && word != lw && len(word) > 1 {
+		return strings.ContainsRune("AEFHILMNORSX", rune(word[0]))
+	}
+	for _, p := range silentH {
+		if strings.HasPrefix(lw, p) {
+			return true
+		}
+	}
+	for _, p := range consonantVowel {
+		if strings.HasPrefix(lw, p) {
+			return false
+		}
+	}
+	switch lw[0] {
+	case 'a', 'e', 'i', 'o', 'u':
+		return true
+	}
+	return false
 }
 
 // collapsibleRun reports whether a run of spaces should collapse. A run at the start of
