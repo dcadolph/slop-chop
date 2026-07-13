@@ -484,7 +484,6 @@
       let out = "";
       let stop = "";
       if (onDelta) {
-        let sawStop = false;
         await readSSE(res, (data) => {
           let ev;
           try {
@@ -502,13 +501,10 @@
           if (ev.type === "message_delta" && ev.delta && ev.delta.stop_reason) {
             stop = ev.delta.stop_reason;
           }
-          if (ev.type === "message_stop") {
-            sawStop = true;
-          }
         });
-        // Without the terminal message_stop the stream was cut mid-reply, so the text is
-        // partial and must not be handed back as a finished rewrite.
-        if (!sawStop) throw new Error("the reply stream ended early and may be truncated");
+        // A stop_reason marks a finished generation. Its absence means the stream was cut
+        // mid-reply, so the text is partial and must not be handed back as a finished rewrite.
+        if (!stop) throw new Error("the reply stream ended early and may be truncated");
       } else {
         const data = await res.json().catch(() => ({}));
         stop = data.stop_reason;
