@@ -48,3 +48,6 @@ coverage.out
 go.work
 go.work.sum
 vendor/
+
+# Built self-contained Obsidian plugin, produced by make obsidian-dist
+/obsidian/dist/

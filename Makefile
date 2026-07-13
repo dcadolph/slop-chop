@@ -85,6 +85,15 @@ worker: wasm
 	cp docs/assets/slop-chop.wasm worker/engine/slop-chop.wasm
 	cp docs/assets/wasm_exec.js worker/engine/wasm_exec.js
 
+## obsidian-dist: build a self-contained plugin main.js with the engine inlined as base64,
+## the form Obsidian's community installer needs since it only downloads main.js
+obsidian-dist: wasm
+	mkdir -p obsidian/dist
+	cp obsidian/manifest.json obsidian/versions.json obsidian/dist/ 2>/dev/null || cp obsidian/manifest.json obsidian/dist/
+	cat docs/assets/wasm_exec.js > obsidian/dist/main.js
+	printf 'globalThis.SLOP_WASM_B64=%s;\n' "\"$$(base64 < docs/assets/slop-chop.wasm | tr -d '\n')\"" >> obsidian/dist/main.js
+	cat obsidian/main.js >> obsidian/dist/main.js
+
 ## clean: remove the built binary, wasm artifacts, and coverage profile
 clean:
 	rm -f $(BINARY) coverage.out docs/assets/slop-chop.wasm docs/assets/wasm_exec.js \
