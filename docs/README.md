@@ -213,28 +213,96 @@ slop-chop is a fixed list, not a mood. The same text gives the same result every
 
 The same engine, wherever you write. Everything is local and free unless noted.
 
-| Where                              | Get it                                                                                                          |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Command line                       | `brew install dcadolph/tap/slop-chop`                                                                            |
-| This page                          | The web app above. Nothing to install, nothing leaves the browser.                                              |
-| VS Code, Cursor, VSCodium          | Search **slop-chop** on [Open VSX](https://open-vsx.org/extension/dcadolph/slop-chop).                           |
-| Neovim, Helix, any LSP editor      | `slop-chop lsp`. See [Editor (LSP)](LSP.md).                                                                     |
-| Browser extension                  | Chrome, Edge, Firefox. See [Extension](EXTENSION.md).                                                            |
-| Obsidian                           | The desktop plugin under [obsidian/](https://github.com/dcadolph/slop-chop/tree/main/obsidian).                 |
-| Node                               | `npm install slop-chop-wasm`.                                                                                    |
-| HTTP API                           | `POST https://api.slop-chop.com/chop`. See [API](API.md).                                                        |
-| CI, Raycast, macOS, pre-commit     | The [GitHub Action](https://github.com/dcadolph/slop-chop) and [integrations](https://github.com/dcadolph/slop-chop/tree/main/integrations). |
+<div class="grid cards sc-installs" markdown>
+
+-   :material-console:{ .lg .middle } __Command line__
+
+    ---
+
+    `brew install dcadolph/tap/slop-chop`
+
+-   :material-cursor-default-click:{ .lg .middle } __This page__
+
+    ---
+
+    The web app above. Nothing to install, nothing leaves the browser.
+
+-   :material-microsoft-visual-studio-code:{ .lg .middle } __VS Code, Cursor, VSCodium__
+
+    ---
+
+    Search **slop-chop** on [Open VSX](https://open-vsx.org/extension/dcadolph/slop-chop).
+
+-   :material-application-brackets:{ .lg .middle } __Any LSP editor__
+
+    ---
+
+    `slop-chop lsp` for Neovim, Helix, and the rest. See [Editor (LSP)](LSP.md).
+
+-   :material-puzzle:{ .lg .middle } __Browser extension__
+
+    ---
+
+    Chrome, Edge, and Firefox. See [Extension](EXTENSION.md).
+
+-   :material-notebook-outline:{ .lg .middle } __Obsidian__
+
+    ---
+
+    The desktop plugin under [obsidian/](https://github.com/dcadolph/slop-chop/tree/main/obsidian).
+
+-   :material-nodejs:{ .lg .middle } __Node__
+
+    ---
+
+    `npm install slop-chop-wasm`.
+
+-   :material-api:{ .lg .middle } __HTTP API__
+
+    ---
+
+    `POST https://api.slop-chop.com/chop`. See [API](API.md).
+
+-   :material-cog-sync:{ .lg .middle } __CI and automation__
+
+    ---
+
+    The [GitHub Action](https://github.com/dcadolph/slop-chop), Raycast, macOS, and pre-commit. See [integrations](https://github.com/dcadolph/slop-chop/tree/main/integrations).
+
+</div>
 
 ## Start here
 
-<div class="sc-start" markdown>
+<div class="grid cards sc-guides" markdown>
 
-| Guide                        | What's inside                                                        |
-| ---------------------------- | -------------------------------------------------------------------- |
-| [Quickstart](quickstart.md)  | Install and clean your first file in a couple of minutes.            |
-| [Profiles](PROFILE.md)       | Every field, the presets, the spelling dialects, and the allow list. |
-| [Engine](ENGINE.md)          | How the rules pass works under the hood.                             |
-| [The tells](TELLS.md)        | The full catalog of what gets chopped or flagged, and why.           |
-| [Claude plugin](PLUGIN.md)   | Install, the skill, the command, backends, and troubleshooting.      |
+-   [__Quickstart__](quickstart.md)
+
+    ---
+
+    Install and clean your first file in a couple of minutes.
+
+-   [__Profiles__](PROFILE.md)
+
+    ---
+
+    Every field, the presets, the spelling dialects, and the allow list.
+
+-   [__Engine__](ENGINE.md)
+
+    ---
+
+    How the rules pass works under the hood.
+
+-   [__The tells__](TELLS.md)
+
+    ---
+
+    The full catalog of what gets chopped or flagged, and why.
+
+-   [__Claude plugin__](PLUGIN.md)
+
+    ---
+
+    Install, the skill, the command, backends, and troubleshooting.
 
 </div>
