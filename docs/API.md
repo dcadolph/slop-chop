@@ -53,6 +53,6 @@ Lists the built-in preset names.
 ## Notes
 
 - CORS is open, so a browser page can call it directly.
-- A body over 1MB answers 413; malformed JSON answers 400.
+- A body over 1MB answers 413. Malformed JSON answers 400.
 - The optional model rewrite is not part of the API. It stays where your keys stay: the CLI
-  and the web app. For private text, prefer those; they never send text anywhere at all.
+  and the web app. For private text, prefer those. They never send text anywhere at all.
