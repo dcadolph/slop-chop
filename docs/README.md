@@ -209,6 +209,22 @@ slop-chop is a fixed list, not a mood. The same text gives the same result every
 
 </div>
 
+## Install it anywhere
+
+The same engine, wherever you write. Everything is local and free unless noted.
+
+| Where                              | Get it                                                                                                          |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Command line                       | `brew install dcadolph/tap/slop-chop`                                                                            |
+| This page                          | The web app above. Nothing to install, nothing leaves the browser.                                              |
+| VS Code, Cursor, VSCodium          | Search **slop-chop** on [Open VSX](https://open-vsx.org/extension/dcadolph/slop-chop).                           |
+| Neovim, Helix, any LSP editor      | `slop-chop lsp`. See [Editor (LSP)](LSP.md).                                                                     |
+| Browser extension                  | Chrome, Edge, Firefox. See [Extension](EXTENSION.md).                                                            |
+| Obsidian                           | The desktop plugin under [obsidian/](https://github.com/dcadolph/slop-chop/tree/main/obsidian).                 |
+| Node                               | `npm install slop-chop-wasm`.                                                                                    |
+| HTTP API                           | `POST https://api.slop-chop.com/chop`. See [API](API.md).                                                        |
+| CI, Raycast, macOS, pre-commit     | The [GitHub Action](https://github.com/dcadolph/slop-chop) and [integrations](https://github.com/dcadolph/slop-chop/tree/main/integrations). |
+
 ## Start here
 
 <div class="sc-start" markdown>
