@@ -80,6 +80,7 @@ The same engine runs on many surfaces. All local and free unless noted.
 | Obsidian | the desktop plugin, see [obsidian/](obsidian/) |
 | Node | `npm install slop-chop-wasm` |
 | HTTP API | `POST https://api.slop-chop.com/chop`, see [docs/API.md](docs/API.md) |
+| Slack | a `/chop` command and a message shortcut, see [docs/SLACK.md](docs/SLACK.md) |
 | CI, Raycast, macOS, pre-commit | the GitHub Action and [integrations/](integrations/) |
 
 ## Usage
