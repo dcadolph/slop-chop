@@ -187,25 +187,25 @@ slop-chop is a fixed list, not a mood. The same text gives the same result every
 
     ---
 
-    The rules pass runs with no model and no cost, and gives the exact same output on every run. Predictable enough to diff in review and trust in a pipeline. It knows markdown, so code, links, and front matter come through untouched while your prose gets cleaned.
+    No model, no cost, and the exact same output every run, predictable enough to diff in review and trust in a pipeline. It knows markdown, so code, links, and front matter pass through untouched.
 
 -   :material-source-branch:{ .lg .middle } __Drop it in CI__
 
     ---
 
-    `check` fails a pull request when it finds slop. `fix` can push the cleanup back to the branch. There is a ready-made GitHub Action.
+    `check` fails a pull request when it finds slop, and `fix` can push the cleanup straight back to the branch. A ready-made GitHub Action wires both into your pipeline in a few lines.
 
 -   :material-robot-happy:{ .lg .middle } __Claude Code plugin__
 
     ---
 
-    The repo is its own marketplace. Install the plugin to get a `slop-chop` skill and a `/slop-chop` command that drive the binary for you.
+    The repo is its own marketplace. Install the plugin for a `slop-chop` skill and a `/slop-chop` command, so the assistant runs the tool and cleans its own output for you.
 
 -   :material-tune:{ .lg .middle } __Reads like you__
 
     ---
 
-    Profiles and presets say what to cut and what to put in its place. Bring your own cut list so the result sounds like you, not a chatbot.
+    Profiles and presets say what to cut and what to put in its place. Bring your own keep, prefer, and avoid lists so the result sounds like you, not a chatbot.
 
 </div>
 
