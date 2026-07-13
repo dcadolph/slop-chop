@@ -33,6 +33,11 @@ coverage.out
 /npm/engine/
 /npm/*.tgz
 
+# Staged engine and local state for the hosted API worker
+/worker/engine/
+/worker/.wrangler/
+/worker/node_modules/
+
 # Packaged extension zip, produced by make extension-package
 /slop-chop-extension.zip
 

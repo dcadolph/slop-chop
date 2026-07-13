@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "slop-chop-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-07-01",
+  // The Go engine is imported as a compiled module and instantiated on the first request.
+  "rules": [
+    { "type": "CompiledWasm", "globs": ["**/*.wasm"], "fallthrough": true }
+  ],
+  // The zone lives on Cloudflare, so deploy provisions the DNS record and certificate.
+  "routes": [
+    { "pattern": "api.slop-chop.com", "custom_domain": true }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}
