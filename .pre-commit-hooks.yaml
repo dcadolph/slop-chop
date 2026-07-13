@@ -1,0 +1,17 @@
+# Hooks for pre-commit (https://pre-commit.com). Add slop-chop to another repo's
+# .pre-commit-config.yaml:
+#
+#   - repo: https://github.com/dcadolph/slop-chop
+#     rev: v0.23.0
+#     hooks:
+#       - id: slop-chop
+#
+# It flags tells in Markdown and text and fails when any are found. Pass a preset or other
+# flags with args, for example [--preset, cleaver].
+- id: slop-chop
+  name: slop-chop
+  description: Flag AI writing tells in text files.
+  entry: slop-chop check
+  language: golang
+  types: [text]
+  files: \.(md|markdown|txt|rst)$
