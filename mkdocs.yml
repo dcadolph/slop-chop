@@ -54,6 +54,7 @@ nav:
   - Web app: WEB.md
   - Extension: EXTENSION.md
   - Editor (LSP): LSP.md
+  - API: API.md
   - Claude plugin: PLUGIN.md
 
 markdown_extensions:
