@@ -12,7 +12,7 @@ GOBIN := $(shell $(GO) env GOPATH)/bin
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: build install uninstall test cover vet lint fmt tidy clean wasm extension extension-package obsidian npm-package help
+.PHONY: build install uninstall test cover vet lint fmt tidy clean wasm extension extension-package obsidian npm-package worker help
 
 ## build: compile the binary into the repo root with the version stamped
 build:
@@ -78,6 +78,12 @@ npm-package: wasm
 	mkdir -p npm/engine
 	cp docs/assets/slop-chop.wasm npm/engine/slop-chop.wasm
 	cp docs/assets/wasm_exec.js npm/engine/wasm_exec.js
+
+## worker: build the wasm engine and stage it into the hosted API worker
+worker: wasm
+	mkdir -p worker/engine
+	cp docs/assets/slop-chop.wasm worker/engine/slop-chop.wasm
+	cp docs/assets/wasm_exec.js worker/engine/wasm_exec.js
 
 ## clean: remove the built binary, wasm artifacts, and coverage profile
 clean:
