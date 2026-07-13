@@ -26,9 +26,6 @@ coverage.out
 # Staged engine for the browser extension, produced by make extension
 /extension/engine/
 
-# Staged engine for the Obsidian plugin, produced by make obsidian
-/obsidian/engine/
-
 # Staged engine for the npm package, produced by make npm-package
 /npm/engine/
 /npm/*.tgz
@@ -59,5 +56,8 @@ go.work
 go.work.sum
 vendor/
 
-# Built self-contained Obsidian plugin, produced by make obsidian-dist
+# Built self-contained Obsidian plugin, produced by make obsidian
 /obsidian/dist/
+
+# Packaged VS Code extension, produced by vsce package
+/vscode/*.vsix
