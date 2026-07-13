@@ -13,7 +13,16 @@ slop-chop lsp
 
 It speaks the protocol on stdin and stdout. Point your editor's LSP client at that command for
 Markdown, plain text, and commit messages. Add `--preset cleaver` for the aggressive swaps, or
-`--voice path.json` for a specific voice; a `~/.slop-chop/voice.json` is picked up on its own.
+`--voice path.json` for a specific voice. A `~/.slop-chop/voice.json` is picked up on its own.
+
+## JetBrains IDEs
+
+Install the slop-chop plugin from the JetBrains Marketplace: in IntelliJ IDEA, PyCharm,
+WebStorm, and the rest, open Settings, Plugins, Marketplace, and search **slop-chop**. It wires
+the language server for you, launching `slop-chop lsp` over Markdown and plain text, so tells
+show as inspections and a code action chops the file. You still need the `slop-chop` binary on
+your PATH. To wire it by hand instead, install the LSP4IJ plugin and register a server that runs
+`slop-chop lsp`.
 
 ## Neovim
 
