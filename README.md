@@ -195,6 +195,12 @@ jobs:
           # message: Chop the slop   # optional commit message
 ```
 
+The fix-and-commit workflow pushes back to the pull request branch, so it works for pull
+requests from a branch in the same repository. A pull request from a fork gets a read-only
+token, so the push fails with a 403 no matter the `permissions` block. For fork pull requests
+use the check workflow above: it needs no write access and still fails the run on slop. To
+auto-fix your own branches, run the same fix-and-commit job on a `push` trigger instead.
+
 ## Use it as a Claude Code plugin
 
 slop-chop ships a Claude Code plugin, so the assistant can run the tool for you. The repo is

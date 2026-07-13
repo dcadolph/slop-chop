@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -162,13 +163,13 @@ func (srv *Server) handle(req request) bool {
 func (srv *Server) publish(uri string) {
 	text := srv.docs[uri]
 	findings := srv.san.Check(text)
-	pos := newPositionMap(text)
+	positions := offsetPositions(text, findings)
 	diags := make([]Diagnostic, 0, len(findings))
 	for _, f := range findings {
 		diags = append(diags, Diagnostic{
 			Range: Range{
-				Start: pos.at(f.Offset),
-				End:   pos.at(f.Offset + len(f.Match)),
+				Start: positions[f.Offset],
+				End:   positions[f.Offset+len(f.Match)],
 			},
 			Severity: severityInformation,
 			Source:   "slop-chop",
@@ -178,6 +179,28 @@ func (srv *Server) publish(uri string) {
 	}
 	srv.notify("textDocument/publishDiagnostics",
 		publishDiagnosticsParams{URI: uri, Diagnostics: diags})
+}
+
+// offsetPositions maps every byte offset the findings' ranges need to its LSP position in one
+// forward walk. The start and end offsets are gathered and sorted first, because findings are
+// ordered by start alone: an overlapping pair, like a block word inside a structural flag
+// span, would feed the forward-only walk a decreasing offset and collapse the inner range.
+func offsetPositions(text string, findings []sanitize.Finding) map[int]Position {
+	if len(findings) == 0 {
+		return nil
+	}
+	offsets := make([]int, 0, len(findings)*2)
+	for _, f := range findings {
+		offsets = append(offsets, f.Offset, f.Offset+len(f.Match))
+	}
+	slices.Sort(offsets)
+	offsets = slices.Compact(offsets)
+	out := make(map[int]Position, len(offsets))
+	pos := newPositionMap(text)
+	for _, off := range offsets {
+		out[off] = pos.at(off)
+	}
+	return out
 }
 
 // codeActions offers a single whole-document chop when it would change anything.

@@ -83,6 +83,57 @@ func TestServer(t *testing.T) {
 	}
 }
 
+// TestPublishOverlappingFindings checks that a finding nested inside a wider one keeps its
+// own diagnostic range. The forward-only position walk must be fed sorted offsets, or the
+// inner finding's start, which sits behind the outer finding's end, collapses to a point.
+func TestPublishOverlappingFindings(t *testing.T) {
+	t.Parallel()
+	san, err := sanitize.New(sanitize.Profile{
+		BlockWords:   []string{"powerful"},
+		FlagPatterns: map[string]string{"neg-parallel": `not just .+ but also`},
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	var in strings.Builder
+	for _, body := range []string{
+		`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}`,
+		`{"jsonrpc":"2.0","method":"textDocument/didOpen","params":` +
+			`{"textDocument":{"uri":"file:///a","text":"not just powerful, but also fast"}}}`,
+		`{"jsonrpc":"2.0","method":"exit"}`,
+	} {
+		fmt.Fprintf(&in, "Content-Length: %d\r\n\r\n%s", len(body), body)
+	}
+
+	var out bytes.Buffer
+	if err := NewServer(san, strings.NewReader(in.String()), &out).Run(); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	frames := splitFrames(t, out.Bytes())
+
+	var diag struct {
+		Params publishDiagnosticsParams `json:"params"`
+	}
+	mustUnmarshal(t, frames[1], &diag)
+
+	// The block word sits inside the wider structural span, so its start is behind that
+	// span's end. Its diagnostic must still cover "powerful" at characters 9..17.
+	var block *Diagnostic
+	for i := range diag.Params.Diagnostics {
+		if diag.Params.Diagnostics[i].Code == "word:powerful" {
+			block = &diag.Params.Diagnostics[i]
+		}
+	}
+	if block == nil {
+		t.Fatalf("no powerful diagnostic in %+v", diag.Params.Diagnostics)
+	}
+	if block.Range.Start.Character != 9 || block.Range.End.Character != 17 {
+		t.Errorf("powerful range = %d..%d, want 9..17",
+			block.Range.Start.Character, block.Range.End.Character)
+	}
+}
+
 // TestReadMessageHardening checks the framing against hostile and spec-legal headers: a
 // lowercase header is accepted, and an absurd Content-Length is a clean error, not a panic.
 func TestReadMessageHardening(t *testing.T) {

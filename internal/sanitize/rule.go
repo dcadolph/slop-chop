@@ -14,8 +14,10 @@ type Rule struct {
 	re *regexp.Regexp
 	// repl is the static replacement string when replFunc is nil.
 	repl string
-	// replFunc computes a replacement from the text and the byte range of the match, so
-	// a rewrite can depend on where the match sits. It takes priority over repl.
+	// replFunc computes a replacement from the text and the submatch index slice of the
+	// match, as returned by FindAllStringSubmatchIndex: loc[0:2] is the whole match and
+	// loc[2:] holds each capture group, so a rewrite can expand a backreference against the
+	// original text with its context intact. It takes priority over repl.
 	replFunc func(text string, loc []int) string
 	// keep decides whether the match at [start, end) counts. A nil keep accepts every
 	// match. It lets a rule skip matches by context, like a semicolon that separates
@@ -29,12 +31,17 @@ type Rule struct {
 	nameByMatch bool
 	// rewrite reports whether the rule changes text. When false the rule only flags.
 	rewrite bool
+	// tidy marks a punctuation or spacing cleanup rule. Tidy rules run in a fixpoint loop
+	// after the content swaps, since they interact with each other: a semicolon split can
+	// leave a space that space-before-punct then trims. Content swaps run once instead, so
+	// a swap whose replacement contains its own trigger cannot feed on its own output.
+	tidy bool
 }
 
 // matches returns the byte ranges of every match the rule keeps, dropping any that
 // touch a protected range, like markdown code.
 func (r Rule) matches(text string, protected [][2]int) [][]int {
-	locs := r.re.FindAllStringIndex(text, -1)
+	locs := r.re.FindAllStringSubmatchIndex(text, -1)
 	kept := locs[:0]
 	for _, loc := range locs {
 		if overlapsAny(protected, loc[0], loc[1]) {

@@ -12,6 +12,37 @@ func TestEnvKey(t *testing.T) {
 	}
 }
 
+// TestSet checks that Set reports a value coming from a flag or the environment, but not the
+// bare default, so an env-only setting like SLOP_CHOP_MODEL is not mistaken for unset.
+func TestSet(t *testing.T) {
+	Reset()
+	t.Cleanup(Reset)
+
+	// Test 0: Nothing set: Set is false even though Model() returns the default.
+	if Set(KeyModel) {
+		t.Error("Set(model) = true with nothing set, want false")
+	}
+
+	// Test 1: An environment value counts as set, where Changed (flag-only) would not.
+	t.Setenv("SLOP_CHOP_MODEL", "env-model")
+	if !Set(KeyModel) {
+		t.Error("Set(model) = false with env set, want true")
+	}
+	if Changed(KeyModel) {
+		t.Error("Changed(model) = true with only env set, want false")
+	}
+
+	// Test 2: A set flag also counts.
+	Reset()
+	if err := FlagModel.Value.Set("flag-model"); err != nil {
+		t.Fatal(err)
+	}
+	FlagModel.Changed = true
+	if !Set(KeyModel) {
+		t.Error("Set(model) = false with flag set, want true")
+	}
+}
+
 // TestLoadPriority checks the resolution order: flag beats environment beats default.
 func TestLoadPriority(t *testing.T) {
 	Reset()

@@ -384,6 +384,11 @@
         allow: dedupe([...(base.allow || []), ...v.keep, ...parseLines(controls.allow.value)]),
         collapseSpaces: controls.collapseSpaces.checked,
         splitSemicolons: controls.splitSemicolons.checked,
+        // Carry the boolean passes the field-by-field rebuild would otherwise drop, so the
+        // default demo runs article correction like every other surface instead of silently
+        // off. Missing on a from-scratch profile stays false, matching a bare engine profile.
+        fixArticles: !!base.fixArticles,
+        protectQuotes: !!base.protectQuotes,
         dialect: dialectValue(),
         tone: parseLines(controls.rwTone.value),
       };
@@ -479,6 +484,7 @@
       let out = "";
       let stop = "";
       if (onDelta) {
+        let sawStop = false;
         await readSSE(res, (data) => {
           let ev;
           try {
@@ -496,7 +502,13 @@
           if (ev.type === "message_delta" && ev.delta && ev.delta.stop_reason) {
             stop = ev.delta.stop_reason;
           }
+          if (ev.type === "message_stop") {
+            sawStop = true;
+          }
         });
+        // Without the terminal message_stop the stream was cut mid-reply, so the text is
+        // partial and must not be handed back as a finished rewrite.
+        if (!sawStop) throw new Error("the reply stream ended early and may be truncated");
       } else {
         const data = await res.json().catch(() => ({}));
         stop = data.stop_reason;
@@ -537,23 +549,45 @@
       }
       let out = "";
       if (onDelta) {
+        let finish = "";
+        let done = false;
         await readSSE(res, (data) => {
-          if (data === "[DONE]") return;
+          if (data === "[DONE]") {
+            done = true;
+            return;
+          }
           let ev;
           try {
             ev = JSON.parse(data);
           } catch {
             return;
           }
-          const piece = ev.choices && ev.choices[0] && ev.choices[0].delta && ev.choices[0].delta.content;
-          if (piece) {
-            out += piece;
+          const choice = ev.choices && ev.choices[0];
+          if (!choice) return;
+          if (choice.delta && choice.delta.content) {
+            out += choice.delta.content;
             onDelta(out);
           }
+          if (choice.finish_reason) {
+            finish = choice.finish_reason;
+            done = true;
+          }
         });
+        if (finish === "length") throw new Error("reply hit the token cap and is truncated");
+        if (finish === "content_filter") throw new Error("the endpoint filtered the reply");
+        // No [DONE] and no finish_reason means the stream was cut mid-reply, so the text is
+        // partial. Treating it as complete would hand back a silently truncated rewrite.
+        if (!done) throw new Error("the reply stream ended early and may be truncated");
       } else {
         const data = await res.json().catch(() => ({}));
-        out = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "";
+        const choice = data.choices && data.choices[0];
+        out = (choice && choice.message && choice.message.content) || "";
+        if (choice && choice.finish_reason === "length") {
+          throw new Error("reply hit the token cap and is truncated");
+        }
+        if (choice && choice.finish_reason === "content_filter") {
+          throw new Error("the endpoint filtered the reply");
+        }
       }
       if (!out) throw new Error("reply had no text content");
       return out.trim();
@@ -658,7 +692,7 @@
       $("sc-pop-words").textContent = String(s.words);
       $("sc-pop-density").textContent = s.tellsPer100 + " tells per 100 words";
       $("sc-pop-cadence").textContent =
-        s.cadenceCv === 0
+        s.cadenceCv < 0
           ? "too short to judge"
           : s.cadenceCv < 0.5
             ? "flat (cv " + s.cadenceCv + "), even sentence lengths read machine-written"
