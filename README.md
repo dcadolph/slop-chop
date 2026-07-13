@@ -74,9 +74,10 @@ The same engine runs on many surfaces. All local and free unless noted.
 | --- | --- |
 | Web app | [slop-chop.com](https://slop-chop.com), nothing to install |
 | VS Code, Cursor, VSCodium | search **slop-chop** on [Open VSX](https://open-vsx.org/extension/dcadolph/slop-chop) |
+| JetBrains IDEs | the Marketplace plugin, or LSP4IJ with `slop-chop lsp`, see [docs/LSP.md](docs/LSP.md) |
 | Neovim, Helix, any LSP editor | `slop-chop lsp`, see [docs/LSP.md](docs/LSP.md) |
-| Browser extension | [extension/](extension/) |
-| Obsidian | [obsidian/](obsidian/) |
+| Chrome, Edge, Firefox | the browser extension, see [docs/EXTENSION.md](docs/EXTENSION.md) |
+| Obsidian | the desktop plugin, see [obsidian/](obsidian/) |
 | Node | `npm install slop-chop-wasm` |
 | HTTP API | `POST https://api.slop-chop.com/chop`, see [docs/API.md](docs/API.md) |
 | CI, Raycast, macOS, pre-commit | the GitHub Action and [integrations/](integrations/) |

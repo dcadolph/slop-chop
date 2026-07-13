@@ -233,17 +233,17 @@ The same engine, wherever you write. Everything is local and free unless noted.
 
     Search **slop-chop** on [Open VSX](https://open-vsx.org/extension/dcadolph/slop-chop).
 
--   :material-application-brackets:{ .lg .middle } __Any LSP editor__
+-   :material-application-brackets:{ .lg .middle } __JetBrains and LSP editors__
 
     ---
 
-    `slop-chop lsp` for Neovim, Helix, and the rest. See [Editor (LSP)](LSP.md).
+    The JetBrains Marketplace plugin, or `slop-chop lsp` for Neovim, Helix, and the rest. See [Editor (LSP)](LSP.md).
 
 -   :material-puzzle:{ .lg .middle } __Browser extension__
 
     ---
 
-    Chrome, Edge, and Firefox. See [Extension](EXTENSION.md).
+    Chrome, Edge, and Firefox, on the Chrome Web Store and Firefox Add-ons. See [Extension](EXTENSION.md).
 
 -   :material-notebook-outline:{ .lg .middle } __Obsidian__
 
