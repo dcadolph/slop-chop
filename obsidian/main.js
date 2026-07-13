@@ -5,8 +5,6 @@
 "use strict";
 
 const { Plugin, PluginSettingTab, Setting, Notice, MarkdownView } = require("obsidian");
-const fs = require("fs");
-const path = require("path");
 
 // DEFAULT_SETTINGS is the plugin's saved state before the user changes anything.
 const DEFAULT_SETTINGS = {
@@ -63,18 +61,24 @@ class SlopChopPlugin extends Plugin {
     this.addSettingTab(new SlopChopSettingTab(this.app, this));
   }
 
-  // bootEngine loads the wasm module from the plugin folder and caches the default profile.
+  // bootEngine instantiates the wasm engine and caches the default profile. The published
+  // build inlines the Go runtime and a base64 wasm ahead of this file, so it runs with no
+  // disk access; the in-repo build reads both from the plugin's engine folder instead.
   async bootEngine() {
-    const adapter = this.app.vault.adapter;
-    const base = typeof adapter.getBasePath === "function" ? adapter.getBasePath() : adapter.basePath;
-    const dir = path.join(base, this.manifest.dir, "engine");
-
-    // wasm_exec.js defines the Go runtime shim on the global object.
-    const execCode = fs.readFileSync(path.join(dir, "wasm_exec.js"), "utf8");
-    (0, eval)(execCode);
-
+    let bytes;
+    if (globalThis.SLOP_WASM_B64) {
+      bytes = Uint8Array.from(atob(globalThis.SLOP_WASM_B64), (c) => c.charCodeAt(0));
+    } else {
+      const fs = require("fs");
+      const path = require("path");
+      const adapter = this.app.vault.adapter;
+      const base =
+        typeof adapter.getBasePath === "function" ? adapter.getBasePath() : adapter.basePath;
+      const dir = path.join(base, this.manifest.dir, "engine");
+      (0, eval)(fs.readFileSync(path.join(dir, "wasm_exec.js"), "utf8"));
+      bytes = fs.readFileSync(path.join(dir, "slop-chop.wasm"));
+    }
     const go = new globalThis.Go();
-    const bytes = fs.readFileSync(path.join(dir, "slop-chop.wasm"));
     const result = await WebAssembly.instantiate(bytes, go.importObject);
     go.run(result.instance);
     await new Promise((r) => setTimeout(r, 0));
