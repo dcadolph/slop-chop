@@ -1,4 +1,4 @@
-# @slop-chop/wasm
+# slop-chop-wasm
 
 Chop AI slop from text, in-process. This is the slop-chop rules engine compiled to
 WebAssembly, wrapped for Node. No network, no model, no data leaves the machine, and the same
@@ -7,7 +7,7 @@ input always gives the same output.
 ## Use
 
 ```js
-const slop = require("@slop-chop/wasm");
+const slop = require("slop-chop-wasm");
 
 const res = await slop.chop("In summary, we leverage a myriad of robust tools.");
 res.output;           // "We use many solid tools."
