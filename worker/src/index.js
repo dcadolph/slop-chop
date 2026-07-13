@@ -32,7 +32,12 @@ function boot() {
     // Give the Go runtime a tick to register its globals.
     await new Promise((r) => setTimeout(r, 0));
     return JSON.parse(globalThis.slopDefaults());
-  })();
+  })().catch((err) => {
+    // A failed boot clears the cache, so the next request retries instead of the isolate
+    // failing every request forever on a stale rejection.
+    ready = null;
+    throw err;
+  });
   return ready;
 }
 

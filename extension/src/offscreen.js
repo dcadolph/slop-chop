@@ -7,7 +7,9 @@
 let ready = null;
 let defaults = null;
 
-// boot instantiates the wasm module once and caches the built-in default profile.
+// boot instantiates the wasm module once and caches the built-in default profile. A failed
+// boot clears the cached promise, so the next call retries instead of replaying a stale
+// rejection forever.
 function boot() {
   if (ready) return ready;
   ready = (async () => {
@@ -24,7 +26,10 @@ function boot() {
     // Give the Go runtime a tick to register its globals.
     await new Promise((r) => setTimeout(r, 0));
     defaults = JSON.parse(self.slopDefaults());
-  })();
+  })().catch((err) => {
+    ready = null;
+    throw err;
+  });
   return ready;
 }
 
@@ -54,11 +59,15 @@ function voiceProfile(base, voice) {
 }
 
 // chop runs the engine with the voice folded in and the presets on top. Settings come from
-// the service worker, since an offscreen document cannot read chrome.storage itself.
+// the service worker, since an offscreen document cannot read chrome.storage itself. Saved
+// preset names are filtered against the engine's current packs, so a name removed by an
+// update degrades gracefully instead of erroring every chop until the user re-saves.
 function chop(text, settings) {
   const s = settings || {};
   const profile = voiceProfile(defaults, s.voice || {});
-  const req = JSON.stringify({ text, profile, presets: s.presets || ["cleaver"] });
+  const known = new Set(JSON.parse(self.slopPresets()));
+  const presets = (s.presets || ["cleaver"]).filter((p) => known.has(p));
+  const req = JSON.stringify({ text, profile, presets });
   const res = JSON.parse(self.slopChop(req));
   if (res.error) return { error: res.error };
   return {
