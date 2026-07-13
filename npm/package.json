@@ -1,0 +1,28 @@
+{
+  "name": "@slop-chop/wasm",
+  "version": "0.1.0",
+  "description": "Chop AI slop from text. The slop-chop rules engine as WebAssembly, no network, no model.",
+  "license": "MIT",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "engine/"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dcadolph/slop-chop.git",
+    "directory": "npm"
+  },
+  "homepage": "https://slop-chop.com",
+  "keywords": [
+    "ai",
+    "slop",
+    "writing",
+    "lint",
+    "wasm",
+    "deslop"
+  ]
+}
