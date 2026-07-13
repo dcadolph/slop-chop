@@ -309,3 +309,10 @@ up to N more times, until the check passes or the tries run out. `--verify-stric
 change that survives fail the command, so a pipeline stops on drift, and the rewrite is
 still written first. With `--json` the verdict goes into the report as a `verify` object,
 there only when the check ran, so a program can read it without parsing stderr.
+
+Out of the box the judge runs on the rewriter's own backend, which means the model grades
+its own work, and the run says so on stderr. `--judge-model`, `--judge-provider`, and
+`--judge-base-url` point the meaning check at a different model, so an independent judge
+holds the rewriter honest. Each falls back to its rewrite counterpart when unset, and the
+warning keys off the resolved backend, not the flags, so naming the same model still counts
+as shared.

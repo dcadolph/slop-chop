@@ -45,6 +45,9 @@ func fixCmd() *cobra.Command {
 	f.AddFlag(&config.FlagProvider)
 	f.AddFlag(&config.FlagModel)
 	f.AddFlag(&config.FlagBaseURL)
+	f.AddFlag(&config.FlagJudgeProvider)
+	f.AddFlag(&config.FlagJudgeModel)
+	f.AddFlag(&config.FlagJudgeBaseURL)
 	f.AddFlag(&config.FlagVerify)
 	f.AddFlag(&config.FlagVerifyStrict)
 	f.AddFlag(&config.FlagVerifyRetry)
@@ -64,6 +67,12 @@ func runFix(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("--base-url needs --rewrite")
 	case config.Changed(config.KeyBaseURL) && config.Provider() != string(rewrite.ProviderOpenAI):
 		return fmt.Errorf("--base-url only applies to --provider openai")
+	case config.JudgeProvider() != "" && !config.Verify():
+		return fmt.Errorf("--judge-provider needs --verify")
+	case config.JudgeModel() != "" && !config.Verify():
+		return fmt.Errorf("--judge-model needs --verify")
+	case config.JudgeBaseURL() != "" && !config.Verify():
+		return fmt.Errorf("--judge-base-url needs --verify")
 	case config.Verify() && !config.Rewrite():
 		return fmt.Errorf("--verify needs --rewrite")
 	case config.VerifyStrict() && !config.Verify():
@@ -160,6 +169,14 @@ func rewriteAndVerify(ctx context.Context, s *sanitize.Sanitizer, tone []string,
 	if err != nil {
 		return "", nil, err
 	}
+	judge, shared, err := newJudgeCompleter()
+	if err != nil {
+		return "", nil, err
+	}
+	if config.Verify() && shared {
+		_, _ = fmt.Fprintln(stderr,
+			"slop-chop: the judge shares the rewriter's model; set --judge-model for an independent meaning check")
+	}
 	tries := 1
 	if config.Verify() {
 		tries += config.VerifyRetry()
@@ -180,7 +197,7 @@ func rewriteAndVerify(ctx context.Context, s *sanitize.Sanitizer, tone []string,
 		if !config.Verify() {
 			return out, nil, nil
 		}
-		verdict, err := judgePass(ctx, completer, original, out)
+		verdict, err := judgePass(ctx, judge, original, out)
 		if err != nil {
 			// Fail closed: a meaning check we asked for could not run, so keep the safe
 			// deterministic rules output rather than ship an unverified rewrite.
@@ -320,6 +337,32 @@ func newRewriteCompleter() (rewrite.Completer, error) {
 		model = config.Model()
 	}
 	return rewrite.NewCompleter(rewrite.Provider(config.Provider()), model, config.BaseURL())
+}
+
+// newJudgeCompleter builds the model backend for the meaning check. Each judge setting falls
+// back to its rewrite counterpart when unset. shared reports whether the judge resolved to
+// the rewriter's exact backend, in which case the rewriter grades its own work and the caller
+// should say so.
+func newJudgeCompleter() (completer rewrite.Completer, shared bool, err error) {
+	rwModel := ""
+	if config.Changed(config.KeyModel) {
+		rwModel = config.Model()
+	}
+	provider := config.Provider()
+	if p := config.JudgeProvider(); p != "" {
+		provider = p
+	}
+	model := rwModel
+	if m := config.JudgeModel(); m != "" {
+		model = m
+	}
+	baseURL := config.BaseURL()
+	if u := config.JudgeBaseURL(); u != "" {
+		baseURL = u
+	}
+	shared = provider == config.Provider() && model == rwModel && baseURL == config.BaseURL()
+	completer, err = rewrite.NewCompleter(rewrite.Provider(provider), model, baseURL)
+	return completer, shared, err
 }
 
 // rewritePass runs the model rewrite over text. It is a variable so tests can swap in
