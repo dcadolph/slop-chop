@@ -45,6 +45,29 @@ slop-chop fix draft.md    # your voice applies with no extra flags
 
 `voice init [path]` writes somewhere else, and `--force` overwrites an existing file.
 
+## Teach it your voice
+
+The three lists shape the deterministic pass. A fourth, `tone`, shapes the optional model
+rewrite: short notes on how you write, sent to the model as "Match this voice" whenever
+`fix --rewrite` runs. Write them by hand:
+
+```json
+{ "tone": ["short, blunt sentences", "dry humor, no hype"] }
+```
+
+Or derive them from your own writing:
+
+```
+slop-chop voice learn notes.md posts/*.md
+cat draft.md | slop-chop voice learn
+```
+
+`learn` sends the samples to the configured model (the same provider setup as
+`fix --rewrite`), gets back a handful of tone notes, and merges them into your voice file
+without duplicates. Run it again on new samples any time; edit or prune the lines like any
+other config. The rules pass ignores tone, so scores and deterministic output are unchanged,
+and the rewrite's fail-closed meaning check still applies.
+
 ## In the web app
 
 The settings panel has a "Your voice" section with the same three lists, one entry per line.
