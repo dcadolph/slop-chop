@@ -1,7 +1,8 @@
 /* slop-chop for Obsidian. Chops AI slop from a note or a selection with the same rules
-   engine as slop-chop.com, loaded from the plugin folder as WebAssembly. Desktop only, since
-   it reads the engine off disk. Your text never leaves the vault. Plain CommonJS: Obsidian
-   provides the "obsidian" module at runtime, so there is no build step. */
+   engine as slop-chop.com, shipped inside main.js as gzipped WebAssembly and run in the
+   app. No filesystem access, no network: your text never leaves the vault. This file is
+   the plugin source; `make obsidian` prepends the Go runtime and the engine payload and
+   minifies the result into obsidian/dist/main.js, the file releases ship. */
 "use strict";
 
 const { Plugin, PluginSettingTab, Setting, Notice, MarkdownView } = require("obsidian");
@@ -94,23 +95,16 @@ class SlopChopPlugin extends Plugin {
     return this.bootPromise;
   }
 
-  // instantiateEngine loads and starts the wasm engine, caching the default profile. The
-  // published build inlines the Go runtime and a base64 wasm ahead of this file, so it runs
-  // with no disk access; the in-repo build reads both from the plugin's engine folder.
+  // instantiateEngine starts the wasm engine and caches the default profile. The build
+  // inlines the engine ahead of this file as base64 over gzip, so the plugin decodes it
+  // from memory and never touches the filesystem. DecompressionStream is native to the
+  // app's Chromium runtime.
   async instantiateEngine() {
-    let bytes;
-    if (globalThis.SLOP_WASM_B64) {
-      bytes = Uint8Array.from(atob(globalThis.SLOP_WASM_B64), (c) => c.charCodeAt(0));
-    } else {
-      const fs = require("fs");
-      const path = require("path");
-      const adapter = this.app.vault.adapter;
-      const base =
-        typeof adapter.getBasePath === "function" ? adapter.getBasePath() : adapter.basePath;
-      const dir = path.join(base, this.manifest.dir, "engine");
-      (0, eval)(fs.readFileSync(path.join(dir, "wasm_exec.js"), "utf8"));
-      bytes = fs.readFileSync(path.join(dir, "slop-chop.wasm"));
-    }
+    const packed = globalThis.SLOP_WASM_B64_GZ;
+    if (!packed) throw new Error("engine payload missing; build with make obsidian");
+    const compressed = Uint8Array.from(atob(packed), (c) => c.charCodeAt(0));
+    const gunzip = new Blob([compressed]).stream().pipeThrough(new DecompressionStream("gzip"));
+    const bytes = new Uint8Array(await new Response(gunzip).arrayBuffer());
     const go = new globalThis.Go();
     const result = await WebAssembly.instantiate(bytes, go.importObject);
     go.run(result.instance);

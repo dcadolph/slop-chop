@@ -11,18 +11,21 @@ From the repo root:
 make obsidian
 ```
 
-This builds the wasm engine and stages it into `obsidian/engine/`.
+This builds the wasm engine, gzips it, inlines it as base64 ahead of the plugin source, and
+minifies the result into `obsidian/dist/`: a self-contained `main.js` plus `manifest.json`
+and `versions.json`. The plugin decodes the engine in memory, so it never reads the
+filesystem. Releases are built and attested by the release workflow in
+[dcadolph/slop-chop-obsidian](https://github.com/dcadolph/slop-chop-obsidian).
 
 ## Install
 
-Copy the plugin into your vault's plugins folder:
+Copy the contents of `obsidian/dist/` into your vault's plugins folder:
 
 ```
 <vault>/.obsidian/plugins/slop-chop/
 ```
 
-It needs `manifest.json`, `main.js`, and the `engine/` folder. Then turn on slop-chop under
-Settings, Community plugins.
+Then turn on slop-chop under Settings, Community plugins.
 
 ## Use
 
