@@ -53,6 +53,7 @@ nav:
   - The tells: TELLS.md
   - Web app: WEB.md
   - Extension: EXTENSION.md
+  - Editor (LSP): LSP.md
   - Claude plugin: PLUGIN.md
 
 markdown_extensions:
