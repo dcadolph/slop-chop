@@ -41,6 +41,10 @@ coverage.out
 # Packaged extension zip, produced by make extension-package
 /slop-chop-extension.zip
 
+# Firefox build, produced by make extension-firefox / firefox-package
+/extension-firefox/
+/slop-chop-firefox.zip
+
 # Browser test suite dependencies
 /e2e/node_modules/
 

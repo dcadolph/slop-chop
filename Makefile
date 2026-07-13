@@ -12,7 +12,7 @@ GOBIN := $(shell $(GO) env GOPATH)/bin
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: build install uninstall test cover vet lint fmt tidy clean wasm extension extension-package obsidian npm-package worker help
+.PHONY: build install uninstall test cover vet lint fmt tidy clean wasm extension extension-package extension-firefox firefox-package obsidian npm-package worker help
 
 ## build: compile the binary into the repo root with the version stamped
 build:
@@ -62,10 +62,25 @@ extension: wasm
 	cp docs/assets/slop-chop.wasm extension/engine/slop-chop.wasm
 	cp docs/assets/wasm_exec.js extension/engine/wasm_exec.js
 
-## extension-package: zip the built extension for a store upload
+## extension-package: zip the built extension for a store upload (Chrome, Edge)
 extension-package: extension
 	rm -f slop-chop-extension.zip
 	cd extension && zip -qr ../slop-chop-extension.zip . -x '.*'
+
+## extension-firefox: stage the Firefox build, where the engine runs in the background page
+## since Firefox has no offscreen API. The manifest swaps the service worker for background
+## scripts, drops the offscreen permission, and adds the gecko id AMO needs.
+extension-firefox: extension
+	rm -rf extension-firefox
+	mkdir -p extension-firefox
+	cp -r extension/src extension/icons extension/engine extension-firefox/
+	rm -f extension-firefox/src/offscreen.html extension-firefox/src/offscreen.js extension-firefox/src/offscreen-relay.js
+	node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync("extension/manifest.json"));delete m.minimum_chrome_version;m.background={scripts:["engine/wasm_exec.js","src/engine.js","src/background.js"]};m.permissions=(m.permissions||[]).filter(p=>p!=="offscreen");m.browser_specific_settings={gecko:{id:"slop-chop@slop-chop.com",strict_min_version:"121.0"}};fs.writeFileSync("extension-firefox/manifest.json",JSON.stringify(m,null,2)+"\n");'
+
+## firefox-package: zip the Firefox extension for AMO
+firefox-package: extension-firefox
+	rm -f slop-chop-firefox.zip
+	cd extension-firefox && zip -qr ../slop-chop-firefox.zip . -x '.*'
 
 ## obsidian: build the wasm engine and stage it into the Obsidian plugin
 obsidian: wasm
