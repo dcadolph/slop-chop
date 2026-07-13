@@ -11,6 +11,22 @@ func Judge() string {
 	return judgeSystem
 }
 
+// Learn returns the instruction that tells the model to study writing samples and describe
+// the author's voice as short tone notes, the lines the rewrite pass matches against.
+func Learn() string {
+	return learnSystem
+}
+
+// learnSystem instructs the model to derive tone notes and return only a JSON array.
+const learnSystem = `You study samples of one author's writing and describe their voice, so ` +
+	`another pass can rewrite text to sound like them. Focus on what is distinctive and ` +
+	`reusable: sentence length and rhythm, formality, contractions, humor, directness, ` +
+	`favorite constructions, how they open and close. Ignore the subject matter.
+
+Return only a JSON array of 3 to 6 short strings, each one tone note under 12 words, ` +
+	`no prose and no code fences. Example:
+["short, blunt sentences", "dry humor, no hype", "contractions everywhere", "opens with the point"]`
+
 // judgeSystem instructs the model to compare meaning and return only a JSON verdict.
 const judgeSystem = `You compare an ORIGINAL text with a REWRITE meant to remove AI ` +
 	`writing tells while preserving meaning exactly. Report only genuine changes in ` +

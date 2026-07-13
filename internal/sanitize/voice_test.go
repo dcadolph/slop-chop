@@ -112,12 +112,14 @@ func TestVoiceAsProfile(t *testing.T) {
 		Keep:   []string{"alpha"},
 		Avoid:  []string{"beta"},
 		Prefer: map[string]string{"one": "1", "two words": "2", "": "skip", "drop": ""},
+		Tone:   []string{"dry humor"},
 	}
 	want := Profile{
 		Allow:         []string{"alpha"},
 		BlockWords:    []string{"beta"},
 		WordReplace:   map[string]string{"one": "1", "drop": ""},
 		PhraseReplace: map[string]string{"two words": "2"},
+		Tone:          []string{"dry humor"},
 	}
 	if diff := cmp.Diff(want, v.asProfile(), cmpopts.EquateEmpty()); diff != "" {
 		t.Errorf("asProfile mismatch (-want +got):\n%s", diff)
@@ -149,5 +151,20 @@ func TestLoadVoice(t *testing.T) {
 	}
 	if (Voice{Keep: []string{"x"}}).Empty() {
 		t.Errorf("Voice with a keep entry: Empty = true, want false")
+	}
+	if (Voice{Tone: []string{"x"}}).Empty() {
+		t.Errorf("Voice with a tone entry: Empty = true, want false")
+	}
+}
+
+// TestVoiceToneFlows checks that a voice's tone lines land on the profile and union with
+// what a project overlay carries, so the rewrite prompt sees both.
+func TestVoiceToneFlows(t *testing.T) {
+	t.Parallel()
+	base := Profile{Tone: []string{"house style"}}
+	got := base.WithVoice(Voice{Tone: []string{"dry humor", "house style"}})
+	want := []string{"house style", "dry humor"}
+	if diff := cmp.Diff(want, got.Tone); diff != "" {
+		t.Errorf("tone mismatch (-want +got):\n%s", diff)
 	}
 }
