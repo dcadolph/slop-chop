@@ -236,16 +236,33 @@ func TestFixVerifyReportsIssues(t *testing.T) {
 	}
 }
 
-// TestFixVerifyFaithfulQuiet checks that a faithful verdict raises no meaning warning.
+// TestFixVerifyFaithfulQuiet checks that a faithful verdict with a distinct judge raises no
+// meaning warning at all.
 func TestFixVerifyFaithfulQuiet(t *testing.T) {
+	fakeRewrite(t, "we reached 99.9% uptime")
+	fakeJudge(t, rewrite.Verdict{Faithful: true}, nil)
+	_, stderr, err := runCLI(t,
+		[]string{"fix", "--rewrite", "--verify", "--judge-model", "other-model"},
+		"we hit 99.9% uptime")
+	if err != nil {
+		t.Fatalf("fix: %v", err)
+	}
+	if strings.Contains(stderr, "meaning") {
+		t.Errorf("stderr = %q, want no meaning warning", stderr)
+	}
+}
+
+// TestFixVerifySharedJudgeWarns checks that leaving the judge on the rewriter's backend says
+// so, since the rewriter is then grading its own work.
+func TestFixVerifySharedJudgeWarns(t *testing.T) {
 	fakeRewrite(t, "we reached 99.9% uptime")
 	fakeJudge(t, rewrite.Verdict{Faithful: true}, nil)
 	_, stderr, err := runCLI(t, []string{"fix", "--rewrite", "--verify"}, "we hit 99.9% uptime")
 	if err != nil {
 		t.Fatalf("fix: %v", err)
 	}
-	if strings.Contains(stderr, "meaning") {
-		t.Errorf("stderr = %q, want no meaning warning", stderr)
+	if !strings.Contains(stderr, "judge shares the rewriter's model") {
+		t.Errorf("stderr = %q, want a shared-judge warning", stderr)
 	}
 }
 
