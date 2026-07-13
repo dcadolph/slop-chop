@@ -2,7 +2,7 @@
   "name": "slop-chop",
   "displayName": "slop-chop",
   "description": "Flag and chop AI writing tells as you write. Runs the local slop-chop binary; text never leaves your machine.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "dcadolph",
   "license": "MIT",
   "repository": {

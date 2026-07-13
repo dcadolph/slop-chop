@@ -1,6 +1,6 @@
 {
   "name": "slop-chop-wasm",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Chop AI slop from text. The slop-chop rules engine as WebAssembly, no network, no model.",
   "license": "MIT",
   "main": "index.js",
