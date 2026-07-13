@@ -45,8 +45,10 @@ function writeText(el, text) {
   }
 }
 
-// toast shows a short-lived badge in the corner.
+// toast shows a short-lived badge in the corner. It no-ops on a document with no body,
+// like a bare XML or SVG file the content script also runs on, where appendChild would throw.
 function toast(message) {
+  if (!document.body) return;
   const t = document.createElement("div");
   t.textContent = message;
   t.style.cssText =
@@ -105,6 +107,7 @@ let chopBtn = null;
 // swaps its body (Turbo-style navigation) detaches the node, so a disconnected button is
 // re-appended rather than styled invisibly off-tree.
 function ensureButton() {
+  if (!document.body) return null;
   if (chopBtn) {
     if (!chopBtn.isConnected) document.body.appendChild(chopBtn);
     return chopBtn;
@@ -128,6 +131,7 @@ function ensureButton() {
 // field is too small to be worth chopping.
 function placeButton(el) {
   const b = ensureButton();
+  if (!b) return;
   const r = el.getBoundingClientRect();
   if (r.width < 80 || r.height < 24 || r.bottom < 0 || r.top > innerHeight) {
     b.style.display = "none";

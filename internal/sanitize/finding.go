@@ -18,6 +18,10 @@ type Finding struct {
 	Line int `json:"line"`
 	// Col is the one-based column (rune count) within the line.
 	Col int `json:"col"`
+	// order is the index of the producing rule in the compiled rule order, which is the
+	// order Fix applies rewrites. It is unexported, so it never serializes; dedupeFindings
+	// uses it to report the rewrite Fix actually performs when two rules match one span.
+	order int
 }
 
 // String renders the finding as a single CI-friendly line.

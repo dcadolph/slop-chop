@@ -21,7 +21,8 @@ type Score struct {
 	// TellsPer100 is tells per hundred words, the density the score leans on.
 	TellsPer100 float64 `json:"tellsPer100"`
 	// CadenceCV is the coefficient of variation of sentence length. A low value means a
-	// flat, even rhythm, which reads as machine written.
+	// flat, even rhythm, which reads as machine written; 0 is the flattest. It is -1 when
+	// there are too few sentences to judge a rhythm, distinct from a measured 0.
 	CadenceCV float64 `json:"cadenceCv"`
 	// Density is the points tell density added to Value.
 	Density int `json:"density"`
@@ -76,7 +77,7 @@ func (s *Sanitizer) Score(text string) Score {
 		Tells:       tells,
 		Words:       words,
 		TellsPer100: math.Round(per100(tells, words)*100) / 100,
-		CadenceCV:   math.Round(math.Max(0, cv)*1000) / 1000,
+		CadenceCV:   cadenceReport(cv),
 		Density:     int(math.Round(density)),
 		Cadence:     int(math.Round(cadence)),
 		Hedging:     int(math.Round(hedging)),
@@ -100,6 +101,16 @@ func countHedges(text string) int {
 		}
 	}
 	return n
+}
+
+// cadenceReport rounds a measured coefficient of variation for the score report, and passes
+// the -1 too-few-sentences sentinel through unrounded, so a flat, measured 0 stays distinct
+// from "not enough sentences to judge" instead of both surfacing as 0.
+func cadenceReport(cv float64) float64 {
+	if cv < 0 {
+		return -1
+	}
+	return math.Round(cv*1000) / 1000
 }
 
 // cadenceCV returns the coefficient of variation of sentence length in words, or -1 when

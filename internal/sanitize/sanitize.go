@@ -40,7 +40,7 @@ func New(p Profile) (*Sanitizer, error) {
 func (s *Sanitizer) Check(text string) []Finding {
 	var findings []Finding
 	protected := s.protectedRanges(text)
-	for _, r := range s.rules {
+	for ri, r := range s.rules {
 		for _, loc := range r.matches(text, protected) {
 			match := text[loc[0]:loc[1]]
 			var repl *string
@@ -53,6 +53,7 @@ func (s *Sanitizer) Check(text string) []Finding {
 				Match:       match,
 				Replacement: repl,
 				Offset:      loc[0],
+				order:       ri,
 			})
 		}
 	}
@@ -64,14 +65,14 @@ func (s *Sanitizer) Check(text string) []Finding {
 }
 
 // dedupeFindings collapses findings that mark the same text at the same offset, which
-// happens when a rewrite rule and a flag rule both match one word. It keeps the rewrite so
-// the report shows the fix rather than a bare flag. Findings arrive sorted by offset, so
+// happens when more than one rule matches one word. It keeps the finding Fix would act on,
+// so the report never contradicts the output. Findings arrive sorted by offset, so
 // duplicates sit next to each other.
 func dedupeFindings(findings []Finding) []Finding {
 	out := findings[:0]
 	for _, f := range findings {
 		if n := len(out); n > 0 && out[n-1].Offset == f.Offset && strings.EqualFold(out[n-1].Match, f.Match) {
-			if out[n-1].Replacement == nil && f.Replacement != nil {
+			if preferFinding(f, out[n-1]) {
 				out[n-1] = f
 			}
 			continue
@@ -81,23 +82,72 @@ func dedupeFindings(findings []Finding) []Finding {
 	return out
 }
 
+// preferFinding reports whether cand should replace kept when both mark the same span. A
+// rewrite beats a bare flag, since a flag leaves the span for the rewrite to change, so the
+// report should show the fix. Between two rewrites the earlier rule wins, because Fix runs
+// rules in order and the first to change a span is the change the output keeps: reporting a
+// later rule's replacement would name a swap that never happened.
+func preferFinding(cand, kept Finding) bool {
+	if candRewrite, keptRewrite := cand.Replacement != nil, kept.Replacement != nil; candRewrite != keptRewrite {
+		return candRewrite
+	} else if candRewrite {
+		return cand.order < kept.order
+	}
+	return false
+}
+
 // Fix returns the cleaned text along with the findings from the original. Rules that
 // only flag are reported but leave the text unchanged. Findings carry positions against
 // the original text, so they are gathered before the rewriting starts.
+//
+// The order is tidy, then content swaps once, then tidy again. The leading tidy normalizes
+// spacing first, so a swap keyed on a single space still fires when the input had a run of
+// them. The content swaps then apply exactly once, which is what keeps a self-referential
+// swap like "use" to "make use of" from feeding on its own output. The trailing tidy cleans
+// up after the swaps, which is also where article agreement is repaired once a swap has
+// flipped a leading sound. Because the swaps run once between two idempotent tidy passes,
+// Fix is idempotent on any profile whose swaps do not rewrite their own output.
 func (s *Sanitizer) Fix(text string) (string, []Finding) {
 	findings := s.Check(text)
-	return s.fixpoint(text), findings
+	out := s.tidyFixpoint(text)
+	out = s.applyContentSwaps(out)
+	out = s.tidyFixpoint(out)
+	return out, findings
 }
 
-// fixpoint runs the rewriting rules over the text until it stops changing, so a later
-// rule that alters an earlier rule's input, like the punctuation cleanup dropping a space
-// the semicolon split had read, cannot leave the output half done. It is capped so a
-// profile whose swaps cycle, such as a to b and b to a, terminates instead of looping.
-func (s *Sanitizer) fixpoint(text string) string {
+// applyContentSwaps runs every content rewrite once, in order: character and phrase
+// swaps, spelling, word replacement, deletions, and regex swaps. One pass is deliberate.
+// Re-running these would let a swap whose replacement contains its own trigger, such as
+// "use" to "make use of", match its own output and grow without bound, and would let a
+// chain like "a" to "b" and "b" to "c" carry "a" all the way to "c". Each match is swapped
+// exactly once. Offsets shift as text changes, so protected ranges are recomputed after
+// any rule that edited the text.
+func (s *Sanitizer) applyContentSwaps(text string) string {
+	out := text
+	protected := s.protectedRanges(out)
+	for _, r := range s.rules {
+		if !r.rewrite || r.tidy {
+			continue
+		}
+		next := r.apply(out, protected)
+		if next != out {
+			out = next
+			protected = s.protectedRanges(out)
+		}
+	}
+	return out
+}
+
+// tidyFixpoint runs the punctuation and spacing cleanup rules until the text stops
+// changing, so a later rule that alters an earlier rule's input, like space-before-punct
+// trimming a space the semicolon split had left, cannot leave the output half done. Each
+// tidy rule is idempotent on its own, so the loop settles quickly; it is capped anyway so
+// it always terminates.
+func (s *Sanitizer) tidyFixpoint(text string) string {
 	const maxPasses = 10
 	out := text
 	for range maxPasses {
-		next := s.applyAll(out)
+		next := s.applyTidy(out)
 		if next == out {
 			break
 		}
@@ -106,13 +156,13 @@ func (s *Sanitizer) fixpoint(text string) string {
 	return out
 }
 
-// applyAll runs every rewriting rule once, in order. Each rewrite shifts offsets, so the
+// applyTidy runs every tidy rule once, in order. Each rewrite shifts offsets, so the
 // protected ranges are recomputed after any rule that changed the text.
-func (s *Sanitizer) applyAll(text string) string {
+func (s *Sanitizer) applyTidy(text string) string {
 	out := text
 	protected := s.protectedRanges(out)
 	for _, r := range s.rules {
-		if !r.rewrite {
+		if !r.rewrite || !r.tidy {
 			continue
 		}
 		next := r.apply(out, protected)

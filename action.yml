@@ -59,6 +59,7 @@ runs:
         PRESET: ${{ inputs.preset }}
         MODE: ${{ inputs.mode }}
       run: |
+        read -ra files <<< "$FILES"
         args=()
         if [ -n "$PROFILE" ]; then args+=(--profile "$PROFILE"); fi
         if [ -n "$DIALECT" ]; then args+=(--dialect "$DIALECT"); fi
@@ -66,7 +67,7 @@ runs:
         case "$MODE" in
           check)
             rc=0
-            for f in $FILES; do
+            for f in "${files[@]}"; do
               echo "::group::slop-chop check $f"
               "${RUNNER_TEMP}/slop-chop" check "${args[@]}" "$f" || rc=1
               echo "::endgroup::"
@@ -77,7 +78,7 @@ runs:
             exit "$rc"
             ;;
           fix)
-            for f in $FILES; do
+            for f in "${files[@]}"; do
               echo "::group::slop-chop fix $f"
               "${RUNNER_TEMP}/slop-chop" fix "${args[@]}" -w "$f"
               echo "::endgroup::"
@@ -96,12 +97,13 @@ runs:
         FILES: ${{ inputs.files }}
         MESSAGE: ${{ inputs.message }}
       run: |
-        if git diff --quiet -- $FILES; then
+        read -ra files <<< "$FILES"
+        if git diff --quiet -- "${files[@]}"; then
           echo "slop-chop: nothing to commit"
           exit 0
         fi
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git add -- $FILES
+        git add -- "${files[@]}"
         git commit -m "$MESSAGE"
         git push

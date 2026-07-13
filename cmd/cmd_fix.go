@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -311,29 +312,51 @@ func reportVerdict(verdict rewrite.Verdict, stderr io.Writer) {
 
 // feedbackNotes turns judge issues into short instructions the retry rewrite can act on,
 // naming the fact to keep so the model does not repeat the change.
+// maxFeedbackNotes and maxFeedbackField bound how much of a judge's reply is folded into the
+// next rewrite prompt, so a malfunctioning or adversarial judge cannot bloat the follow-up
+// paid call with an oversized reply that still fit under the response read cap.
+const (
+	maxFeedbackNotes = 32
+	maxFeedbackField = 200
+)
+
+// clipField trims s to at most maxFeedbackField runes, marking a cut with an ellipsis. Judge
+// feedback is meant to be a short pointer, so a longer field is a malfunction, not signal.
+func clipField(s string) string {
+	r := []rune(s)
+	if len(r) <= maxFeedbackField {
+		return s
+	}
+	return string(r[:maxFeedbackField]) + "…"
+}
+
 func feedbackNotes(issues []rewrite.Issue) []string {
+	if len(issues) > maxFeedbackNotes {
+		issues = issues[:maxFeedbackNotes]
+	}
 	notes := make([]string, 0, len(issues))
 	for _, issue := range issues {
+		was, now, note := clipField(issue.Was), clipField(issue.Now), clipField(issue.Note)
 		switch {
-		case issue.Was != "" && issue.Now != "":
-			notes = append(notes, fmt.Sprintf("keep %q, do not change it to %q (%s)", issue.Was, issue.Now, issue.Note))
-		case issue.Was != "":
-			notes = append(notes, fmt.Sprintf("keep %q, do not drop it (%s)", issue.Was, issue.Note))
-		case issue.Now != "":
-			notes = append(notes, fmt.Sprintf("do not add %q (%s)", issue.Now, issue.Note))
-		case issue.Note != "":
-			notes = append(notes, issue.Note)
+		case was != "" && now != "":
+			notes = append(notes, fmt.Sprintf("keep %q, do not change it to %q (%s)", was, now, note))
+		case was != "":
+			notes = append(notes, fmt.Sprintf("keep %q, do not drop it (%s)", was, note))
+		case now != "":
+			notes = append(notes, fmt.Sprintf("do not add %q (%s)", now, note))
+		case note != "":
+			notes = append(notes, note)
 		}
 	}
 	return notes
 }
 
 // newRewriteCompleter builds the model backend for the rewrite pass from the configured
-// provider, model, and base URL. The model is left empty unless set, so each provider
-// falls back to its own default rather than the Anthropic one.
+// provider, model, and base URL. The model is left empty unless the user set it by flag or
+// environment, so each provider falls back to its own default rather than the Anthropic one.
 func newRewriteCompleter() (rewrite.Completer, error) {
 	model := ""
-	if config.Changed(config.KeyModel) {
+	if config.Set(config.KeyModel) {
 		model = config.Model()
 	}
 	return rewrite.NewCompleter(rewrite.Provider(config.Provider()), model, config.BaseURL())
@@ -345,7 +368,7 @@ func newRewriteCompleter() (rewrite.Completer, error) {
 // should say so.
 func newJudgeCompleter() (completer rewrite.Completer, shared bool, err error) {
 	rwModel := ""
-	if config.Changed(config.KeyModel) {
+	if config.Set(config.KeyModel) {
 		rwModel = config.Model()
 	}
 	provider := config.Provider()
@@ -360,9 +383,27 @@ func newJudgeCompleter() (completer rewrite.Completer, shared bool, err error) {
 	if u := config.JudgeBaseURL(); u != "" {
 		baseURL = u
 	}
-	shared = provider == config.Provider() && model == rwModel && baseURL == config.BaseURL()
+	// Compare the models that actually run, not the raw settings: an empty model resolves to
+	// the provider default, so a judge model set to that default still shares the rewriter's
+	// backend even though the strings differ.
+	shared = provider == config.Provider() &&
+		resolveModel(provider, model) == resolveModel(config.Provider(), rwModel) &&
+		baseURL == config.BaseURL()
 	completer, err = rewrite.NewCompleter(rewrite.Provider(provider), model, baseURL)
 	return completer, shared, err
+}
+
+// resolveModel returns the model a completer for provider will actually use, filling an
+// empty model with that provider's own default. It lets the shared-backend check compare
+// effective models rather than a set string against an empty one.
+func resolveModel(provider, model string) string {
+	if model != "" {
+		return model
+	}
+	if rewrite.Provider(provider) == rewrite.ProviderOpenAI {
+		return rewrite.DefaultOpenAIModel
+	}
+	return rewrite.DefaultModel
 }
 
 // rewritePass runs the model rewrite over text. It is a variable so tests can swap in
@@ -382,13 +423,31 @@ var judgePass = func(ctx context.Context, c rewrite.Completer, original, rewritt
 	return rewrite.NewJudge(c).Judge(ctx, original, rewritten)
 }
 
-// writeFile writes out back to path, keeping the file's existing mode.
+// writeFile writes out back to path, keeping the file's existing mode. It writes a temp file
+// in the same directory and renames it over the target, so an interrupted write leaves the
+// original intact rather than a truncated file: the rename is atomic on one filesystem.
 func writeFile(path, out string) error {
 	mode := os.FileMode(0o644)
 	if info, err := os.Stat(path); err == nil {
 		mode = info.Mode().Perm()
 	}
-	if err := os.WriteFile(path, []byte(out), mode); err != nil {
+	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".slop-*")
+	if err != nil {
+		return fmt.Errorf("write file: %w", err)
+	}
+	tmpName := tmp.Name()
+	defer func() { _ = os.Remove(tmpName) }()
+	if _, err := tmp.WriteString(out); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("write file: %w", err)
+	}
+	if err := tmp.Close(); err != nil {
+		return fmt.Errorf("write file: %w", err)
+	}
+	if err := os.Chmod(tmpName, mode); err != nil {
+		return fmt.Errorf("write file: %w", err)
+	}
+	if err := os.Rename(tmpName, path); err != nil {
 		return fmt.Errorf("write file: %w", err)
 	}
 	return nil

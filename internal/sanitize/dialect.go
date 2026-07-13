@@ -94,8 +94,9 @@ func spellingRule(d Dialect) (Rule, bool, error) {
 }
 
 // wordSwapRule builds one rule that rewrites any whole word found in from to its mapped
-// value, carrying the match's case onto the replacement. Keys and values are lower case.
-// It returns ok false when from is empty, so the caller can skip it.
+// value, carrying the match's case onto the replacement. Keys are lower case; a value
+// keeps whatever capitalization it was written with, so "GitHub" is not flattened. It
+// returns ok false when from is empty, so the caller can skip it.
 func wordSwapRule(name string, from map[string]string) (Rule, bool, error) {
 	if len(from) == 0 {
 		return Rule{}, false, nil
@@ -127,8 +128,8 @@ func wordSwapReplace(from map[string]string) func(text string, loc []int) string
 }
 
 // matchCase returns repl recased to mirror match: an all-caps match yields an all-caps
-// replacement, a leading capital yields a leading capital, and any other pattern returns
-// repl unchanged, since the word list stores its replacements in lower case.
+// replacement, a leading capital yields a leading capital, and a lower-case or mixed match
+// returns repl as written, so a value that carries its own casing like "GitHub" survives.
 func matchCase(match, repl string) string {
 	if match == "" || repl == "" {
 		return repl
