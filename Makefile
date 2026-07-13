@@ -75,7 +75,7 @@ extension-firefox: extension
 	mkdir -p extension-firefox
 	cp -r extension/src extension/icons extension/engine extension-firefox/
 	rm -f extension-firefox/src/offscreen.html extension-firefox/src/offscreen.js extension-firefox/src/offscreen-relay.js
-	node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync("extension/manifest.json"));delete m.minimum_chrome_version;m.background={scripts:["engine/wasm_exec.js","src/engine.js","src/background.js"]};m.permissions=(m.permissions||[]).filter(p=>p!=="offscreen");m.browser_specific_settings={gecko:{id:"slop-chop@slop-chop.com",strict_min_version:"121.0"}};fs.writeFileSync("extension-firefox/manifest.json",JSON.stringify(m,null,2)+"\n");'
+	node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync("extension/manifest.json"));delete m.minimum_chrome_version;m.background={scripts:["engine/wasm_exec.js","src/engine.js","src/background.js"]};m.permissions=(m.permissions||[]).filter(p=>p!=="offscreen");m.browser_specific_settings={gecko:{id:"slop-chop@slop-chop.com",strict_min_version:"140.0",data_collection_permissions:{required:["none"]}}};fs.writeFileSync("extension-firefox/manifest.json",JSON.stringify(m,null,2)+"\n");'
 
 ## firefox-package: zip the Firefox extension for AMO
 firefox-package: extension-firefox
