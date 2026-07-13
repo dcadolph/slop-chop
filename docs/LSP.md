@@ -51,9 +51,12 @@ language-servers = ["slop-chop"]
 
 ## VS Code
 
-VS Code needs a thin client extension to launch a stdio server. Point its server options at
-`slop-chop lsp`, with a document selector for `markdown`, `plaintext`, and `git-commit`. A
-ready-made extension is on the roadmap.
+A ready-made extension lives in the repo under
+[`vscode/`](https://github.com/dcadolph/slop-chop/tree/main/vscode). It runs the binary
+directly: diagnostics as you type, a "Chop the slop" command, and a document formatter so
+format-on-save chops the file. Its README covers the install. Rolling your own client
+instead works too: point it at `slop-chop lsp` with a document selector for `markdown`,
+`plaintext`, and `git-commit`.
 
 ## What it provides
 
