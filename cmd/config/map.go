@@ -6,25 +6,25 @@ import "github.com/spf13/pflag"
 //
 //nolint:gochecknoglobals // Flag registry, written once at init.
 var flags = map[string]*pflag.Flag{
-	KeyProfile:      &FlagProfile,
-	KeyDialect:      &FlagDialect,
-	KeyPreset:       &FlagPreset,
-	KeyVoice:        &FlagVoice,
-	KeyJSON:         &FlagJSON,
-	KeyPretty:       &FlagPretty,
-	KeyMarkdown:     &FlagMarkdown,
-	KeyWrite:        &FlagWrite,
-	KeyRewrite:      &FlagRewrite,
+	KeyProfile:       &FlagProfile,
+	KeyDialect:       &FlagDialect,
+	KeyPreset:        &FlagPreset,
+	KeyVoice:         &FlagVoice,
+	KeyJSON:          &FlagJSON,
+	KeyPretty:        &FlagPretty,
+	KeyMarkdown:      &FlagMarkdown,
+	KeyWrite:         &FlagWrite,
+	KeyRewrite:       &FlagRewrite,
 	KeyProvider:      &FlagProvider,
 	KeyModel:         &FlagModel,
 	KeyBaseURL:       &FlagBaseURL,
 	KeyJudgeProvider: &FlagJudgeProvider,
 	KeyJudgeModel:    &FlagJudgeModel,
 	KeyJudgeBaseURL:  &FlagJudgeBaseURL,
-	KeyVerify:       &FlagVerify,
-	KeyVerifyStrict: &FlagVerifyStrict,
-	KeyVerifyRetry:  &FlagVerifyRetry,
-	KeyMax:          &FlagMax,
+	KeyVerify:        &FlagVerify,
+	KeyVerifyStrict:  &FlagVerifyStrict,
+	KeyVerifyRetry:   &FlagVerifyRetry,
+	KeyMax:           &FlagMax,
 }
 
 // Changed reports whether the flag for key was set on the command line.
