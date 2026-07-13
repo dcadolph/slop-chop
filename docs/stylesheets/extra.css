@@ -270,13 +270,30 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 2.4rem;
-  align-items: start;
+  align-items: stretch;
   max-width: 66rem;
   margin: 0 auto 2.6rem;
 }
 
 .sc-compare > .sc-compare-col > :first-child {
   margin-top: 0;
+}
+
+/* The counterpoint reads as one featured answer: a bordered panel that fills the height of
+   the steps beside it and centers its text, so the shorter column never trails off into a
+   gap. A faint lime wash sets it apart from the how-it-works cards. */
+.sc-compare > .sc-compare-col:last-child {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 1.6rem 1.8rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.7rem;
+  background: linear-gradient(180deg, rgba(155, 207, 26, 0.05), rgba(155, 207, 26, 0.01));
+}
+
+.sc-compare > .sc-compare-col:last-child :last-child {
+  margin-bottom: 0;
 }
 
 .sc-compare .sc-steps {
@@ -312,10 +329,37 @@
   }
 }
 
-/* Start-here table spans the content column instead of shrinking to its text. */
-.md-typeset .sc-start table:not([class]) {
-  display: table;
-  width: 100%;
+/* Install grid: three even columns, so nine targets make three clean rows across the full
+   width instead of a narrow table stranded on the left. Start-here is five short guide cards
+   in one row. Both override the four-across default and stack down on smaller screens. */
+.md-typeset .grid.cards.sc-installs > ul {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.md-typeset .grid.cards.sc-guides > ul {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+@media (max-width: 1219px) {
+  .md-typeset .grid.cards.sc-installs > ul {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .md-typeset .grid.cards.sc-guides > ul {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .md-typeset .grid.cards.sc-installs > ul,
+  .md-typeset .grid.cards.sc-guides > ul {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Keep a long command or URL inside its card instead of overflowing the narrower columns. */
+.md-typeset .sc-installs .grid.cards > ul > li code,
+.md-typeset .sc-installs > ul > li code {
+  overflow-wrap: anywhere;
 }
 
 /* Slime-themed 404. */
