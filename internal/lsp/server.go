@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"unicode/utf8"
 
 	"github.com/dcadolph/slop-chop/internal/sanitize"
 )
@@ -65,7 +66,13 @@ func (srv *Server) Run() error {
 	}
 }
 
-// readMessage reads one Content-Length framed message body.
+// maxMessageBytes bounds one framed message, so a corrupt or hostile Content-Length cannot
+// panic makeslice or provoke a giant allocation. Real documents are far under this.
+const maxMessageBytes = 64 << 20
+
+// readMessage reads one Content-Length framed message body. Header field names are matched
+// case-insensitively, per the LSP header conventions, and an out-of-range length is a clean
+// error rather than a panic.
 func (srv *Server) readMessage() ([]byte, error) {
 	length := -1
 	for {
@@ -77,16 +84,21 @@ func (srv *Server) readMessage() ([]byte, error) {
 		if line == "" {
 			break
 		}
-		if after, ok := strings.CutPrefix(line, "Content-Length:"); ok {
-			n, err := strconv.Atoi(strings.TrimSpace(after))
-			if err != nil {
-				return nil, fmt.Errorf("bad Content-Length: %w", err)
-			}
-			length = n
+		name, value, ok := strings.Cut(line, ":")
+		if !ok || !strings.EqualFold(strings.TrimSpace(name), "Content-Length") {
+			continue
 		}
+		n, err := strconv.Atoi(strings.TrimSpace(value))
+		if err != nil {
+			return nil, fmt.Errorf("bad Content-Length: %w", err)
+		}
+		length = n
 	}
 	if length < 0 {
 		return nil, errors.New("missing Content-Length header")
+	}
+	if length > maxMessageBytes {
+		return nil, fmt.Errorf("message too large: %d bytes", length)
 	}
 	buf := make([]byte, length)
 	if _, err := io.ReadFull(srv.r, buf); err != nil {
@@ -150,10 +162,14 @@ func (srv *Server) handle(req request) bool {
 func (srv *Server) publish(uri string) {
 	text := srv.docs[uri]
 	findings := srv.san.Check(text)
+	pos := newPositionMap(text)
 	diags := make([]Diagnostic, 0, len(findings))
 	for _, f := range findings {
 		diags = append(diags, Diagnostic{
-			Range:    findingRange(text, f),
+			Range: Range{
+				Start: pos.at(f.Offset),
+				End:   pos.at(f.Offset + len(f.Match)),
+			},
 			Severity: severityInformation,
 			Source:   "slop-chop",
 			Code:     f.Rule,
@@ -232,12 +248,39 @@ func diagMessage(f sanitize.Finding) string {
 	return fmt.Sprintf("%q: %s", f.Match, f.Rule)
 }
 
-// findingRange maps a finding's byte span to an LSP range in the document text.
-func findingRange(text string, f sanitize.Finding) Range {
-	return Range{
-		Start: offsetToPosition(text, f.Offset),
-		End:   offsetToPosition(text, f.Offset+len(f.Match)),
+// positionMap converts ascending byte offsets to LSP positions in one forward walk of the
+// document, so publishing many findings costs one pass instead of one scan per finding.
+type positionMap struct {
+	// text is the document being walked.
+	text string
+	// byteOff is the byte offset the walk has reached.
+	byteOff int
+	// line and char are the position at byteOff, char in UTF-16 code units.
+	line, char int
+}
+
+// newPositionMap starts a walk at the top of text.
+func newPositionMap(text string) *positionMap {
+	return &positionMap{text: text}
+}
+
+// at returns the position of a byte offset. Offsets must not decrease between calls; the
+// findings the engine returns are already in document order.
+func (p *positionMap) at(off int) Position {
+	for p.byteOff < off && p.byteOff < len(p.text) {
+		r, size := utf8.DecodeRuneInString(p.text[p.byteOff:])
+		p.byteOff += size
+		switch {
+		case r == '\n':
+			p.line++
+			p.char = 0
+		case r > 0xFFFF:
+			p.char += 2
+		default:
+			p.char++
+		}
 	}
+	return Position{Line: p.line, Character: p.char}
 }
 
 // offsetToPosition converts a byte offset into a zero-based line and UTF-16 character

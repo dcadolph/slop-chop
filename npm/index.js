@@ -24,7 +24,12 @@ function init() {
     // Give the Go runtime a tick to register its globals.
     await new Promise((r) => setTimeout(r, 0));
     defaults = JSON.parse(globalThis.slopDefaults());
-  })();
+  })().catch((err) => {
+    // A failed boot clears the cache, so the next call retries instead of replaying a
+    // stale rejection forever.
+    ready = null;
+    throw err;
+  });
   return ready;
 }
 

@@ -106,9 +106,16 @@ class SlopChopPlugin extends Plugin {
   }
 
   // chop runs the engine over text and returns the cleaned output with before and after
-  // scores, or an error.
-  chop(text) {
-    if (!this.engineReady) return { error: "engine not loaded" };
+  // scores, or an error. A boot that failed at load time is retried here, so a transient
+  // failure does not brick the plugin until restart.
+  async chop(text) {
+    if (!this.engineReady) {
+      try {
+        await this.bootEngine();
+      } catch (err) {
+        return { error: "engine not loaded: " + ((err && err.message) || err) };
+      }
+    }
     const req = JSON.stringify({ text, profile: this.voiceProfile(), presets: this.presets() });
     const res = JSON.parse(globalThis.slopChop(req));
     if (res.error) return { error: res.error };
@@ -120,7 +127,7 @@ class SlopChopPlugin extends Plugin {
   }
 
   // chopActiveFile chops the whole active note in place.
-  chopActiveFile() {
+  async chopActiveFile() {
     const view = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (!view) {
       new Notice("slop-chop: open a note first");
@@ -129,9 +136,13 @@ class SlopChopPlugin extends Plugin {
     const editor = view.editor;
     const text = editor.getValue();
     if (!text.trim()) return;
-    const res = this.chop(text);
+    const res = await this.chop(text);
     if (res.error) {
       new Notice("slop-chop: " + res.error);
+      return;
+    }
+    if (editor.getValue() !== text) {
+      new Notice("slop-chop: the note changed while chopping; nothing applied");
       return;
     }
     editor.setValue(res.output);
@@ -139,13 +150,18 @@ class SlopChopPlugin extends Plugin {
   }
 
   // chopSelection chops the selection, or the whole note when nothing is selected.
-  chopSelection(editor) {
+  async chopSelection(editor) {
     const sel = editor.getSelection();
     const text = sel || editor.getValue();
     if (!text.trim()) return;
-    const res = this.chop(text);
+    const snapshot = editor.getValue();
+    const res = await this.chop(text);
     if (res.error) {
       new Notice("slop-chop: " + res.error);
+      return;
+    }
+    if (editor.getValue() !== snapshot) {
+      new Notice("slop-chop: the note changed while chopping; nothing applied");
       return;
     }
     if (sel) editor.replaceSelection(res.output);
