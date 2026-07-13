@@ -1,7 +1,8 @@
 {
   "manifest_version": 3,
   "name": "slop-chop",
-  "version": "0.2.0",
+  "version": "0.2.1",
+  "minimum_chrome_version": "116",
   "description": "Chop AI slop from any text field. The engine runs locally; your text never leaves the browser.",
   "permissions": ["offscreen", "storage"],
   "background": {

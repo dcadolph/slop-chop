@@ -36,7 +36,8 @@
         "slop-chop.path": {
           "type": "string",
           "default": "slop-chop",
-          "description": "Path to the slop-chop binary."
+          "scope": "machine",
+          "description": "Path to the slop-chop binary. Machine-scoped, so a workspace cannot point it at a repo-local executable."
         },
         "slop-chop.preset": {
           "type": "string",

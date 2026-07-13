@@ -21,17 +21,28 @@ function readText(el) {
 }
 
 // writeText puts text back and fires an input event, so a framework-bound field notices the
-// change instead of snapping back to its old model value.
+// change instead of snapping back to its old model value. A contenteditable is rewritten
+// through the editor's own insertText command: the host editor keeps its paragraph
+// structure and its undo stack, instead of having its subtree flattened to one text node.
 function writeText(el, text) {
   if (el.tagName === "TEXTAREA" || el.tagName === "INPUT") {
     const proto =
       el.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
     const setter = Object.getOwnPropertyDescriptor(proto, "value").set;
     setter.call(el, text);
-  } else {
-    el.textContent = text;
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    return;
   }
-  el.dispatchEvent(new Event("input", { bubbles: true }));
+  el.focus();
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  const sel = getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  if (!document.execCommand("insertText", false, text)) {
+    el.textContent = text;
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  }
 }
 
 // toast shows a short-lived badge in the corner.
@@ -70,6 +81,16 @@ async function chopFocused() {
     toast("slop-chop: " + ((res && res.error) || "no response"));
     return;
   }
+  if (res.output === text) {
+    toast("Already clean" + (res.before != null ? " (slop " + res.before + ")" : ""));
+    return;
+  }
+  // The first chop can take seconds while the engine boots. Anything typed in the meantime
+  // must not be clobbered by the stale snapshot's rewrite.
+  if (readText(el) !== text) {
+    toast("slop-chop: the field changed while chopping; nothing applied");
+    return;
+  }
   writeText(el, res.output);
   const drop =
     res.before != null && res.after != null ? " (slop " + res.before + " → " + res.after + ")" : "";
@@ -80,9 +101,14 @@ async function chopFocused() {
 // discoverable without the hotkey. mousedown is swallowed to keep focus on the field.
 let chopBtn = null;
 
-// ensureButton builds the floating button once and wires its click to a chop.
+// ensureButton builds the floating button once and wires its click to a chop. A page that
+// swaps its body (Turbo-style navigation) detaches the node, so a disconnected button is
+// re-appended rather than styled invisibly off-tree.
 function ensureButton() {
-  if (chopBtn) return chopBtn;
+  if (chopBtn) {
+    if (!chopBtn.isConnected) document.body.appendChild(chopBtn);
+    return chopBtn;
+  }
   chopBtn = document.createElement("button");
   chopBtn.type = "button";
   chopBtn.textContent = "✂"; // scissors

@@ -83,6 +83,49 @@ func TestServer(t *testing.T) {
 	}
 }
 
+// TestReadMessageHardening checks the framing against hostile and spec-legal headers: a
+// lowercase header is accepted, and an absurd Content-Length is a clean error, not a panic.
+func TestReadMessageHardening(t *testing.T) {
+	t.Parallel()
+	san, err := sanitize.New(sanitize.Profile{})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	// Test 0: a lowercase content-length header frames the message fine.
+	body := `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}`
+	in := fmt.Sprintf("content-length: %d\r\n\r\n%s", len(body), body)
+	var out bytes.Buffer
+	if err := NewServer(san, strings.NewReader(in), &out).Run(); err != nil {
+		t.Errorf("lowercase header: Run = %v, want clean EOF end", err)
+	}
+	if got := splitFrames(t, out.Bytes()); len(got) != 1 {
+		t.Errorf("lowercase header: frames = %d, want the initialize reply", len(got))
+	}
+
+	// Test 1: a giant Content-Length is refused as an error instead of panicking makeslice.
+	huge := "Content-Length: 9223372036854775807\r\n\r\n"
+	err = NewServer(san, strings.NewReader(huge), &bytes.Buffer{}).Run()
+	if err == nil || !strings.Contains(err.Error(), "too large") {
+		t.Errorf("huge length: err = %v, want a too-large error", err)
+	}
+}
+
+// TestPositionMapMatchesScan checks the single-pass position map against the reference
+// scanner on multi-byte text, so the fast path cannot drift from the correct one.
+func TestPositionMapMatchesScan(t *testing.T) {
+	t.Parallel()
+	text := "café — plain\nnew 😀 line\nlast"
+	pos := newPositionMap(text)
+	for off := 0; off <= len(text); off++ {
+		want := offsetToPosition(text, off)
+		got := pos.at(off)
+		if got != want {
+			t.Fatalf("offset %d: got %+v, want %+v", off, got, want)
+		}
+	}
+}
+
 // splitFrames breaks a Content-Length framed stream into its message bodies.
 func splitFrames(t *testing.T, b []byte) [][]byte {
 	t.Helper()
