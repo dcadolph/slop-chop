@@ -9,6 +9,8 @@ import "../engine/wasm_exec.js";
 // The CompiledWasm rule turns this import into a WebAssembly.Module.
 import engineModule from "../engine/slop-chop.wasm";
 
+import { verifySignature, handleCommand, handleInteract } from "./slack.js";
+
 // maxTextBytes caps one request's text, so a giant paste cannot pin the isolate.
 const maxTextBytes = 1024 * 1024;
 
@@ -74,6 +76,18 @@ function json(body, status = 200) {
   });
 }
 
+// engineChop runs one text through the engine. A throw means the Go runtime died, which a
+// panic surfaces as "Go program has already exited", so the cached boot is dropped and the
+// result is marked died so callers can answer 500 rather than 400.
+function engineChop(text, profile, presets) {
+  try {
+    return JSON.parse(globalThis.slopChop(JSON.stringify({ text, profile, presets })));
+  } catch (err) {
+    ready = null;
+    return { error: "engine error: " + (err && err.message ? err.message : String(err)), died: true };
+  }
+}
+
 // chop runs the engine over one request body and returns the response. A body that is not
 // a JSON object, or is missing text, is a 400 rather than an uncaught error, so a bare
 // "null" or an array does not throw. If the engine itself throws, which a Go panic surfaces
@@ -88,18 +102,8 @@ function chop(body, defaults) {
     return json({ error: "text is required" }, 400);
   }
   const base = body.profile && typeof body.profile === "object" ? body.profile : defaults;
-  const req = JSON.stringify({
-    text,
-    profile: voiceProfile(base, body.voice),
-    presets: body.presets || ["cleaver"],
-  });
-  let res;
-  try {
-    res = JSON.parse(globalThis.slopChop(req));
-  } catch (err) {
-    ready = null;
-    return json({ error: "engine error: " + (err && err.message ? err.message : String(err)) }, 500);
-  }
+  const res = engineChop(text, voiceProfile(base, body.voice), body.presets || ["cleaver"]);
+  if (res.died) return json({ error: res.error }, 500);
   if (res.error) return json({ error: res.error }, 400);
   return json(res);
 }
@@ -109,9 +113,9 @@ export default {
   // GET / describes the endpoints. The whole body runs under one guard so any unexpected
   // throw still answers with CORS headers, and a throw that means the engine died drops the
   // cached instance so the next request re-boots rather than serving a poisoned isolate.
-  async fetch(request) {
+  async fetch(request, env) {
     try {
-      return await route(request);
+      return await route(request, env);
     } catch (err) {
       ready = null;
       return json({ error: "internal error: " + (err && err.message ? err.message : String(err)) }, 500);
@@ -121,7 +125,7 @@ export default {
 
 // route resolves one request to a response. It is separated from fetch so the fetch guard
 // can turn any thrown error into a CORS-bearing JSON response.
-async function route(request) {
+async function route(request, env) {
   const url = new URL(request.url);
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -135,6 +139,8 @@ async function route(request) {
       endpoints: {
         "POST /chop": "{text, presets?, voice?, profile?} -> {output, findings, score, scoreAfter}",
         "GET /presets": "built-in preset names",
+        "POST /slack/command": "the /chop slash command, signature-verified",
+        "POST /slack/interact": "the Chop this message shortcut, signature-verified",
       },
       docs: "https://slop-chop.com/API.html",
     });
@@ -161,6 +167,26 @@ async function route(request) {
     }
     const defaults = await boot();
     return chop(body, defaults);
+  }
+
+  if (url.pathname === "/slack/command" || url.pathname === "/slack/interact") {
+    if (request.method !== "POST") {
+      return json({ error: "use POST" }, 405);
+    }
+    const secret = env && env.SLACK_SIGNING_SECRET;
+    if (!secret) {
+      return json({ error: "slack is not configured" }, 503);
+    }
+    const rawBody = await request.text();
+    if (!(await verifySignature(request, rawBody, secret))) {
+      return json({ error: "bad signature" }, 401);
+    }
+    const defaults = await boot();
+    const run = (text) => engineChop(text, defaults, ["cleaver"]);
+    if (url.pathname === "/slack/command") {
+      return handleCommand(rawBody, run);
+    }
+    return handleInteract(rawBody, run);
   }
 
   return json({ error: "not found" }, 404);
