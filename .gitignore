@@ -26,6 +26,9 @@ coverage.out
 # Staged engine for the browser extension, produced by make extension
 /extension/engine/
 
+# Staged engine for the Obsidian plugin, produced by make obsidian
+/obsidian/engine/
+
 # Packaged extension zip, produced by make extension-package
 /slop-chop-extension.zip
 
