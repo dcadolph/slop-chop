@@ -55,6 +55,7 @@ nav:
   - Extension: EXTENSION.md
   - Editor (LSP): LSP.md
   - API: API.md
+  - Slack: SLACK.md
   - Claude plugin: PLUGIN.md
   - Privacy: PRIVACY.md
 

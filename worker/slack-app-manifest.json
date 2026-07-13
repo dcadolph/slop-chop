@@ -1,0 +1,45 @@
+{
+  "display_information": {
+    "name": "slop-chop",
+    "description": "Chop AI slop from your messages, deterministically.",
+    "background_color": "#111111",
+    "long_description": "Runs the slop-chop rules engine over your text and hands back the cleaned version with a before and after slop score. Deterministic word, phrase, and punctuation rules; no model, no storage. Replies are ephemeral, so only you see them. Use the /chop command with any text, or the Chop this message shortcut on an existing message."
+  },
+  "features": {
+    "bot_user": {
+      "display_name": "slop-chop",
+      "always_online": false
+    },
+    "slash_commands": [
+      {
+        "command": "/chop",
+        "url": "https://api.slop-chop.com/slack/command",
+        "description": "Chop AI slop from text",
+        "usage_hint": "[text to chop]",
+        "should_escape": false
+      }
+    ],
+    "shortcuts": [
+      {
+        "name": "Chop this message",
+        "type": "message",
+        "callback_id": "chop_message",
+        "description": "Chop the slop from this message and show you the result"
+      }
+    ]
+  },
+  "oauth_config": {
+    "scopes": {
+      "bot": ["commands"]
+    }
+  },
+  "settings": {
+    "interactivity": {
+      "is_enabled": true,
+      "request_url": "https://api.slop-chop.com/slack/interact"
+    },
+    "org_deploy_enabled": false,
+    "socket_mode_enabled": false,
+    "token_rotation_enabled": false
+  }
+}
