@@ -1,5 +1,5 @@
 {
-  "name": "@slop-chop/wasm",
+  "name": "slop-chop-wasm",
   "version": "0.1.0",
   "description": "Chop AI slop from text. The slop-chop rules engine as WebAssembly, no network, no model.",
   "license": "MIT",
