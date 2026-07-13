@@ -45,6 +45,12 @@ coverage.out
 /extension-firefox/
 /slop-chop-firefox.zip
 
+# JetBrains plugin build output
+/jetbrains/build/
+/jetbrains/.gradle/
+/jetbrains/.intellijPlatform/
+/jetbrains/.kotlin/
+
 # Browser test suite dependencies
 /e2e/node_modules/
 

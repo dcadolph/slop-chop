@@ -1,0 +1,25 @@
+<idea-plugin>
+    <id>com.slopchop.jetbrains</id>
+    <name>slop-chop</name>
+    <vendor url="https://slop-chop.com">dcadolph</vendor>
+
+    <description><![CDATA[
+        Chop AI writing tells in Markdown and plain text. The plugin runs the local
+        <code>slop-chop</code> binary as a language server through LSP4IJ: tells surface as
+        diagnostics, and a code action chops the document in place. Install the binary and put it
+        on your PATH first (<code>brew install dcadolph/tap/slop-chop</code> or
+        <code>go install github.com/dcadolph/slop-chop@latest</code>). See
+        <a href="https://slop-chop.com">slop-chop.com</a>.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.redhat.devtools.lsp4ij</depends>
+
+    <extensions defaultExtensionNs="com.redhat.devtools.lsp4ij">
+        <server id="slopChop"
+                name="slop-chop"
+                factoryClass="com.slopchop.jetbrains.SlopChopLanguageServerFactory"/>
+        <languageMapping language="Markdown" serverId="slopChop"/>
+        <languageMapping language="TEXT" serverId="slopChop"/>
+    </extensions>
+</idea-plugin>
