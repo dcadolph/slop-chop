@@ -5,7 +5,7 @@
    touched. */
 "use strict";
 
-const NAME = "slop-chop-shell-v2";
+const NAME = "slop-chop-shell-v3";
 
 /* CORE is everything the chopper itself needs. The theme's hashed bundles are
    discovered from the built page at install time, since their names change. */
@@ -55,10 +55,18 @@ self.addEventListener("activate", (e) => {
   );
 });
 
-/* freshFirst answers pages and stylesheets from the network so a deploy is visible
-   on the next load, keeping the cached copy for offline. */
+/* CORE_FRESH are the engine's fixed-name assets. Unlike the theme's content-hashed bundles,
+   their names do not change between deploys, so a cache-first rule would serve the previous
+   build's engine until a background revalidate, leaving the first load after a deploy stale.
+   They are answered network-first instead, with the cache kept for offline. */
+const CORE_FRESH = ["/assets/app.js", "/assets/worker.js", "/assets/wasm_exec.js", "/assets/slop-chop.wasm"];
+
+/* freshFirst answers pages, stylesheets, and the fixed-name engine assets from the network
+   so a deploy is visible on the next load, keeping the cached copy for offline. */
 function freshFirst(req) {
-  return req.mode === "navigate" || new URL(req.url).pathname.endsWith(".css");
+  if (req.mode === "navigate") return true;
+  const path = new URL(req.url).pathname;
+  return path.endsWith(".css") || CORE_FRESH.some((p) => path.endsWith(p));
 }
 
 /* respond picks network-first or cache-first per request, refreshes the cache with

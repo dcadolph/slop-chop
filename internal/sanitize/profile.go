@@ -221,7 +221,7 @@ func (p Profile) compile() ([]Rule, error) {
 	}
 
 	swaps, drops := splitDrops(p.WordReplace)
-	replace, ok, err := wordSwapRule("replace", lowerBoth(swaps))
+	replace, ok, err := wordSwapRule("replace", lowerKeys(swaps))
 	if err != nil {
 		return nil, err
 	}
@@ -277,6 +277,7 @@ func (p Profile) compile() ([]Rule, error) {
 				return semicolonJoinsClauses(text, start)
 			},
 			rewrite: true,
+			tidy:    true,
 		})
 	}
 
@@ -289,6 +290,7 @@ func (p Profile) compile() ([]Rule, error) {
 			replFunc: stripOrphanComma,
 			keep:     commaOpensSentence,
 			rewrite:  true,
+			tidy:     true,
 		})
 		rules = append(rules, Rule{
 			Name:     "space-before-punct",
@@ -296,18 +298,21 @@ func (p Profile) compile() ([]Rule, error) {
 			replFunc: trimLeadingSpace,
 			keep:     spaceBeforePunctKeep,
 			rewrite:  true,
+			tidy:     true,
 		})
 		rules = append(rules, Rule{
 			Name:     "comma-before-stop",
 			re:       regexp.MustCompile(`,+[.!?;:]`),
 			replFunc: keepFinalByte,
 			rewrite:  true,
+			tidy:     true,
 		})
 		rules = append(rules, Rule{
 			Name:    "comma-run",
 			re:      regexp.MustCompile(`,{2,}`),
 			repl:    ",",
 			rewrite: true,
+			tidy:    true,
 		})
 		rules = append(rules, Rule{
 			Name:    "double-space",
@@ -315,11 +320,12 @@ func (p Profile) compile() ([]Rule, error) {
 			repl:    " ",
 			keep:    collapsibleRun,
 			rewrite: true,
+			tidy:    true,
 		})
 	}
 
 	if p.FixArticles {
-		rules = append(rules, Rule{Name: "article", re: articleRe, replFunc: fixArticle, keep: articleNeedsFix, rewrite: true})
+		rules = append(rules, Rule{Name: "article", re: articleRe, replFunc: fixArticle, keep: articleNeedsFix, rewrite: true, tidy: true})
 	}
 
 	if allow := allowSet(p.Allow); allow != nil {
@@ -386,9 +392,11 @@ func splitDrops(m map[string]string) (swaps map[string]string, drops []string) {
 	return swaps, drops
 }
 
-// lowerBoth returns m with every key and value lower-cased and empty keys dropped, the
-// shape wordSwapRule expects. It returns nil for an empty map.
-func lowerBoth(m map[string]string) map[string]string {
+// lowerKeys returns m with every key lower-cased and empty keys dropped, the shape
+// wordSwapRule expects for case-insensitive matching. Values are left as written, so a
+// replacement's intended capitalization, like "GitHub" or "iPhone", survives instead of
+// being flattened to lower case. It returns nil for an empty map.
+func lowerKeys(m map[string]string) map[string]string {
 	if len(m) == 0 {
 		return nil
 	}
@@ -397,7 +405,7 @@ func lowerBoth(m map[string]string) map[string]string {
 		if k == "" {
 			continue
 		}
-		out[strings.ToLower(k)] = strings.ToLower(v)
+		out[strings.ToLower(k)] = v
 	}
 	return out
 }
@@ -415,12 +423,11 @@ func regexRule(pattern, repl string) (Rule, error) {
 		Name: "regex:" + pattern,
 		re:   re,
 		replFunc: func(text string, loc []int) string {
-			span := text[loc[0]:loc[1]]
-			sub := re.FindStringSubmatchIndex(span)
-			if sub == nil {
-				return span
-			}
-			return string(re.ExpandString(nil, repl, span, sub))
+			// loc already holds the submatch indices from matching the full text, so the
+			// replacement expands against the original with its surrounding context intact.
+			// Re-running the pattern on the isolated span would drop the preceding character
+			// a boundary anchor like \b or \B depends on, silently voiding the swap.
+			return string(re.ExpandString(nil, repl, text, loc))
 		},
 		keep:    func(_ string, start, end int) bool { return end > start },
 		rewrite: true,

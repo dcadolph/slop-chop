@@ -25,6 +25,18 @@ func load(key, def string) string {
 	return def
 }
 
+// Set reports whether key took its value from a flag or an environment variable rather than
+// falling back to its default, mirroring load's flag-then-env precedence. It lets a caller
+// tell an explicit choice from the built-in default even when the two are equal, which
+// Changed cannot, since Changed sees only the command-line flag and not the environment.
+func Set(key string) bool {
+	if f, ok := flags[key]; ok && f.Changed {
+		return true
+	}
+	_, ok := os.LookupEnv(envKey(key))
+	return ok
+}
+
 // loadString resolves key as a string.
 func loadString(key, def string) string {
 	return load(key, def)
