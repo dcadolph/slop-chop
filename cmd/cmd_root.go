@@ -40,7 +40,7 @@ working directory, that profile is used instead of the built-in one.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	cmd.AddCommand(checkCmd(), fixCmd(), scoreCmd(), tellsCmd(), voiceCmd())
+	cmd.AddCommand(checkCmd(), fixCmd(), scoreCmd(), tellsCmd(), voiceCmd(), lspCmd())
 	return cmd
 }
 
