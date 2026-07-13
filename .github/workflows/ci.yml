@@ -13,6 +13,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: stable
+      - run: go build -o slop-chop .
       - run: go build ./...
       - run: GOOS=js GOARCH=wasm go build -o /dev/null ./wasm
       - run: go vet ./...
@@ -20,6 +21,13 @@ jobs:
       - run: go test ./...
       - name: The tells page must match the profile it documents
         run: go run . tells --markdown | diff - docs/TELLS.md
+      # Share the compiled binary so the check jobs need no Go toolchain, which keeps them off
+      # setup-go, the heavier action whose download was the source of the flaky setup failures.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: slop-chop-binary
+          path: slop-chop
+          retention-days: 1
 
   lint:
     runs-on: ubuntu-latest
@@ -64,26 +72,29 @@ jobs:
           fi
 
   docs-pass-their-own-check:
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: The docs must pass slop-chop
-        uses: ./
+      - uses: actions/download-artifact@v4
         with:
-          files: README.md ENGINE.md docs/PROFILE.md docs/PLUGIN.md docs/TELLS.md
+          name: slop-chop-binary
+      - run: chmod +x slop-chop
+      - name: The docs must pass slop-chop
+        run: ./slop-chop check README.md ENGINE.md docs/PROFILE.md docs/PLUGIN.md docs/TELLS.md
 
   check-fails-on-slop:
+    needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/download-artifact@v4
         with:
-          go-version: stable
-      - run: go build -o /tmp/slop-chop .
+          name: slop-chop-binary
+      - run: chmod +x slop-chop
       - name: Check must exit non-zero on slop
         run: |
           printf 'In summary, a comprehensive result.\n' > dirty.md
-          if /tmp/slop-chop check dirty.md; then
+          if ./slop-chop check dirty.md; then
             echo "check passed but should have failed" >&2
             exit 1
           fi
