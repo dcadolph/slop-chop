@@ -1,7 +1,7 @@
 {
   "id": "slop-chop",
   "name": "slop-chop",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "minAppVersion": "1.4.0",
   "description": "Chop AI slop from your notes. The rules engine runs locally in the app; your text never leaves the vault.",
   "author": "dcadolph",
