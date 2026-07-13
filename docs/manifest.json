@@ -3,8 +3,14 @@
   "short_name": "slop-chop",
   "description": "Chop the slop. Text that reads like a person wrote it.",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#141414",
   "theme_color": "#191919",
-  "icons": [{ "src": "assets/icon.png", "sizes": "256x256", "type": "image/png" }]
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon.png", "sizes": "256x256", "type": "image/png" }
+  ]
 }
