@@ -10,22 +10,25 @@
 
 # slop-chop
 
+AI writing leaves fingerprints.
+
 Chop the slop. Paste in text and get back something that reads like a person wrote it.
 
 Try it without installing anything: [slop-chop.com](https://slop-chop.com/) runs the same
 engine in your browser.
 
-AI writing leaves fingerprints. It runs on em-dashes, drops a semicolon into every other
-sentence, reaches for words like `comprehensive` and `substrate`, and clears its throat
-with openers like "In summary" or "Giving it to you honestly." slop-chop pulls all of
-that out in a single pass. You can also hand it your own list of things to cut, so the
-result reads like you instead of a chatbot.
+AI writing has patterns. It loves em-dashes, drops a semicolon into every other sentence,
+reaches for words like `comprehensive` and `substrate`, and clears its throat with
+openers like "In summary" or "Giving it to you honestly."
+
+slop-chop removes those patterns in a single pass. You can also hand it your own list of
+things to cut, so the result reads like you instead of a chatbot.
 
 ## Why
 
-Cleaning this up by hand is tedious, and asking the model to "stop using em-dashes" holds
-for about three sentences before it forgets. slop-chop just takes the text and cleans it,
-the same way every time.
+Cleaning this up by hand is tedious. Asking a model to "stop using em-dashes" works for
+about three sentences before it forgets. slop-chop applies the same cleanup rules every
+time.
 
 ## How it works
 
