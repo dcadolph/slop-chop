@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.slopchop"
-version = "0.1.1"
+version = "0.1.2"
 
 repositories {
     mavenCentral()
@@ -29,6 +29,12 @@ intellijPlatform {
             sinceBuild = "242"
             untilBuild = provider { null }
         }
+        changeNotes = """
+            <ul>
+              <li>Add the slop-chop plugin logo.</li>
+              <li>Support every IDE build from 2024.2 onward, not just 2024.2.</li>
+            </ul>
+        """.trimIndent()
     }
 }
 
