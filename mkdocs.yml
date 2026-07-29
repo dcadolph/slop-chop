@@ -56,6 +56,7 @@ nav:
   - Editor (LSP): LSP.md
   - API: API.md
   - Slack: SLACK.md
+  - MCP server: MCP.md
   - Claude plugin: PLUGIN.md
   - Privacy: PRIVACY.md
 
