@@ -10,8 +10,8 @@ import (
 	"errors"
 	"syscall/js"
 
-	"github.com/dcadolph/slop-chop/internal/rewrite/prompt"
-	"github.com/dcadolph/slop-chop/internal/sanitize"
+	"github.com/dcadolph/slop-chop/rewrite/prompt"
+	"github.com/dcadolph/slop-chop/sanitize"
 )
 
 // version is stamped by the Makefile at build time.

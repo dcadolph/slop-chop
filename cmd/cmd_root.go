@@ -11,7 +11,7 @@ import (
 
 	"github.com/dcadolph/slop-chop/cmd/config"
 	"github.com/dcadolph/slop-chop/internal/jsonutil"
-	"github.com/dcadolph/slop-chop/internal/sanitize"
+	"github.com/dcadolph/slop-chop/sanitize"
 )
 
 // voiceDir and voiceFile name the personal voice discovered under the home directory when

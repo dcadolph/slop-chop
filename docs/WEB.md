@@ -6,7 +6,7 @@ server: the page is static files on GitHub Pages.
 
 ## How the pieces fit
 
-The Go engine in `internal/sanitize` compiles to `slop-chop.wasm` through the shim in
+The Go engine in `sanitize` compiles to `slop-chop.wasm` through the shim in
 `wasm/main.go`. The page never touches the engine directly: a Web Worker owns the WASM
 instance so a giant paste chops off the main thread and typing never freezes.
 
@@ -20,7 +20,7 @@ instance so a giant paste chops off the main thread and typing never freezes.
 The shim exposes four calls. `slopChop` takes text, a full profile, and preset names,
 and returns the output, the findings, and the score. `slopDefaults` and `slopPresets`
 feed the settings panel from the same source of truth the CLI uses. `slopRewritePrompt`
-and `slopJudgePrompt` return the model instructions from `internal/rewrite/prompt`, a
+and `slopJudgePrompt` return the model instructions from `rewrite/prompt`, a
 package split off so the WASM build shares the CLI's exact prompts without pulling the
 HTTP client into the binary. Adding a shim export means adding it to the worker's
 allowlist too.

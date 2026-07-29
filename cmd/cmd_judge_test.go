@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dcadolph/slop-chop/internal/rewrite"
+	"github.com/dcadolph/slop-chop/rewrite"
 )
 
 // TestJudgeFlagGuards checks that the judge flags are rejected without --verify.

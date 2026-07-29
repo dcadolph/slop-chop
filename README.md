@@ -82,6 +82,7 @@ The same engine runs on many surfaces. All local and free unless noted.
 | Chrome, Edge, Firefox | the browser extension, see [docs/EXTENSION.md](docs/EXTENSION.md) |
 | Obsidian | the desktop plugin, see [obsidian/](obsidian/) |
 | Node | `npm install slop-chop-wasm` |
+| Go programs | `import github.com/dcadolph/slop-chop/sanitize`, see [below](#use-it-as-a-go-library) |
 | HTTP API | `POST https://api.slop-chop.com/chop`, see [docs/API.md](docs/API.md) |
 | Slack | a `/chop` command and a message shortcut, see [docs/SLACK.md](docs/SLACK.md) |
 | Claude Desktop, Cursor, any MCP client | `slop-chop mcp`, see [docs/MCP.md](docs/MCP.md) |
@@ -303,6 +304,44 @@ slop-chop fix --rewrite --provider openai --base-url http://localhost:11434/v1 \
 Using a different vendor to rewrite than the one that wrote the draft is a good idea, since
 a model is bad at spotting its own tics.
 
+## Use it as a Go library
+
+The engine is a public package, so a Go program can chop text in process, with no binary to
+shell out to and nothing sent anywhere. Add it:
+
+```sh
+go get github.com/dcadolph/slop-chop/sanitize
+```
+
+Build a sanitizer once from a profile and reuse it. `Fix` returns the cleaned text and the
+tells it found, `Check` reports the tells without changing the text, and `Score` rates it from
+0 for clean to 100 for heavy slop.
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/dcadolph/slop-chop/sanitize"
+)
+
+func main() {
+	s, err := sanitize.New(sanitize.DefaultProfile())
+	if err != nil {
+		panic(err)
+	}
+	clean, findings := s.Fix("In summary, the plan—which shipped—works; the results speak for themselves.")
+	fmt.Println(clean)              // The plan, which shipped, works. The results speak for themselves.
+	fmt.Println(len(findings), "tells")
+}
+```
+
+Overlay a built-in preset with `sanitize.ApplyPresets`, enforce a spelling dialect through the
+profile's `Dialect` field, or fold in a personal `sanitize.Voice` with `profile.WithVoice`. The
+optional model rewrite lives in `github.com/dcadolph/slop-chop/rewrite`. The full reference is
+on [pkg.go.dev](https://pkg.go.dev/github.com/dcadolph/slop-chop/sanitize).
+
 ## Docs
 
 - [docs/PLUGIN.md](docs/PLUGIN.md) is the Claude Code plugin guide: install, the skill, the
@@ -320,7 +359,7 @@ has a key-gated integration test, kept out of the default build so it never spen
 accident. Run it against the real API with an API key:
 
 ```sh
-ANTHROPIC_API_KEY=sk-... go test -tags=integration ./internal/rewrite/ -run Live -v
+ANTHROPIC_API_KEY=sk-... go test -tags=integration ./rewrite/ -run Live -v
 ```
 
 ## License

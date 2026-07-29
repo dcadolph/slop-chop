@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dcadolph/slop-chop/internal/rewrite"
+	"github.com/dcadolph/slop-chop/rewrite"
 )
 
 // fakeRewrite swaps rewritePass to return reply verbatim for the duration of a test.

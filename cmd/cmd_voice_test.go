@@ -11,8 +11,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/dcadolph/slop-chop/internal/rewrite"
-	"github.com/dcadolph/slop-chop/internal/sanitize"
+	"github.com/dcadolph/slop-chop/rewrite"
+	"github.com/dcadolph/slop-chop/sanitize"
 )
 
 // stubLearn swaps the learn pass for a fake that returns reply, restoring it after the test.
