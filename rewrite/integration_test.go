@@ -14,7 +14,7 @@ import (
 // them out of a normal build, and they skip when ANTHROPIC_API_KEY is unset, so they run
 // only when asked for. Run them with:
 //
-//	ANTHROPIC_API_KEY=sk-... go test -tags=integration ./internal/rewrite/ -run Live -v
+//	ANTHROPIC_API_KEY=sk-... go test -tags=integration ./rewrite/ -run Live -v
 
 // requireKey skips the test unless a real API key is present.
 func requireKey(t *testing.T) {

@@ -12,9 +12,9 @@ import (
 
 	"github.com/dcadolph/slop-chop/cmd/config"
 	"github.com/dcadolph/slop-chop/internal/jsonutil"
-	"github.com/dcadolph/slop-chop/internal/rewrite"
-	"github.com/dcadolph/slop-chop/internal/rewrite/prompt"
-	"github.com/dcadolph/slop-chop/internal/sanitize"
+	"github.com/dcadolph/slop-chop/rewrite"
+	"github.com/dcadolph/slop-chop/rewrite/prompt"
+	"github.com/dcadolph/slop-chop/sanitize"
 )
 
 // voiceExample is the starter voice written by `voice init`. It is valid JSON with sample

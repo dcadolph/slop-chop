@@ -3,7 +3,7 @@ package config
 import (
 	"github.com/spf13/pflag"
 
-	"github.com/dcadolph/slop-chop/internal/rewrite"
+	"github.com/dcadolph/slop-chop/rewrite"
 )
 
 // KeyModel is the model flag name.

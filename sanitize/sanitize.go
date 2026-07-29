@@ -1,3 +1,18 @@
+// Package sanitize is the slop-chop engine: a deterministic pass that finds and removes the
+// tells of AI writing and enforces a house style, with no model and no network. It is the same
+// engine behind the CLI, the web app, and every other slop-chop surface.
+//
+// Build a Sanitizer from a Profile and reuse it. Fix returns the cleaned text, Check reports
+// the tells without touching the text, and Score rates text from 0 for clean to 100 for heavy
+// slop. DefaultProfile targets common tells, and presets and a Voice layer tune it to your own
+// style. The engine leaves Markdown code blocks and inline backtick spans untouched.
+//
+//	s, err := sanitize.New(sanitize.DefaultProfile())
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	clean, findings := s.Fix("In summary, the plan—which shipped—works; it delivers.")
+//	fmt.Println(clean, len(findings))
 package sanitize
 
 import (

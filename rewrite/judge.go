@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dcadolph/slop-chop/internal/rewrite/prompt"
+	"github.com/dcadolph/slop-chop/rewrite/prompt"
 )
 
 // Verdict is the meaning-comparison result from the judge.
