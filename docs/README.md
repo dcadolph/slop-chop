@@ -269,6 +269,12 @@ The same engine, wherever you write. Everything is local and free unless noted.
 
     A `/chop` command and a message shortcut, riding the API. See [Slack](SLACK.md).
 
+-   :material-robot-outline:{ .lg .middle } __Claude Desktop, Cursor, any MCP client__
+
+    ---
+
+    `slop-chop mcp` serves chop and check as tools, over stdio and local. See [MCP server](MCP.md).
+
 -   :material-cog-sync:{ .lg .middle } __CI and automation__
 
     ---

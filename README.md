@@ -84,6 +84,7 @@ The same engine runs on many surfaces. All local and free unless noted.
 | Node | `npm install slop-chop-wasm` |
 | HTTP API | `POST https://api.slop-chop.com/chop`, see [docs/API.md](docs/API.md) |
 | Slack | a `/chop` command and a message shortcut, see [docs/SLACK.md](docs/SLACK.md) |
+| Claude Desktop, Cursor, any MCP client | `slop-chop mcp`, see [docs/MCP.md](docs/MCP.md) |
 | CI, Raycast, macOS, pre-commit | the GitHub Action and [integrations/](integrations/) |
 
 ## Usage

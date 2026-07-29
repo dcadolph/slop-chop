@@ -40,7 +40,7 @@ working directory, that profile is used instead of the built-in one.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	cmd.AddCommand(checkCmd(), fixCmd(), scoreCmd(), tellsCmd(), voiceCmd(), lspCmd())
+	cmd.AddCommand(checkCmd(), fixCmd(), scoreCmd(), tellsCmd(), voiceCmd(), lspCmd(), mcpCmd())
 	return cmd
 }
 
@@ -48,6 +48,14 @@ working directory, that profile is used instead of the built-in one.`,
 // .slop-chop.json and then the built-in one, and builds a sanitizer from it. The
 // profile is returned too so fix mode can hand its tone to the rewrite pass.
 func newSanitizer() (*sanitize.Sanitizer, sanitize.Profile, error) {
+	return sanitizerFor(splitList(config.Preset()), config.Dialect())
+}
+
+// sanitizerFor builds a sanitizer with presetNames and dialect applied in place of the flag
+// values, so a caller carrying its own per-request overrides, such as the MCP server, reuses
+// this one precedence rather than repeating it. Everything else, the profile, the discovered
+// project file, and the voice, resolves the same way it does for every command.
+func sanitizerFor(presetNames []string, dialect string) (*sanitize.Sanitizer, sanitize.Profile, error) {
 	profilePath := config.Profile()
 	if profilePath == "" {
 		if _, err := os.Stat(defaultProfileFile); err == nil {
@@ -66,14 +74,14 @@ func newSanitizer() (*sanitize.Sanitizer, sanitize.Profile, error) {
 		projectProfile = p
 		haveProject = true
 	}
-	// The flag and its env var override the profile's own dialect. Left unset, the
-	// profile's field stands, so a repo can pin a dialect in .slop-chop.json.
-	if d := config.Dialect(); d != "" {
-		profile.Dialect = sanitize.Dialect(d)
+	// The caller's dialect overrides the profile's own. Left unset, the profile's field
+	// stands, so a repo can pin a dialect in .slop-chop.json.
+	if dialect != "" {
+		profile.Dialect = sanitize.Dialect(dialect)
 	}
 	// Presets add their rules on top of the profile, which still wins on any conflict.
-	if names := splitList(config.Preset()); len(names) > 0 {
-		merged, err := sanitize.ApplyPresets(profile, names...)
+	if len(presetNames) > 0 {
+		merged, err := sanitize.ApplyPresets(profile, presetNames...)
 		if err != nil {
 			return nil, sanitize.Profile{}, err
 		}

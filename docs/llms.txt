@@ -11,8 +11,9 @@
 
 Use it in the browser at https://slop-chop.com, or reach for the surface that fits the
 workflow: a Go CLI, a browser extension, JetBrains and Obsidian plugins, an npm package, a
-GitHub Action for CI, a Slack /chop command, an editor LSP, and a Claude plugin. It works
-the same offline: the deterministic engine needs no network and sends no text anywhere.
+GitHub Action for CI, a Slack /chop command, an editor LSP, an MCP server for AI assistants,
+and a Claude plugin. It works the same offline: the deterministic engine needs no network and
+sends no text anywhere.
 
 ## Start here
 
@@ -35,6 +36,8 @@ the same offline: the deterministic engine needs no network and sends no text an
 - [Browser extension](https://slop-chop.com/EXTENSION.html): chop text in any web field
 - [Editor plugin and LSP](https://slop-chop.com/LSP.html): chop as you write in your IDE
 - [Slack app](https://slop-chop.com/SLACK.html): /chop a message or a shortcut
+- [MCP server](https://slop-chop.com/MCP.html): chop, check, and preset tools for Claude
+  Desktop, Claude Code, Cursor, and any other MCP client, over stdio and local
 - [API](https://slop-chop.com/API.html): call slop-chop from anything, including agents
 - [Privacy](https://slop-chop.com/PRIVACY.html): local by default, nothing uploaded
 
