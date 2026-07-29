@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dcadolph/slop-chop/internal/sanitize"
+	"github.com/dcadolph/slop-chop/sanitize"
 )
 
 // TestServer drives the server over a scripted message stream and checks the initialize

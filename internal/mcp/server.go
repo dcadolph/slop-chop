@@ -11,7 +11,7 @@ import (
 
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/dcadolph/slop-chop/internal/sanitize"
+	"github.com/dcadolph/slop-chop/sanitize"
 )
 
 // serverName is what the server calls itself in the protocol handshake, and the name a client

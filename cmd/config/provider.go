@@ -3,7 +3,7 @@ package config
 import (
 	"github.com/spf13/pflag"
 
-	"github.com/dcadolph/slop-chop/internal/rewrite"
+	"github.com/dcadolph/slop-chop/rewrite"
 )
 
 // KeyProvider is the provider flag name.

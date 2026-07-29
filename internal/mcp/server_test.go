@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/dcadolph/slop-chop/internal/sanitize"
+	"github.com/dcadolph/slop-chop/sanitize"
 )
 
 // TestTools checks that the server advertises the three tools, each with a description a

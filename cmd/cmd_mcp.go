@@ -8,8 +8,8 @@ import (
 
 	"github.com/dcadolph/slop-chop/cmd/config"
 	"github.com/dcadolph/slop-chop/internal/mcp"
-	"github.com/dcadolph/slop-chop/internal/rewrite"
-	"github.com/dcadolph/slop-chop/internal/sanitize"
+	"github.com/dcadolph/slop-chop/rewrite"
+	"github.com/dcadolph/slop-chop/sanitize"
 )
 
 // mcpCmd builds the mcp subcommand, which serves slop-chop over the Model Context Protocol.

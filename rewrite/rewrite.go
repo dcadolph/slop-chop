@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dcadolph/slop-chop/internal/rewrite/prompt"
+	"github.com/dcadolph/slop-chop/rewrite/prompt"
 )
 
 // DefaultModel is the model used when none is set.

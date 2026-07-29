@@ -12,7 +12,7 @@ import (
 	"sync"
 	"unicode/utf8"
 
-	"github.com/dcadolph/slop-chop/internal/sanitize"
+	"github.com/dcadolph/slop-chop/sanitize"
 )
 
 // severityInformation is the LSP diagnostic severity for an informational note, the level a

@@ -12,12 +12,12 @@ import (
 // it out of a normal build, and it skips unless a key or a base URL is set, so it runs only
 // when asked for. Against hosted OpenAI:
 //
-//	OPENAI_API_KEY=sk-... go test -tags=integration ./internal/rewrite/ -run OpenAILive -v
+//	OPENAI_API_KEY=sk-... go test -tags=integration ./rewrite/ -run OpenAILive -v
 //
 // Against a local server like Ollama, which needs no key:
 //
 //	OPENAI_BASE_URL=http://localhost:11434/v1 OPENAI_MODEL=llama3.1 \
-//	  go test -tags=integration ./internal/rewrite/ -run OpenAILive -v
+//	  go test -tags=integration ./rewrite/ -run OpenAILive -v
 
 // requireOpenAI skips the test unless a key or a base URL is set. A local server takes the
 // base URL with no key, so either one is enough to opt in.
