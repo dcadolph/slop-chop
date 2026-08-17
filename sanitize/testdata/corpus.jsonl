@@ -41,3 +41,21 @@
 {"label":"technical","note":"robust control","text":"Robust control keeps the loop stable when the plant model is only approximately right."}
 {"label":"human","note":"brand name matching a buzzword","text":"I ordered dinner on Seamless and split the check with a friend."}
 {"label":"human","note":"capitalized product name mid-sentence","text":"The Robust release shipped on Friday, a week behind schedule."}
+{"label":"ai","note":"fragment reveal plus spaced hyphen","text":"The best part? You can try it free - no credit card, no signup, no commitment. Setup takes minutes."}
+{"label":"ai","note":"here-are-n plus bold bullet run","text":"Here are three reasons to switch:\n- **Speed:** builds finish in seconds, not minutes.\n- **Cost:** the free tier covers most small teams.\n- **Support:** the community answers questions fast."}
+{"label":"ai","note":"whether-youre plus embark","text":"Whether you're a solo founder or an enterprise team, onboarding takes minutes. Ready to embark on your automation journey?"}
+{"label":"ai","note":"sign-off at paragraph end","text":"You can find more examples in the documentation. Feel free to reach out with questions. I hope this helps!"}
+{"label":"ai","note":"in-an-era plus split negative parallelism","text":"In an era where attention is scarce, speed matters. You're not just shipping a site. You're making a promise to every visitor."}
+{"label":"ai","note":"think-of-it-as plus modern vocabulary","text":"Think of it as a personal trainer for your codebase. Consistent reviews are crucial, and daily practice fosters lasting habits."}
+{"label":"ai","note":"blazing fast, game changer, boasts, vibrant","text":"The new engine is blazing fast, a true game changer for large monorepos, and it boasts a vibrant plugin ecosystem."}
+{"label":"ai","note":"remember and keep-in-mind hedging openers","text":"It's important to remember that no benchmark tells the whole story. Keep in mind that workloads vary more than ever."}
+{"label":"human","note":"foster care, the allowed sense","text":"My sister spent ten years as a foster parent. Three kids came through her house. Two of them still call her on birthdays."}
+{"label":"human","note":"terse work anecdote","text":"The deadline moved twice this quarter. Nobody told the vendor either time. We ate the rush fees and swore we'd log changes next round."}
+{"label":"technical","note":"robust standard errors, the allowed collocation","text":"The estimator falls back to robust standard errors when heteroskedasticity is detected. The appendix walks through the derivation."}
+{"label":"ai","note":"emoji bullets with bold labels","text":"- 🚀 **Speed:** ship in minutes, not days.\n- 💰 **Cost:** pay only for what you use.\n- 🔒 **Security:** encrypted by default."}
+{"label":"ai","note":"conclusion heading plus inversion","text":"## Conclusion\nNot only does the platform scale with you, it plays a crucial role in modernizing your stack. Look no further."}
+{"label":"ai","note":"travel slop","text":"Nestled in the heart of the bustling old town, this hidden cafe is a must-visit. The vibrant market next door offers a treasure trove of local crafts."}
+{"label":"ai","note":"next-level pitch","text":"Take your writing to the next level with a whopping 40 percent boost in output. The possibilities are endless."}
+{"label":"human","note":"early market run","text":"We got to the market at seven. Half the stalls were still setting up, and the coffee cart had a line anyway. Worth the early alarm."}
+{"label":"human","note":"plain repair story","text":"The dishwasher died on a Sunday, naturally. The part cost eleven dollars and took nine days to arrive. Washing plates by hand got old by day two."}
+{"label":"technical","note":"plain markdown heading and bullets","text":"## Setup\n- install the binary\n- copy the sample config\n- run the smoke test\nThe defaults work for a single node."}
