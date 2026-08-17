@@ -132,7 +132,7 @@ func TestBenchmark(t *testing.T) {
 	assertFloor(t, "technical precision", techPrecision, 0.95)
 	assertFloor(t, "score recall", scoreRecall, 0.90)
 	assertFloor(t, "score precision", scorePrecision, 0.95)
-	assertFloor(t, "score margin", meanAI-meanHuman, 40)
+	assertFloor(t, "score margin", meanAI-meanHuman, 60)
 }
 
 // ratio returns n/d as a float, or 0 when d is zero.
