@@ -24,7 +24,8 @@ type Score struct {
 	// flat, even rhythm, which reads as machine written; 0 is the flattest. It is -1 when
 	// there are too few sentences to judge a rhythm, distinct from a measured 0.
 	CadenceCV float64 `json:"cadenceCv"`
-	// Density is the points tell density added to Value.
+	// Density is the points tell density added to Value, with a structural tell counted
+	// double since a stock sentence shape is stronger evidence than one word.
 	Density int `json:"density"`
 	// Cadence is the points a flat sentence rhythm added to Value.
 	Cadence int `json:"cadence"`
@@ -49,7 +50,16 @@ var hedges = map[string]bool{
 
 // Score rates text from 0 to 100 by tell density, cadence flatness, and hedge density.
 func (s *Sanitizer) Score(text string) Score {
-	tells := len(s.Check(text))
+	findings := s.Check(text)
+	tells := len(findings)
+	// A structural tell counts double toward density: a stock sentence shape is stronger
+	// evidence of machine writing than any one word.
+	weighted := tells
+	for _, f := range findings {
+		if strings.HasPrefix(f.Rule, "structural:") {
+			weighted++
+		}
+	}
 	// Measure the densities against prose only. Code is blanked so a large fenced block
 	// cannot dilute the word count the signals are weighed against.
 	prose := maskCode(text)
@@ -57,7 +67,7 @@ func (s *Sanitizer) Score(text string) Score {
 
 	// Tell density is the main signal. Each tell per hundred words adds eight points, capped
 	// so a dense page saturates near eighty.
-	density := math.Min(80, per100(tells, words)*8)
+	density := math.Min(80, per100(weighted, words)*8)
 
 	// A flat, even rhythm reads as machine written. A coefficient of variation under 0.5
 	// penalizes, cv == 0 the most. A negative cv means too few sentences to judge.
