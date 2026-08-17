@@ -1,0 +1,19 @@
+{
+  // Serves the built documentation site at slop-chop.com. The site is static, so the
+  // Worker has no script: the assets directory is the whole deployment. Build it with
+  // "make site" first, since site/ is generated and not checked in.
+  "name": "slop-chop-site",
+  "compatibility_date": "2026-07-01",
+  "assets": {
+    "directory": "./site",
+    "not_found_handling": "404-page"
+  },
+  // The zone lives on Cloudflare, so deploy provisions the DNS record and certificate.
+  "routes": [
+    { "pattern": "slop-chop.com", "custom_domain": true },
+    { "pattern": "www.slop-chop.com", "custom_domain": true }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}
