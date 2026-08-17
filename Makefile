@@ -12,7 +12,7 @@ GOBIN := $(shell $(GO) env GOPATH)/bin
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: build install uninstall test cover vet lint fmt tidy clean wasm extension extension-package extension-firefox firefox-package obsidian npm-package worker help
+.PHONY: build install uninstall test cover vet lint fmt tidy clean wasm extension extension-package extension-firefox firefox-package obsidian npm-package worker site site-deploy help
 
 ## build: compile the binary into the repo root with the version stamped
 build:
@@ -108,6 +108,14 @@ worker: wasm
 	mkdir -p worker/engine
 	cp docs/assets/slop-chop.wasm worker/engine/slop-chop.wasm
 	cp docs/assets/wasm_exec.js worker/engine/wasm_exec.js
+
+## site: build the documentation site into site/ with a freshly built engine
+site: wasm
+	mkdocs build --strict
+
+## site-deploy: build the site and publish it to Cloudflare Pages
+site-deploy: site
+	npx -y wrangler pages deploy site --project-name slop-chop --branch main --commit-dirty=true
 
 ## clean: remove the built binary, wasm artifacts, and coverage profile
 clean:
