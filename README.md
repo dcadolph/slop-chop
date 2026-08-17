@@ -141,7 +141,13 @@ the matched text, the suggested replacement, and a line and column.
 
 `score` gives a single number from 0 for clean to 100 for heavy slop. It weighs the density
 of rule tells against how flat the sentence cadence is, since an even, machine-like rhythm
-is a tell no word list catches.
+is a tell no word list catches. A structural tell counts double toward the density, because
+a stock sentence shape is stronger evidence of machine writing than any one word.
+
+The engine ships with a labeled corpus of AI, human, and technical passages under
+`sanitize/testdata/`, and `TestBenchmark` measures recall, precision, and the score margin
+against it on every run, so a change that weakens detection fails the build instead of
+going unnoticed.
 
 ```sh
 slop-chop score notes.md            # prints a number like 42
@@ -154,11 +160,17 @@ does.
 
 ## Structural tells
 
-Word swaps catch the vocabulary of AI writing. The rules pass also flags a few structural
-tells that a word list misses, like the `it's not just X, it's Y` and `not only X but also
-Y` cadence, the `let's dive in` opener, and `here's the thing` throat-clearing. These are
-flagged, not rewritten, since the fix depends on the whole sentence and is left to the
-rewrite pass. Add your own with the `flagPatterns` field in a profile.
+Word swaps catch the vocabulary of AI writing. The rules pass also flags 21 structural
+tells that a word list misses: the `it's not just X, it's Y` cadence, the `let's dive in`
+opener, `here's the thing` throat-clearing, the `The best part?` fragment reveal, `here are
+five ways` enumeration, runs of bold-label bullets, emoji-decorated headings, and the
+spaced hyphen models reach for now that the em-dash is a known tell. These are flagged, not
+rewritten, since the fix depends on the whole sentence and is left to the rewrite pass. Add
+your own with the `flagPatterns` field in a profile.
+
+Every tell that becomes famous gets trained out of the next model and the writing moves
+somewhere else, so the default profile tracks what models write now rather than what they
+wrote in 2023.
 
 ## Use it in CI
 
