@@ -14,10 +14,9 @@ hide:
 
 <p class="sc-artifacts">Emails. Resumes. Blog posts. Docs. LinkedIn. READMEs.</p>
 
-<p class="subtitle">Paste text that sounds like a bot, get back text that sounds like you. Em-dashes, buzzwords, and stock phrases all get chopped in one pass, right in your browser. Plug in a model when you want a deeper rewrite.</p>
+<p class="subtitle">Paste text that sounds like a bot, get back text that sounds like you. Em-dashes, buzzwords, stock phrases, and the newer tells models switched to once everyone learned the old ones: the spaced hyphen, the "The best part?" reveal, emoji bullets. All chopped in one pass, right in your browser. Plug in a model when you want a deeper rewrite.</p>
 
 [Get started](quickstart.md){ .md-button .md-button--primary }
-[View on GitHub](https://github.com/dcadolph/slop-chop){ .md-button }
 
 </div>
 
@@ -30,7 +29,7 @@ hide:
 <button id="sc-settings-btn" class="sc-iconbtn" type="button" aria-label="Settings" aria-expanded="false" aria-controls="sc-drawer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
 <div id="sc-score-pop" class="sc-score-pop" hidden>
 <div class="sc-score-pop-head"><strong>Slop score: <span id="sc-pop-value"></span> of 100</strong></div>
-<p class="sc-score-pop-what">How much the input reads like AI wrote it. It weighs the density of tells against how flat the sentence rhythm is.</p>
+<p class="sc-score-pop-what">How much the input reads like AI wrote it. It weighs the density of tells, with sentence shapes counted double, against flat rhythm and hedging.</p>
 <div class="sc-score-legend">
 <span><i class="dot low"></i>under 25 reads clean</span>
 <span><i class="dot mid"></i>25 to 54 mixed</span>
@@ -137,21 +136,21 @@ hide:
 
 <div class="sc-terminal">
 <div class="sc-terminal-bar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="title">slop-chop</span></div>
-<div class="sc-terminal-body"><span class="prompt">$</span> <span class="cmd">echo "In summary, a robust—and seamless—result." | slop-chop fix</span>
-<span class="out">The result works.</span>
+<div class="sc-terminal-body"><span class="prompt">$</span> <span class="cmd">echo "In summary, the fix—simple and quick—shipped today." | slop-chop fix</span>
+<span class="out">The fix, simple and quick, shipped today.</span>
 <span class="prompt">$</span> <span class="cmd">slop-chop check notes.md</span>
-<span class="out">notes.md:1:1  opener   "In summary"
-notes.md:1:14 word     "robust"
-notes.md:1:22 char     em-dash
-3 tells found</span>
+<span class="out">notes.md:1:43 structural:lets-dive-in: "Let's dive into"
+notes.md:3:18 word:robust: "robust"
+notes.md:4:35 structural:fragment-reveal: "The best part?"
+slop-chop: 3 finding(s)</span>
 <span class="prompt">$</span> <span class="cmd">slop-chop score notes.md</span>
-<span class="out">7</span></div>
+<span class="out">66</span></div>
 </div>
 
 <div class="sc-install" markdown>
 
 ```sh
-brew install dcadolph/tap/slop-chop
+go install github.com/dcadolph/slop-chop@latest
 ```
 
 </div>
@@ -163,7 +162,7 @@ brew install dcadolph/tap/slop-chop
 
 <div class="sc-steps">
 <div class="step"><span class="num">1</span><strong>Rules pass</strong>Fast and deterministic. Swaps characters, drops flagged words, rewrites stock phrases, fixes spelling to one dialect, tidies punctuation. No model, no cost, same output every run. Code blocks come through untouched.</div>
-<div class="step"><span class="num">2</span><strong>Score</strong>One number from 0 for clean to 100 for heavy slop. It weighs rule tells against flat, machine-like sentence cadence. Pass <code>--max</code> to gate a build.</div>
+<div class="step"><span class="num">2</span><strong>Score</strong>One number from 0 for clean to 100 for heavy slop. It weighs rule tells, with stock sentence shapes counted double, against flat cadence and a hedge-heavy register. Pass <code>--max</code> to gate a build.</div>
 <div class="step"><span class="num">3</span><strong>Rewrite</strong>Optional. Hands the text to a model for the things rules cannot manage, like reworking a sentence so it no longer needs a semicolon, or bending the writing toward your voice.</div>
 </div>
 
@@ -175,6 +174,8 @@ brew install dcadolph/tap/slop-chop
 A model has the brains for it. Point one at your draft and it will spot the buzzwords and fix a clumsy line better than any fixed list can. What it will not do is behave the same way twice. It cuts a phrase on this run and keeps it on the next, forgets half your rules by the third paragraph, and nudges your meaning while you look away. Ask the model that wrote the slop to take it back out and you get the same model guessing a second time. Nothing to pin down, nothing to diff.
 
 **slop-chop is a fixed list, not a mood.** The same text gives the same result every run, with or without a model in the loop. On its own it is a deterministic clean that costs nothing. Paired with your AI it becomes the rails: it runs after the model to catch what drifted, gates a build on the score, and bosses the agent into cleaning its own work to your standard, not its whim. You keep the model's brains and add the bumpers that hold it honest.
+
+There is a second problem a model cannot solve for you. Every tell that gets famous gets trained away, and the writing simply moves somewhere else. The em-dash gave way to a spaced hyphen. "Delve" gave way to "crucial" and "vibrant". The stock opener became the fragment reveal, "The best part?", and the bold-label bullet list. A list only works if someone keeps watching what changed. That is the work here, and the benchmark in the repo is the receipt.
 
 </div>
 </div>
@@ -207,6 +208,18 @@ A model has the brains for it. Point one at your draft and it will spot the buzz
 
     Profiles and presets say what to cut and what to put in its place. Bring your own keep, prefer, and avoid lists so the result sounds like you, not a chatbot.
 
+-   :material-target:{ .lg .middle } __Tuned for today's models__
+
+    ---
+
+    Models trained away "delve" and the em-dash, then picked up new habits: the spaced hyphen, the "The best part?" reveal, bold-label bullets, emoji headings. The default profile tracks what models write now, with 114 buzzwords, 39 stock phrases, and 21 sentence shapes.
+
+-   :material-scale-balance:{ .lg .middle } __Measured, not guessed__
+
+    ---
+
+    The engine ships with a labeled corpus of AI, human, and technical passages. AI text averages 79 of 100 on the slop score, human text 3, and technical prose raises no false flags. The benchmark runs with the tests and fails on any regression.
+
 </div>
 
 ## Install it anywhere
@@ -219,7 +232,7 @@ The same engine, wherever you write. Everything is local and free unless noted.
 
     ---
 
-    `brew install dcadolph/tap/slop-chop`
+    `go install github.com/dcadolph/slop-chop@latest`
 
 -   :material-cursor-default-click:{ .lg .middle } __This page__
 
