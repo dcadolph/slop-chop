@@ -5,12 +5,6 @@ Zero to a cleaned file in a couple of minutes. No install needed to try it first
 
 ## Install
 
-Homebrew:
-
-```sh
-brew install dcadolph/tap/slop-chop
-```
-
 With Go:
 
 ```sh
