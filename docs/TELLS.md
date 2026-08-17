@@ -28,7 +28,7 @@ Rewritten in place. The usual suspects: the em-dash, smart quotes, the ellipsis.
 | `⁠` | dropped |
 | `﻿` | dropped |
 
-## Stock phrases (33)
+## Stock phrases (39)
 
 Openers and filler that add words but no meaning. Each is dropped with its trailing
 comma and space, and when it opened the sentence the next word gets its capital back.
@@ -49,11 +49,17 @@ comma and space, and when it opened the sentence the next word gets its capital 
 | `in summary,` | dropped |
 | `in today's digital age,` | dropped |
 | `in today's fast-paced world,` | dropped |
+| `in today's world,` | dropped |
 | `it goes without saying that` | dropped |
 | `it is important to note that` | dropped |
+| `it is important to remember that` | dropped |
+| `it is worth mentioning that` | dropped |
 | `it is worth noting that` | dropped |
 | `it's important to note that` | dropped |
+| `it's important to remember that` | dropped |
+| `it's worth mentioning that` | dropped |
 | `it's worth noting that` | dropped |
+| `keep in mind that` | dropped |
 | `last but not least,` | dropped |
 | `more importantly,` | dropped |
 | `moreover,` | dropped |
@@ -69,29 +75,42 @@ comma and space, and when it opened the sentence the next word gets its capital 
 | `with that said,` | dropped |
 | `without further ado,` | dropped |
 
-## Buzzwords (77)
+## Buzzwords (114)
 
 Flagged wherever they appear, never rewritten, because the right replacement depends
 on the sentence. The cleaver preset swaps the common ones for plain words when you want
 that done for you.
 
-`best-in-class` `blast radius` `comprehensive` `cutting edge` `cutting-edge` `delve` `delved` `delves` `delving` `effortless` `effortlessly` `elegant` `empower` `empowering` `empowers` `ever-evolving` `facilitate` `facilitates` `facilitating` `fast-paced` `frictionless` `game-changer` `game-changing` `groundbreaking` `harness the power` `holistic` `in the realm of` `innovative` `invaluable` `leverage` `leveraged` `leverages` `leveraging` `meticulous` `meticulously` `myriad` `paradigm shift` `pivotal` `plethora` `powerful` `revolutionize` `revolutionized` `revolutionizes` `revolutionizing` `robust` `seamless` `seamlessly` `showcase` `showcased` `showcases` `showcasing` `state-of-the-art` `streamline` `streamlined` `streamlines` `streamlining` `substrate` `supercharge` `supercharged` `synergies` `synergy` `tapestry` `testament to` `top-notch` `transformative` `unleash` `unleashed` `unleashes` `unleashing` `unlock the full potential` `unlock the potential` `unparalleled` `utilize` `utilized` `utilizes` `utilizing` `world-class`
+`best-in-class` `blast radius` `blazing fast` `blazingly fast` `boast` `boasted` `boasting` `boasts` `bustling` `comprehensive` `crucial` `cutting edge` `cutting-edge` `daunting` `delve` `delved` `delves` `delving` `dive deeper` `effortless` `effortlessly` `elegant` `elevate` `elevates` `elevating` `embark` `embarked` `embarking` `embarks` `empower` `empowering` `empowers` `ever-changing` `ever-evolving` `facilitate` `facilitates` `facilitating` `fast-paced` `foster` `fostering` `fosters` `frictionless` `game changer` `game changers` `game-changer` `game-changers` `game-changing` `groundbreaking` `harness the power` `has something for everyone` `holistic` `in the realm of` `in the world of` `innovative` `invaluable` `leverage` `leveraged` `leverages` `leveraging` `look no further` `meticulous` `meticulously` `more than ever` `must-see` `must-visit` `myriad` `nestled` `paradigm shift` `pivotal` `plethora` `powerful` `revolutionize` `revolutionized` `revolutionizes` `revolutionizing` `robust` `seamless` `seamlessly` `showcase` `showcased` `showcases` `showcasing` `stands as a` `state-of-the-art` `streamline` `streamlined` `streamlines` `streamlining` `substrate` `supercharge` `supercharged` `synergies` `synergy` `tapestry` `testament to` `the possibilities are endless` `to the next level` `top-notch` `transformative` `treasure trove` `unleash` `unleashed` `unleashes` `unleashing` `unlock the full potential` `unlock the potential` `unparalleled` `utilize` `utilized` `utilizes` `utilizing` `vibrant` `whopping` `world-class`
 
-## Structural patterns (8)
+## Structural patterns (21)
 
 Sentence shapes a word list cannot catch, like the setup-and-reveal cadence. Flag
 only: the fix depends on the whole sentence, so it is left to you or the rewrite pass.
 
 | Name | Pattern |
 | ---- | ------- |
-| `assistant-opener` | `(?im)^\s{0,3}(?:certainly\|absolutely\|great question\|i'?d be happy to\|happy to help\|i hope this helps)\b` |
+| `assistant-opener` | `(?im)^\s{0,3}(?:certainly\|absolutely\|great question\|i'?d be happy to\|happy to help)\b` |
+| `assistant-signoff` | `(?i)\b(?:i hope this helps\|hope this helps\|don'?t hesitate to\|feel free to reach out)\b` |
+| `bold-bullet-run` | `(?m)(?:^[ \t]*[-*][ \t]+\*\*[^*\n]{1,60}\*\*.*\n){2}[ \t]*[-*][ \t]+\*\*[^*\n]{1,60}\*\*` |
+| `conclusion-heading` | `(?im)^#{1,6}[ \t]+(?:conclusion\|final thoughts\|wrapping up\|in closing\|key takeaways)\b` |
+| `emoji-decoration` | `(?m)^[ \t]*(?:[-*][ \t]+\|#{1,6}[ \t]+)\*{0,2}[\x{2600}-\x{27BF}\x{2B00}-\x{2BFF}\x{1F000}-\x{1FAFF}]` |
+| `fragment-reveal` | `(?i)\bthe (?:best part\|result\|catch\|takeaway\|upshot\|kicker\|bottom line\|good news\|bad news\|verdict\|payoff)\?` |
 | `hedge-stack` | `(?i)\b(?:may\|might\|could\|possibly\|perhaps\|arguably\|generally\|potentially\|somewhat\|seemingly\|presumably\|conceivably)\b[^.!?\n]{1,50}\b(?:may\|might\|could\|possibly\|perhaps\|arguably\|generally\|potentially\|somewhat\|seemingly\|presumably\|conceivably)\b` |
+| `here-are-n` | `(?i)\bhere are (?:\d+\|a few\|some\|several\|three\|four\|five\|six\|seven\|eight\|nine\|ten) (?:key \|simple \|quick \|easy \|practical \|common )?(?:reasons\|ways\|things\|tips\|steps\|takeaways\|strategies\|examples\|benefits\|best practices)\b` |
 | `heres-the-thing` | `(?i)\bhere'?s the (thing\|kicker\|deal\|catch\|secret\|problem)\b` |
+| `in-an-era` | `(?i)\bin an? (?:era\|age\|world) (?:where\|when\|of)\b` |
 | `its-not-x-its-y` | `(?i)\b(?:it\|this\|that)(?:'?s\|\s+(?:is\|was\|are\|were))(?:\s+not\|n'?t)\b[^.!?\n]{1,40}[,;]\s*it'?s\b` |
 | `lets-dive-in` | `(?i)\blet'?s (dive\|delve\|jump) in(to)?\b` |
 | `lets-take-a-look` | `(?i)\blet'?s (?:take a (?:closer )?look\|explore\|unpack\|break (?:it\|this) down)\b` |
 | `not-just-but-also` | `(?i)\bnot (just\|only)\b[^.!?\n]{1,60}\bbut\b[^.!?\n]{0,25}\balso\b` |
+| `not-just-sentence-split` | `(?i)\bnot just\b[^.!?\n]{1,60}\.[ \t]+(?:it'?s\|you'?re\|we'?re\|they'?re\|this is\|that'?s)\b` |
+| `not-only-inversion` | `(?i)\bnot only (?:does\|do\|did\|is\|are\|was\|were\|can\|could\|will\|would)\b` |
+| `plays-a-role` | `(?i)\bplay(?:s\|ed\|ing)? an? (?:crucial\|key\|vital\|pivotal\|central\|significant\|essential) role\b` |
+| `spaced-hyphen` | `\p{L} - \p{L}` |
 | `thats-where-comes-in` | `(?i)\bthat'?s where\b[^.!?\n]{1,30}\bcomes? in\b` |
+| `think-of-it-as` | `(?i)\bthink of (?:it\|this\|them) as\b` |
+| `whether-youre` | `(?i)\bwhether you'?re an? [^.!?\n]{1,40}\bor an? \p{L}` |
 
 ## Cleanup passes
 
@@ -149,24 +168,34 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 
 ### cleaver
 
-#### Word swaps (81)
+#### Word swaps (97)
 
 | From | To |
 | ---- | -- |
 | `best-in-class` | `top` |
+| `boast` | `have` |
+| `boasted` | `had` |
+| `boasting` | `having` |
+| `boasts` | `has` |
 | `bolster` | `strengthen` |
 | `bolstered` | `strengthened` |
 | `bolstering` | `strengthening` |
 | `bolsters` | `strengthens` |
+| `bustling` | `busy` |
 | `comprehensive` | `thorough` |
 | `comprehensively` | `thoroughly` |
+| `crucial` | `key` |
 | `cutting-edge` | `modern` |
+| `daunting` | `tough` |
 | `delve` | `dig` |
 | `delved` | `dug` |
 | `delves` | `digs` |
 | `delving` | `digging` |
 | `effortless` | `easy` |
 | `effortlessly` | `easily` |
+| `elevate` | `improve` |
+| `elevates` | `improves` |
+| `elevating` | `improving` |
 | `empower` | `help` |
 | `empowered` | `helped` |
 | `empowering` | `helping` |
@@ -177,6 +206,9 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 | `facilitates` | `helps` |
 | `facilitating` | `helping` |
 | `forward-thinking` | `modern` |
+| `foster` | `build` |
+| `fostering` | `building` |
+| `fosters` | `builds` |
 | `frictionless` | `smooth` |
 | `future-proof` | `lasting` |
 | `game-changer` | `breakthrough` |
@@ -192,6 +224,7 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 | `meticulous` | `careful` |
 | `meticulously` | `carefully` |
 | `myriad` | `many` |
+| `nestled` | `tucked` |
 | `next-generation` | `new` |
 | `operationalize` | `apply` |
 | `operationalized` | `applied` |
@@ -233,9 +266,11 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 | `utilizes` | `uses` |
 | `utilizing` | `using` |
 | `value-added` | `useful` |
+| `vibrant` | `lively` |
+| `whopping` | dropped |
 | `world-class` | `top` |
 
-#### Phrase swaps (42)
+#### Phrase swaps (52)
 
 | From | To |
 | ---- | -- |
@@ -245,20 +280,29 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 | `a wide variety of` | `many` |
 | `actionable insights` | `useful findings` |
 | `at the end of the day, ` | dropped |
+| `blazing fast` | `fast` |
+| `blazingly fast` | `fast` |
 | `core competencies` | `strengths` |
 | `core competency` | `strength` |
 | `curated collection` | `selected collection` |
 | `curated list` | `selected list` |
 | `deep dive into` | `dig into` |
 | `deep-dive into` | `dig into` |
+| `dive deeper into` | `dig into` |
 | `elevate your ` | `improve your ` |
 | `embark on` | `start` |
+| `embarked on` | `started` |
+| `embarking on` | `starting` |
+| `embarks on` | `starts` |
 | `empowered to` | `able to` |
+| `game changer` | `breakthrough` |
+| `game changers` | `breakthroughs` |
 | `harness the power of` | `use` |
 | `harnesses the power of` | `uses` |
 | `harnessing the power of` | `using` |
 | `in order to ` | `to ` |
 | `in the realm of` | `in` |
+| `in the world of` | `in` |
 | `in today's digital-first landscape, ` | dropped |
 | `in today's ever-evolving landscape, ` | dropped |
 | `in today's fast-paced, digital-first landscape, ` | dropped |
@@ -273,6 +317,7 @@ Adds 8 buzzwords: `comprehensive analysis` `future research directions` `novel a
 | `resonate with ` | `connect with ` |
 | `resonates with ` | `connects with ` |
 | `stands as a testament to` | `shows` |
+| `treasure trove of` | `wealth of` |
 | `ultimately, ` | dropped |
 | `underscores how ` | `shows how ` |
 | `underscores that ` | `shows that ` |
