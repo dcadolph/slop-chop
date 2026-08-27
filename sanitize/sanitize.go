@@ -51,12 +51,14 @@ func New(p Profile) (*Sanitizer, error) {
 
 // Check reports every rule match in text without changing it. Findings are computed
 // against the original text, so their positions are exact, and they come back in text
-// order rather than rule order.
+// order rather than rule order. Structural rules also see a copy with the soft line wraps
+// joined, so a tell a hard wrap split across two lines is still reported.
 func (s *Sanitizer) Check(text string) []Finding {
 	var findings []Finding
 	protected := s.protectedRanges(text)
+	unwrapped := unwrapProse(text)
 	for ri, r := range s.rules {
-		for _, loc := range r.matches(text, protected) {
+		for _, loc := range r.matches(text, unwrapped, protected) {
 			match := text[loc[0]:loc[1]]
 			var repl *string
 			if r.rewrite {

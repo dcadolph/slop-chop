@@ -1,7 +1,9 @@
 package sanitize
 
 import (
+	"cmp"
 	"regexp"
+	"slices"
 	"strings"
 )
 
@@ -31,6 +33,11 @@ type Rule struct {
 	nameByMatch bool
 	// rewrite reports whether the rule changes text. When false the rule only flags.
 	rewrite bool
+	// unwrap runs the rule a second time over a copy of the text whose soft line wraps
+	// have been joined, so a multi-word tell a hard wrap split in two is still caught. Only
+	// flag rules set it: the phrase and word rules already widen their own spaces, and a
+	// rewrite must key off the text exactly as written.
+	unwrap bool
 	// tidy marks a punctuation or spacing cleanup rule. Tidy rules run in a fixpoint loop
 	// after the content swaps, since they interact with each other: a semicolon split can
 	// leave a space that space-before-punct then trims. Content swaps run once instead, so
@@ -40,8 +47,16 @@ type Rule struct {
 
 // matches returns the byte ranges of every match the rule keeps, dropping any that
 // touch a protected range, like markdown code.
-func (r Rule) matches(text string, protected [][2]int) [][]int {
+//
+// An unwrap rule also scans unwrapped, the same text with its soft line wraps joined. That
+// copy is the same length as text, so the offsets it reports index the original directly.
+// Callers with no unwrapped copy pass text itself, which costs one extra scan of a string
+// that cannot match anything the first scan missed.
+func (r Rule) matches(text, unwrapped string, protected [][2]int) [][]int {
 	locs := r.re.FindAllStringSubmatchIndex(text, -1)
+	if r.unwrap && unwrapped != text {
+		locs = mergeLocs(locs, r.re.FindAllStringSubmatchIndex(unwrapped, -1))
+	}
 	kept := locs[:0]
 	for _, loc := range locs {
 		if overlapsAny(protected, loc[0], loc[1]) {
@@ -79,7 +94,7 @@ func (r Rule) findingName(match string) string {
 // apply rewrites every kept match in text and returns the result. It honors keep and
 // the protected ranges, so a rule rewrites exactly the matches it also reports.
 func (r Rule) apply(text string, protected [][2]int) string {
-	locs := r.matches(text, protected)
+	locs := r.matches(text, text, protected)
 	if len(locs) == 0 {
 		return text
 	}
@@ -92,4 +107,29 @@ func (r Rule) apply(text string, protected [][2]int) string {
 	}
 	b.WriteString(text[last:])
 	return b.String()
+}
+
+// mergeLocs folds the matches found on the unwrapped copy into those found on the original,
+// keeping the list sorted by start offset. A match that overlaps one already held is
+// dropped, so a tell a wrap split reports once rather than once per copy it was found in.
+// The originals win every overlap, since they mark the text exactly as it is written.
+func mergeLocs(base, extra [][]int) [][]int {
+	out := base
+	for _, loc := range extra {
+		if !locOverlaps(out, loc) {
+			out = append(out, loc)
+		}
+	}
+	slices.SortFunc(out, func(a, b []int) int { return cmp.Compare(a[0], b[0]) })
+	return out
+}
+
+// locOverlaps reports whether loc shares any byte with a match already in locs.
+func locOverlaps(locs [][]int, loc []int) bool {
+	for _, o := range locs {
+		if loc[0] < o[1] && o[0] < loc[1] {
+			return true
+		}
+	}
+	return false
 }

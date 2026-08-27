@@ -146,6 +146,23 @@ func DefaultProfile() Profile {
 			"unlock the full potential", "unlock the potential", "unparalleled",
 			"utilize", "utilized", "utilizes", "utilizing", "vibrant", "whopping",
 			"world-class",
+			// Stock metaphors and set phrases that carry no information of their own.
+			"a beacon of", "actionable insights", "at the forefront",
+			"bespoke", "deep dive", "double-edged sword",
+			"navigate the complexities", "navigating the complexities",
+			"pave the way", "paved the way", "paves the way", "paving the way",
+			"peace of mind", "perfect blend", "shed light on", "sheds light on",
+			"stark contrast", "stark reality", "stark reminder",
+			"tailored to your", "the intersection of", "when it comes to",
+			"a marathon, not a sprint", "multifaceted",
+			"competitive landscape", "changing landscape", "current landscape",
+			"digital landscape", "evolving landscape",
+			// Worn metaphors a model reaches for when it has nothing specific to say.
+			"tip of the iceberg", "scratching the surface", "the proof is in the pudding",
+			"where the rubber meets the road", "the writing is on the wall",
+			"breath of fresh air", "best of both worlds", "speak for themselves",
+			"opens up a world of", "a world of possibilities", "time will tell",
+			"the results speak", "we've got you covered", "you're in good hands",
 		},
 		FlagPatterns: map[string]string{
 			// "It's not just X, it's Y" and its "this is not X, it's Y" cousin, matched in
@@ -193,6 +210,49 @@ func DefaultProfile() Profile {
 			"conclusion-heading": `(?im)^#{1,6}[ \t]+(?:conclusion|final thoughts|wrapping up|in closing|key takeaways)\b`,
 			// An emoji decorating a bullet or heading, the generated-listicle look.
 			"emoji-decoration": `(?m)^[ \t]*(?:[-*][ \t]+|#{1,6}[ \t]+)\*{0,2}[\x{2600}-\x{27BF}\x{2B00}-\x{2BFF}\x{1F000}-\x{1FAFF}]`,
+			// The contracted negative parallelism, "it isn't a perk. It's an expectation",
+			// which the spelled-out "not just" patterns walk straight past.
+			"contracted-not-just": `(?i)\b(?:is|are|was|were|do|does|did|has|have)n'?t\b[^.!?\n]{1,60}[.,]\s*(?:it'?s|they'?re|you'?re|we'?re|that'?s|this is)\b`,
+			// "Let's be clear" and the other throat-clearing declaratives.
+			"lets-be-clear": `(?i)\b(?:let'?s be clear|make no mistake|the truth is|here'?s the reality)\b`,
+			// A rhetorical question aimed at the reader, the engagement-bait opener.
+			"rhetorical-hook": `(?i)\b(?:ever wondered|have you ever wondered|what if i told you|sound familiar\?|why does (?:this|it) matter\?|the question is:)`,
+			// "The answer lies in" and its cousins, the manufactured reveal.
+			"the-answer-lies": `(?i)\bthe (?:answer|secret|key|difference|trick) (?:lies in|is (?:simple|straightforward)|comes down to)\b`,
+			// "Has never been more important", the urgency claim with no evidence.
+			"never-been-more": `(?i)\b(?:has|have) never been more (?:important|critical|relevant|urgent|clear|apparent|necessary)\b`,
+			// A numbered list whose items each open with a bold label, the ordered twin of
+			// bold-bullet-run.
+			"bold-number-run": `(?m)(?:^[ \t]*\d+[.)][ \t]+\*\*[^*\n]{1,60}\*\*.*\n){2}[ \t]*\d+[.)][ \t]+\*\*[^*\n]{1,60}\*\*`,
+			// "The ultimate guide to", the stock generated-article title.
+			"ultimate-guide": `(?i)\bthe (?:ultimate|complete|definitive|essential) guide to\b`,
+			// "Underscores the importance", a claim verb standing in for evidence.
+			"underscores-the": `(?i)\b(?:underscore|underscores|underscoring|highlights|underlines) the (?:importance|need|value|fact|reality|significance)\b`,
+			// The narrator stepping in to announce what it is about to do, the register of a
+			// reply rather than a piece of writing.
+			"chatbot-scaffolding": `(?i)\blet me (?:explain|break (?:this|it) down|walk you through|show you|start by)\b|\bhere'?s how (?:it works|this works|you do it)\b`,
+			// "You might be wondering", the question the writer puts in the reader's mouth.
+			"reader-mind-reading": `(?i)\b(?:you (?:might|may|could) be (?:wondering|asking|thinking)|you'?re probably (?:wondering|thinking)|so,? what does this mean for you)\b`,
+			// "But here's where it gets interesting", the manufactured turn.
+			"manufactured-turn": `(?i)\b(?:here'?s where it gets (?:interesting|good|tricky|fun)|but here'?s the (?:twist|thing))\b`,
+			// Sign-offs that close a chat reply rather than a piece of writing.
+			"chat-signoff": `(?i)\b(?:happy (?:coding|building|shipping|writing)!|thanks for reading|until next time|let me know if you have any questions|if you have any questions,? (?:just )?ask|hopefully this (?:gives|helps))`,
+			// The before-and-after pitch, "say goodbye to X" and "gone are the days".
+			"marketing-reveal": `(?i)\b(?:say (?:goodbye|hello) to|gone are the days|no more (?:wrestling|fighting|struggling) with|imagine a world where|picture this:)`,
+			// "Enter Foo, the tool that", the product introduced as the answer to a setup. The
+			// appositive article is required, so the ordinary imperative "Enter Berlin, then
+			// pick a date" is left alone.
+			"enter-the-product": `(?:^|[.!?]\s+)Enter \p{Lu}[\p{L}-]+,\s+(?:the|a|an)\b`,
+			// Certainty asserted instead of shown, the confident filler that carries no
+			// evidence with it.
+			"asserted-certainty": `(?i)\b(?:there'?s no denying|without a doubt|it'?s clear that|it is clear that|suffice it to say|needless to say|make no mistake about it)\b`,
+			// The summary flourish that announces a conclusion rather than reaching one.
+			"summary-flourish": `(?i)\b(?:the bottom line is|long story short|at its heart|the beauty of (?:it|this)|that'?s the beauty of|the best part is)\b`,
+			// "What if there were a better way", the infomercial setup.
+			"what-if-better-way": `(?i)\bwhat if (?:there (?:were|was)|i told you|you could)\b`,
+			// Reader-instruction openers, the cousins of "it is important to note" that a
+			// phrase delete cannot swallow because the sentence continues through them.
+			"reader-instruction": `(?i)\b(?:it'?s important to (?:understand|remember|realize)|one thing to keep in mind|the (?:one )?thing to remember)\b`,
 		},
 		Allow: []string{
 			// Technical collocations where a flagged word is a term of art, protected so a
@@ -300,7 +360,7 @@ func (p Profile) compile() ([]Rule, error) {
 	}
 
 	for _, name := range slices.Sorted(maps.Keys(p.FlagPatterns)) {
-		re, err := regexp.Compile(p.FlagPatterns[name])
+		re, err := regexp.Compile(flexPatternSpaces(p.FlagPatterns[name]))
 		if err != nil {
 			return nil, fmt.Errorf("%w: flag pattern %q: %w", ErrCompile, name, err)
 		}
@@ -308,6 +368,7 @@ func (p Profile) compile() ([]Rule, error) {
 			Name:    "structural:" + name,
 			re:      re,
 			rewrite: false,
+			unwrap:  true,
 		})
 	}
 
@@ -488,6 +549,42 @@ const wsGap = `(?:[ \t]+(?:\n[ \t]*)?|\n[ \t]*)`
 // around it still match when a line wrap sits between them.
 func flexSpaces(quoted string) string {
 	return strings.ReplaceAll(quoted, " ", wsGap)
+}
+
+// flexPatternSpaces widens each literal space in a hand-written pattern into a run of one
+// or more spaces and tabs, so a flag pattern still matches where a wrap left extra
+// indentation between two words. Unlike flexSpaces the input is a real pattern, not quoted
+// text, so a space inside a character class is left alone: widening the one in "[ \t]+"
+// would break the class it belongs to. A space after a backslash is an escaped literal and
+// is widened like any other.
+func flexPatternSpaces(pattern string) string {
+	var b strings.Builder
+	b.Grow(len(pattern))
+	inClass := false
+	for i := 0; i < len(pattern); i++ {
+		c := pattern[i]
+		switch {
+		case c == '\\' && i+1 < len(pattern):
+			if pattern[i+1] == ' ' && !inClass {
+				b.WriteString(`[ \t]+`)
+			} else {
+				b.WriteByte(c)
+				b.WriteByte(pattern[i+1])
+			}
+			i++
+		case c == '[' && !inClass:
+			inClass = true
+			b.WriteByte(c)
+		case c == ']' && inClass:
+			inClass = false
+			b.WriteByte(c)
+		case c == ' ' && !inClass:
+			b.WriteString(`[ \t]+`)
+		default:
+			b.WriteByte(c)
+		}
+	}
+	return b.String()
 }
 
 // blockWordRule compiles every block word into one flag-only rule. Folding them into a

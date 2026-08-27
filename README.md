@@ -160,11 +160,15 @@ does.
 
 ## Structural tells
 
-Word swaps catch the vocabulary of AI writing. The rules pass also flags 21 structural
-tells that a word list misses: the `it's not just X, it's Y` cadence, the `let's dive in`
-opener, `here's the thing` throat-clearing, the `The best part?` fragment reveal, `here are
-five ways` enumeration, runs of bold-label bullets, emoji-decorated headings, and the
-spaced hyphen models reach for now that the em-dash is a known tell. These are flagged, not
+Word swaps catch the vocabulary of AI writing. The rules pass also flags 39 structural
+tells that a word list misses: the `it's not just X, it's Y` cadence and its contracted
+`isn't a perk. It's an expectation` twin, the `let's dive in` opener, `here's the thing`
+throat-clearing, the `The best part?` fragment reveal, `here are five ways` enumeration,
+runs of bold-label bullets and numbered items, emoji-decorated headings, and the spaced
+hyphen models reach for now that the em-dash is a known tell. It also catches the register
+of a chat reply rather than a piece of writing: `let me break this down`, `you might be
+wondering`, `here's where it gets interesting`, `happy coding!`, and the `say goodbye to
+X` and `Enter Foo, the tool that` moves of generated marketing copy. These are flagged, not
 rewritten, since the fix depends on the whole sentence and is left to the rewrite pass. Add
 your own with the `flagPatterns` field in a profile.
 
