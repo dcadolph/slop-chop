@@ -59,3 +59,47 @@
 {"label":"human","note":"early market run","text":"We got to the market at seven. Half the stalls were still setting up, and the coffee cart had a line anyway. Worth the early alarm."}
 {"label":"human","note":"plain repair story","text":"The dishwasher died on a Sunday, naturally. The part cost eleven dollars and took nine days to arrive. Washing plates by hand got old by day two."}
 {"label":"technical","note":"plain markdown heading and bullets","text":"## Setup\n- install the binary\n- copy the sample config\n- run the smoke test\nThe defaults work for a single node."}
+{"label": "ai", "note": "chatbot scaffolding", "text": "Let me break this down for you. Here's how it works: the index stores pointers, not rows."}
+{"label": "ai", "note": "reader mind reading", "text": "Now, you might be wondering why any of this matters for a small team."}
+{"label": "ai", "note": "manufactured turn", "text": "The build got faster. But here's where it gets interesting: the cache was never the bottleneck."}
+{"label": "ai", "note": "chat signoff", "text": "That covers the basics of indexing. Happy coding! Let me know if you have any questions."}
+{"label": "ai", "note": "marketing reveal", "text": "Say goodbye to slow builds. Gone are the days of waiting twenty minutes for a deploy."}
+{"label": "ai", "note": "imagine a world", "text": "Imagine a world where your tests never flake and every deploy lands on the first try."}
+{"label": "ai", "note": "enter the product", "text": "Builds were slow and nobody knew why. Enter Kibble, the tool that runs your README in a clean container."}
+{"label": "ai", "note": "asserted certainty", "text": "There's no denying the impact. Without a doubt, this is the better approach for most teams."}
+{"label": "ai", "note": "summary flourish", "text": "The bottom line is simple. At its heart, this is a cache with a friendlier name."}
+{"label": "ai", "note": "what if better way", "text": "What if there were a better way to ship documentation that actually works?"}
+{"label": "ai", "note": "reader instruction", "text": "It's important to understand the tradeoff. One thing to keep in mind is the write cost."}
+{"label": "ai", "note": "contracted negative parallelism", "text": "Remote work isn't a perk anymore. It's an expectation, and companies that miss it fall behind."}
+{"label": "ai", "note": "lets be clear", "text": "Let's be clear: tools alone will not save you. Make no mistake, process is the hard part."}
+{"label": "ai", "note": "rhetorical hook", "text": "Ever wondered why some teams ship daily while others ship quarterly?"}
+{"label": "ai", "note": "the answer lies in", "text": "The answer lies in how they handle disagreement, not in the tools they buy."}
+{"label": "ai", "note": "never been more important", "text": "In a distributed team, clear writing has never been more important."}
+{"label": "ai", "note": "ultimate guide heading", "text": "The Ultimate Guide to Remote Work: everything you need to build a distributed team."}
+{"label": "ai", "note": "underscores the importance", "text": "The data underscores the importance of writing decisions down as they are made."}
+{"label": "ai", "note": "bold numbered run", "text": "1. **Async by default.** Meetings are the exception.\n2. **Write it down.** A decision in a head is a decision at risk.\n3. **Over-communicate.** Assume no shared context."}
+{"label": "ai", "note": "stock metaphor stack", "text": "This is just the tip of the iceberg. We're only scratching the surface of what the platform can do."}
+{"label": "ai", "note": "landscape filler", "text": "In an ever-evolving competitive landscape, the results speak for themselves."}
+{"label": "ai", "note": "reassurance copy", "text": "Rest assured, we've got you covered. You're in good hands from day one."}
+{"label": "ai", "note": "wrapped analogy opener", "text": "At its core, an index is a structure that trades write speed for read speed. Think\nof it as the index at the back of a textbook, so you never scan every page."}
+{"label": "ai", "note": "wrapped setup and reveal", "text": "Covering indexes remove the table lookup entirely. That's\nwhere the INCLUDE clause comes in, letting you attach non-key columns."}
+{"label": "ai", "note": "wrapped dive invitation", "text": "Database indexing trips up a lot of people. Let's dive\ninto how the B-tree actually works underneath."}
+{"label": "ai", "note": "wrapped enumeration opener", "text": "Indexes are not free. Here are three\nthings to keep in mind before you add another one."}
+{"label": "ai", "note": "wrapped audience frame", "text": "Whether you're a junior engineer\nor a staff architect, the leftmost prefix rule still applies."}
+{"label": "ai", "note": "wrapped inversion", "text": "Not only\ndoes the cache cut latency, it also cuts the bill at the end of the month."}
+{"label": "human", "note": "concessive marker", "text": "That said, there are real tradeoffs. On the flip side, the write cost goes up on every insert."}
+{"label": "human", "note": "it depends", "text": "It depends on your use case. Your mileage may vary, and the short answer is usually no."}
+{"label": "human", "note": "back reference", "text": "As mentioned earlier, the cache is warm by then. As we've seen, that changes the arithmetic."}
+{"label": "human", "note": "debugging note", "text": "I spent Tuesday chasing a bug that turned out to be a stale DNS cache on my laptop. Four hours. The service was fine the whole time."}
+{"label": "human", "note": "plain recommendation", "text": "If your service works inside the container but not from the host, check DNS before anything else."}
+{"label": "human", "note": "wrapped human prose", "text": "The annoying part is that I hit this exact problem two years ago and did\nnot write it down. I am writing it down now."}
+{"label": "human", "note": "ordinary heading and prose", "text": "# Setup\nInstall the binary, then run the login command once to cache a token."}
+{"label": "human", "note": "hedged but honest", "text": "The numbers might move once the index warms up, so treat the first run as a rough read."}
+{"label": "technical", "note": "plain three item list", "text": "The snapshot captures staged, unstaged, and untracked changes on a scratch index."}
+{"label": "technical", "note": "plain verb enumeration", "text": "The parser will read, split, and remember each entry before the writer touches disk."}
+{"label": "technical", "note": "enter as an imperative", "text": "Press return to confirm. Enter Berlin, then pick a departure date from the calendar."}
+{"label": "technical", "note": "separate bullets each hedged", "text": "- we may want to retry here\n- it might be cheaper to batch"}
+{"label": "technical", "note": "heading above prose", "text": "# Not just a title\nIt's a heading, and the two lines are separate blocks."}
+{"label": "technical", "note": "robust as a term of art", "text": "We fit the model with robust standard errors and compared it against the optimal control baseline."}
+{"label": "technical", "note": "comprehensive exam", "text": "She passed her comprehensive exam in the spring and started fieldwork in June."}
+{"label": "technical", "note": "table rows", "text": "| flag | meaning |\n| --- | --- |\n| -v | verbose output |"}

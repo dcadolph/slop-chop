@@ -47,6 +47,30 @@ func TestFlagPatterns(t *testing.T) {
 		{Name: "two bold bullets", In: "- **Speed:** fast builds\n- **Cost:** free forever", WantRule: "structural:bold-bullet-run", WantHit: false},
 		{Name: "whether or not", In: "Whether you're coming or not, save me a seat.", WantRule: "structural:whether-youre", WantHit: false},
 		{Name: "hyphen bullet line", In: "Bring these:\n- a folding chair\n- b vitamins", WantRule: "structural:spaced-hyphen", WantHit: false},
+		{Name: "contracted not just", In: "Remote work isn't a perk anymore. It's an expectation.", WantRule: "structural:contracted-not-just", WantHit: true},
+		{Name: "lets be clear", In: "Let's be clear: tools alone will not save you.", WantRule: "structural:lets-be-clear", WantHit: true},
+		{Name: "rhetorical hook", In: "Ever wondered why some teams ship faster?", WantRule: "structural:rhetorical-hook", WantHit: true},
+		{Name: "answer lies in", In: "The answer lies in how they handle ambiguity.", WantRule: "structural:the-answer-lies", WantHit: true},
+		{Name: "never been more", In: "Good documentation has never been more important.", WantRule: "structural:never-been-more", WantHit: true},
+		{Name: "ultimate guide", In: "The Ultimate Guide to Remote Work", WantRule: "structural:ultimate-guide", WantHit: true},
+		{Name: "underscores the", In: "The data underscores the importance of testing.", WantRule: "structural:underscores-the", WantHit: true},
+		{Name: "bold number run", In: "1. **Async first.** Fewer meetings.\n2. **Write it down.** Decisions rot.\n3. **Add context.** Assume nothing.", WantRule: "structural:bold-number-run", WantHit: true},
+		{Name: "chatbot scaffolding", In: "Let me break this down for you.", WantRule: "structural:chatbot-scaffolding", WantHit: true},
+		{Name: "reader mind reading", In: "Now, you might be wondering why that matters.", WantRule: "structural:reader-mind-reading", WantHit: true},
+		{Name: "manufactured turn", In: "But here's where it gets interesting.", WantRule: "structural:manufactured-turn", WantHit: true},
+		{Name: "chat signoff", In: "That covers the setup. Happy coding!", WantRule: "structural:chat-signoff", WantHit: true},
+		{Name: "marketing reveal", In: "Say goodbye to slow builds.", WantRule: "structural:marketing-reveal", WantHit: true},
+		{Name: "enter the product", In: "Builds were slow. Enter Kibble, the tool that fixes it.", WantRule: "structural:enter-the-product", WantHit: true},
+		{Name: "asserted certainty", In: "There's no denying the impact of caching.", WantRule: "structural:asserted-certainty", WantHit: true},
+		{Name: "summary flourish", In: "The bottom line is that indexes cost writes.", WantRule: "structural:summary-flourish", WantHit: true},
+		{Name: "what if better way", In: "What if there were a better way to deploy?", WantRule: "structural:what-if-better-way", WantHit: true},
+		{Name: "reader instruction", In: "One thing to keep in mind is the write cost.", WantRule: "structural:reader-instruction", WantHit: true},
+		// A three-item list is ordinary English, not a tell. These guard the precision the
+		// rule-of-three pattern cost when it was tried and dropped.
+		{Name: "plain enumeration", In: "The tree tracks staged, unstaged, and untracked files.", WantHit: false},
+		{Name: "plain verb list", In: "The command will read, split, and remember each entry.", WantHit: false},
+		// "Enter" as an ordinary verb must not read as a product reveal.
+		{Name: "enter as a verb", In: "Press return. Enter Berlin, then pick a date.", WantRule: "structural:enter-the-product", WantHit: false},
 	}
 
 	for testNum, test := range tests {
