@@ -1,7 +1,13 @@
 name: release
 
 # Cross-builds slop-chop on every v* tag, attaches the Homebrew-style archives and
-# checksums to the release, and (when a tap token is present) bumps the formula.
+# checksums to the release, then publishes every downstream surface that carries the
+# engine: the Homebrew formula, the Obsidian plugin, and the npm package. Each publish
+# needs its own token and skips with a note when that token is absent, so a fork or a
+# token-less run still cuts a normal release.
+#
+# The Obsidian plugin and the npm package take the tag with its "v" stripped, so one
+# version identifies the engine on every surface and none of them can drift again.
 on:
   push:
     tags:
@@ -15,6 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+      PLUGIN_TOKEN: ${{ secrets.OBSIDIAN_PLUGIN_TOKEN }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -121,3 +129,63 @@ jobs:
           git add Formula/slop-chop.rb
           git commit -m "Update slop-chop to ${VER}"
           git push
+
+      - name: Publish the Obsidian plugin
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PLUGIN_TOKEN:-}" ]; then
+            echo "OBSIDIAN_PLUGIN_TOKEN not set; skipping the Obsidian plugin publish"
+            exit 0
+          fi
+          VER="${TAG#v}"
+          # The manifest version is the tag without its "v", and the plugin release tag has
+          # to equal it exactly: Obsidian installs from the release whose tag matches the
+          # manifest sitting at the head of the default branch.
+          jq --arg v "$VER" '.version = $v' obsidian/manifest.json > manifest.tmp
+          mv manifest.tmp obsidian/manifest.json
+          MIN=$(jq -r .minAppVersion obsidian/manifest.json)
+          jq --arg v "$VER" --arg m "$MIN" '.[$v] = $m' obsidian/versions.json > versions.tmp
+          mv versions.tmp obsidian/versions.json
+          make obsidian
+          git clone "https://x-access-token:${PLUGIN_TOKEN}@github.com/dcadolph/slop-chop-obsidian.git" plugin
+          cp obsidian/dist/main.js obsidian/manifest.json obsidian/versions.json plugin/
+          cd plugin
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add main.js manifest.json versions.json
+          # A rebuild with no engine change produces the same bytes, so there is nothing to
+          # commit and nothing to release.
+          if git diff --cached --quiet; then
+            echo "the plugin already holds ${VER}; nothing to publish"
+            exit 0
+          fi
+          git commit -m "Update to ${VER}"
+          git push
+          GH_TOKEN="${PLUGIN_TOKEN}" gh release create "${VER}" \
+            main.js manifest.json \
+            --title "${VER}" \
+            --notes "Ships the slop-chop ${VER} engine. See https://github.com/dcadolph/slop-chop/releases/tag/${TAG}."
+
+      - name: Publish the npm package
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [ -z "${NPM_TOKEN:-}" ]; then
+            echo "NPM_TOKEN not set; skipping the npm publish"
+            exit 0
+          fi
+          VER="${TAG#v}"
+          # Republishing a version the registry already holds is an error rather than a
+          # no-op, so a re-run of a tag that already shipped stops here.
+          if npm view "slop-chop-wasm@${VER}" version >/dev/null 2>&1; then
+            echo "slop-chop-wasm@${VER} is already published; nothing to do"
+            exit 0
+          fi
+          make npm-package
+          jq --arg v "$VER" '.version = $v' npm/package.json > pkg.tmp
+          mv pkg.tmp npm/package.json
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+          npm publish npm/ --access public
