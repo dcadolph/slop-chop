@@ -8,6 +8,8 @@ on:
       - overrides/**
       - mkdocs.yml
       - internal/**
+      - sanitize/**
+      - rewrite/**
       - wasm/**
       - go.mod
       - go.sum
