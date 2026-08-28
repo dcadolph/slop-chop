@@ -15,6 +15,11 @@ on:
 
 permissions:
   contents: write
+  # npm publishes over OIDC rather than a token. The account requires a second factor for
+  # publishing and CI cannot answer an authenticator prompt, so a token always fails with
+  # EOTP. GitHub signs a short-lived identity here and npm trusts this repository and
+  # workflow directly, which needs no secret and nothing to rotate.
+  id-token: write
 
 jobs:
   release:
@@ -22,7 +27,6 @@ jobs:
     env:
       TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
       PLUGIN_TOKEN: ${{ secrets.OBSIDIAN_PLUGIN_TOKEN }}
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -174,15 +178,19 @@ jobs:
             --title "${VER}" \
             --notes "Ships the slop-chop ${VER} engine. See https://github.com/dcadolph/slop-chop/releases/tag/${TAG}."
 
+      # OIDC publishing needs npm 11.5.1 or newer, which is ahead of the npm the runner
+      # ships with its default Node.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+
       - name: Publish the npm package
         env:
           TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          if [ -z "${NPM_TOKEN:-}" ]; then
-            echo "NPM_TOKEN not set; skipping the npm publish"
-            exit 0
-          fi
+          npm install -g npm@latest
           VER="${TAG#v}"
           # Republishing a version the registry already holds is an error rather than a
           # no-op, so a re-run of a tag that already shipped stops here.
@@ -193,5 +201,4 @@ jobs:
           make npm-package
           jq --arg v "$VER" '.version = $v' npm/package.json > pkg.tmp
           mv pkg.tmp npm/package.json
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
-          npm publish npm/ --access public
+          npm publish npm/ --access public --provenance
