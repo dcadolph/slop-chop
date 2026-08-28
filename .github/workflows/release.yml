@@ -127,6 +127,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Formula/slop-chop.rb
+          # A re-run of a tag that already shipped rewrites the same formula, so there is
+          # nothing staged and nothing to push. Committing anyway would fail the release.
+          if git diff --cached --quiet; then
+            echo "the formula already holds ${VER}; nothing to bump"
+            exit 0
+          fi
           git commit -m "Update slop-chop to ${VER}"
           git push
 
