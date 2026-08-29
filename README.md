@@ -380,9 +380,9 @@ ANTHROPIC_API_KEY=sk-... go test -tags=integration ./rewrite/ -run Live -v
 
 ## More tools
 
-- [kibble](https://github.com/dcadolph/kibble), test your README's install steps in a clean container
-- [preen](https://github.com/dcadolph/preen), split a messy working tree into clean, atomic git commits
-- [vamoose](https://github.com/dcadolph/vamoose), route time off through approval, then tell the team
+- [kibble](https://github.com/dcadolph/kibble): Test your README's install steps in a clean container.
+- [preen](https://github.com/dcadolph/preen): Split a messy working tree into clean, atomic git commits.
+- [vamoose](https://github.com/dcadolph/vamoose): Route time off through approval, then tell the team.
 
 ## License
 
