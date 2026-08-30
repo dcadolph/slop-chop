@@ -1,0 +1,8 @@
+# Settings kibble uses when it replays this README in a clean container.
+# The profile flag points at a profile the reader writes for their own voice,
+# so the session has nothing to supply and the document is not missing a step.
+version: 1
+examples:
+  steps:
+    - match: "--profile myprofile.json"
+      skip: "points at a profile the reader writes themselves"
