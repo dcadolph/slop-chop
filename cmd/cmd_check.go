@@ -55,13 +55,12 @@ func runCheck(cmd *cobra.Command, args []string) error {
 	}
 	found := false
 	for _, path := range args {
-		if sourceFile(path) {
-			warnSourceSkip(cmd.ErrOrStderr(), path)
-			continue
-		}
-		text, err := readInput(path, cmd.InOrStdin())
+		text, ok, err := readProse(path, cmd.InOrStdin(), cmd.ErrOrStderr())
 		if err != nil {
 			return err
+		}
+		if !ok {
+			continue
 		}
 		switch err := checkOne(s, text, path, cmd.OutOrStdout(), cmd.ErrOrStderr()); {
 		case errors.Is(err, errFindings):
@@ -77,9 +76,14 @@ func runCheck(cmd *cobra.Command, args []string) error {
 }
 
 // checkOne reports findings for one input and returns errFindings when there are any.
-// Findings on a file are prefixed with its path, so a terminal can jump to the spot.
+// Findings on a file are prefixed with its path, so a terminal can jump to the spot. On a
+// source file the text is the comment mask, so cleanup findings are dropped: a spacing
+// nit inside a comment is not a tell, and fix will never rewrite it.
 func checkOne(s *sanitize.Sanitizer, text, path string, stdout, stderr io.Writer) error {
 	findings := s.Check(text)
+	if path != "" && sourceFile(path) {
+		findings = dropTidyFindings(findings)
+	}
 	if config.JSON() {
 		if err := writeJSON(stdout, checkReport{Findings: jsonutil.OrEmpty(findings)}, config.Pretty()); err != nil {
 			return err

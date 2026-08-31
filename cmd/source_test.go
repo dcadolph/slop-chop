@@ -40,17 +40,50 @@ func TestSourceFile(t *testing.T) {
 	}
 }
 
-// TestCheckSkipsSource checks that check skips a source file with a warning instead of
-// flagging its code as prose.
-func TestCheckSkipsSource(t *testing.T) {
+// TestCheckScansComments checks that check on a source file reads the comments and only
+// the comments: a tell in a comment is flagged at its real position, while the same word
+// as an identifier, a tell inside a string literal, and gofmt alignment spacing draw
+// nothing.
+func TestCheckScansComments(t *testing.T) {
 	dir := t.TempDir()
-	goFile := writeTemp(t, dir, "main.go", "package main\n\n// A robust plan; really.\nfunc main() {}\n")
+	src := "package main\n" +
+		"\n" +
+		"// This delivers a comprehensive solution.\n" +
+		"func main() {\n" +
+		"\tcomprehensive := 1     // twelve\n" +
+		"\ts := \"a robust plan\"\n" +
+		"\t_, _ = comprehensive, s\n" +
+		"}\n"
+	goFile := writeTemp(t, dir, "main.go", src)
 	_, stderr, err := runCLI(t, []string{"check", goFile}, "")
-	if err != nil {
-		t.Fatalf("err = %v, want nil for a skipped source file", err)
+	if !errors.Is(err, errFindings) {
+		t.Fatalf("err = %v, want errFindings for a tell in a comment", err)
 	}
-	if !strings.Contains(stderr, "skipping "+goFile) {
-		t.Errorf("stderr = %q, want a skip warning for %q", stderr, goFile)
+	if !strings.Contains(stderr, goFile+":3:") || !strings.Contains(stderr, "word:comprehensive") {
+		t.Errorf("stderr = %q, want word:comprehensive reported on line 3", stderr)
+	}
+	if strings.Contains(stderr, "word:robust") {
+		t.Errorf("stderr = %q, want no finding for a tell inside a string literal", stderr)
+	}
+	if strings.Contains(stderr, "double-space") {
+		t.Errorf("stderr = %q, want no cleanup findings on a source file", stderr)
+	}
+	if strings.Contains(stderr, goFile+":5:2") {
+		t.Errorf("stderr = %q, want no finding for the identifier on line 5", stderr)
+	}
+}
+
+// TestCheckSkipsDataFile checks that a file type with no comments still skips with a
+// warning.
+func TestCheckSkipsDataFile(t *testing.T) {
+	dir := t.TempDir()
+	jsonFile := writeTemp(t, dir, "cfg.json", "{\"note\": \"a robust plan\"}\n")
+	_, stderr, err := runCLI(t, []string{"check", jsonFile}, "")
+	if err != nil {
+		t.Fatalf("err = %v, want nil for a skipped data file", err)
+	}
+	if !strings.Contains(stderr, "skipping "+jsonFile) {
+		t.Errorf("stderr = %q, want a skip warning for %q", stderr, jsonFile)
 	}
 }
 
@@ -81,18 +114,19 @@ func TestFixRefusesSource(t *testing.T) {
 	}
 }
 
-// TestScoreSkipsSource checks that score skips a source file rather than rating code.
-func TestScoreSkipsSource(t *testing.T) {
+// TestScoreScansComments checks that score on a source file rates its comments, so a
+// slop-commented file scores above a tersely commented one.
+func TestScoreScansComments(t *testing.T) {
 	dir := t.TempDir()
-	goFile := writeTemp(t, dir, "gen.go", "package gen\n\nvar x = 1\n")
-	stdout, stderr, err := runCLI(t, []string{"score", goFile}, "")
-	if err != nil && !errors.Is(err, errFindings) {
-		t.Fatalf("err = %v", err)
+	sloppy := writeTemp(t, dir, "sloppy.go",
+		"package gen\n\n// In summary, this comprehensive solution leverages robust synergy.\nvar x = 1\n")
+	terse := writeTemp(t, dir, "terse.go",
+		"package gen\n\n// x counts retries.\nvar x = 1\n")
+	stdout, _, err := runCLI(t, []string{"score", sloppy, terse}, "")
+	if err != nil {
+		t.Fatalf("err = %v, want nil without a gate", err)
 	}
-	if strings.Contains(stdout, goFile+":") {
-		t.Errorf("stdout = %q, want no score line for a skipped file", stdout)
-	}
-	if !strings.Contains(stderr, "skipping "+goFile) {
-		t.Errorf("stderr = %q, want a skip warning for %q", stderr, goFile)
+	if !strings.Contains(stdout, sloppy+": ") || !strings.Contains(stdout, terse+": 0") {
+		t.Errorf("stdout = %q, want a high score for the sloppy comments and 0 for the terse ones", stdout)
 	}
 }

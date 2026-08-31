@@ -138,6 +138,13 @@ the matched text, the suggested replacement, and a line and column.
   the file in place instead.
 - `score` rates the text from 0 to 100 on how much it reads like AI wrote it.
 
+Source code gets its own treatment. On a `.go`, `.py`, `.ts`, or any other code file,
+`check` and `score` read only the comments, so a buzzword in a comment is flagged at its
+real line and column while identifiers, strings, and formatting alignment draw nothing.
+`fix` refuses to rewrite code files outright, since prose cleanups break code. Pipe a
+file through stdin to override either behavior on purpose. Data files with no comments,
+like `.json` and `.csv`, are skipped with a note.
+
 ## Score
 
 `score` gives a single number from 0 for clean to 100 for heavy slop. It weighs the density
