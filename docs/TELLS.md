@@ -9,16 +9,21 @@ profile acts on, generated straight from the profile the engine compiles, so wha
 read here is exactly what gets chopped. Rebuild it any time with
 `slop-chop tells --markdown`.
 
-## Character swaps (12)
+## Character swaps (17)
 
 Rewritten in place. The usual suspects: the em-dash, smart quotes, the ellipsis.
 
 | From | To |
 | ---- | -- |
 | ` ` | ` ` |
+| `­` | dropped |
 | `​` | dropped |
+| `‐` | `-` |
+| `‑` | `-` |
+| `‒` | `-` |
 | `–` | `-` |
 | `—` | `, ` |
+| `―` | `, ` |
 | `‘` | `'` |
 | `’` | `'` |
 | `“` | `"` |
@@ -28,7 +33,7 @@ Rewritten in place. The usual suspects: the em-dash, smart quotes, the ellipsis.
 | `⁠` | dropped |
 | `﻿` | dropped |
 
-## Stock phrases (39)
+## Stock phrases (45)
 
 Openers and filler that add words but no meaning. Each is dropped with its trailing
 comma and space, and when it opened the sentence the next word gets its capital back.
@@ -45,8 +50,10 @@ comma and space, and when it opened the sentence the next word gets its capital 
 | `importantly,` | dropped |
 | `in a nutshell,` | dropped |
 | `in conclusion,` | dropped |
+| `in conclusion:` | dropped |
 | `in essence,` | dropped |
 | `in summary,` | dropped |
+| `in summary:` | dropped |
 | `in today's digital age,` | dropped |
 | `in today's fast-paced world,` | dropped |
 | `in today's world,` | dropped |
@@ -72,61 +79,74 @@ comma and space, and when it opened the sentence the next word gets its capital 
 | `to be honest,` | dropped |
 | `to put it simply,` | dropped |
 | `to recap,` | dropped |
+| `to recap:` | dropped |
+| `to summarize,` | dropped |
+| `to summarize:` | dropped |
+| `ultimately,` | dropped |
 | `with that said,` | dropped |
 | `without further ado,` | dropped |
 
-## Buzzwords (157)
+## Buzzwords (161)
 
 Flagged wherever they appear, never rewritten, because the right replacement depends
 on the sentence. The cleaver preset swaps the common ones for plain words when you want
 that done for you.
 
-`a beacon of` `a marathon, not a sprint` `a world of possibilities` `actionable insights` `at the forefront` `bespoke` `best of both worlds` `best-in-class` `blast radius` `blazing fast` `blazingly fast` `boast` `boasted` `boasting` `boasts` `breath of fresh air` `bustling` `changing landscape` `competitive landscape` `comprehensive` `crucial` `current landscape` `cutting edge` `cutting-edge` `daunting` `deep dive` `delve` `delved` `delves` `delving` `digital landscape` `dive deeper` `double-edged sword` `effortless` `effortlessly` `elegant` `elevate` `elevates` `elevating` `embark` `embarked` `embarking` `embarks` `empower` `empowering` `empowers` `ever-changing` `ever-evolving` `evolving landscape` `facilitate` `facilitates` `facilitating` `fast-paced` `foster` `fostering` `fosters` `frictionless` `game changer` `game changers` `game-changer` `game-changers` `game-changing` `groundbreaking` `harness the power` `has something for everyone` `holistic` `in the realm of` `in the world of` `innovative` `invaluable` `leverage` `leveraged` `leverages` `leveraging` `look no further` `meticulous` `meticulously` `more than ever` `multifaceted` `must-see` `must-visit` `myriad` `navigate the complexities` `navigating the complexities` `nestled` `opens up a world of` `paradigm shift` `pave the way` `paved the way` `paves the way` `paving the way` `peace of mind` `perfect blend` `pivotal` `plethora` `powerful` `revolutionize` `revolutionized` `revolutionizes` `revolutionizing` `robust` `scratching the surface` `seamless` `seamlessly` `shed light on` `sheds light on` `showcase` `showcased` `showcases` `showcasing` `speak for themselves` `stands as a` `stark contrast` `stark reality` `stark reminder` `state-of-the-art` `streamline` `streamlined` `streamlines` `streamlining` `substrate` `supercharge` `supercharged` `synergies` `synergy` `tailored to your` `tapestry` `testament to` `the intersection of` `the possibilities are endless` `the proof is in the pudding` `the results speak` `the writing is on the wall` `time will tell` `tip of the iceberg` `to the next level` `top-notch` `transformative` `treasure trove` `unleash` `unleashed` `unleashes` `unleashing` `unlock the full potential` `unlock the potential` `unparalleled` `utilize` `utilized` `utilizes` `utilizing` `vibrant` `we've got you covered` `when it comes to` `where the rubber meets the road` `whopping` `world-class` `you're in good hands`
+`a beacon of` `a marathon, not a sprint` `a world of possibilities` `actionable insights` `at the forefront` `bespoke` `best of both worlds` `best-in-class` `blast radius` `blazing fast` `blazingly fast` `boast` `boasted` `boasting` `boasts` `breath of fresh air` `bustling` `changing landscape` `competitive landscape` `comprehensive` `crucial` `current landscape` `cutting edge` `cutting-edge` `daunting` `deep dive` `delve` `delved` `delves` `delving` `digital landscape` `dive deeper` `double-edged sword` `effortless` `effortlessly` `elegant` `elevate` `elevates` `elevating` `embark` `embarked` `embarking` `embarks` `empower` `empowering` `empowers` `ever-changing` `ever-evolving` `evolving landscape` `facilitate` `facilitates` `facilitating` `fascinating` `fast-paced` `foster` `fostering` `fosters` `frictionless` `future-proof` `future-proofing` `future-proofs` `game changer` `game changers` `game-changer` `game-changers` `game-changing` `groundbreaking` `harness the power` `has something for everyone` `holistic` `in the realm of` `in the world of` `innovative` `invaluable` `leverage` `leveraged` `leverages` `leveraging` `look no further` `meticulous` `meticulously` `more than ever` `multifaceted` `must-see` `must-visit` `myriad` `navigate the complexities` `navigating the complexities` `nestled` `opens up a world of` `paradigm shift` `pave the way` `paved the way` `paves the way` `paving the way` `peace of mind` `perfect blend` `pivotal` `plethora` `powerful` `revolutionize` `revolutionized` `revolutionizes` `revolutionizing` `robust` `scratching the surface` `seamless` `seamlessly` `shed light on` `sheds light on` `showcase` `showcased` `showcases` `showcasing` `speak for themselves` `stands as a` `stark contrast` `stark reality` `stark reminder` `state-of-the-art` `streamline` `streamlined` `streamlines` `streamlining` `supercharge` `supercharged` `synergies` `synergy` `tailored to your` `tapestry` `testament to` `the intersection of` `the possibilities are endless` `the proof is in the pudding` `the results speak` `the writing is on the wall` `time will tell` `tip of the iceberg` `to the next level` `top-notch` `transformative` `treasure trove` `unleash` `unleashed` `unleashes` `unleashing` `unlock the full potential` `unlock the potential` `unparalleled` `unprecedented` `utilize` `utilized` `utilizes` `utilizing` `vibrant` `we've got you covered` `when it comes to` `where the rubber meets the road` `whopping` `world-class` `you're in good hands`
 
-## Structural patterns (39)
+## Structural patterns (48)
 
 Sentence shapes a word list cannot catch, like the setup-and-reveal cadence. Flag
 only: the fix depends on the whole sentence, so it is left to you or the rewrite pass.
 
 | Name | Pattern |
 | ---- | ------- |
+| `as-an-ai` | `(?i)\bas an ai(?: language)? model\b` |
 | `asserted-certainty` | `(?i)\b(?:there'?s no denying\|without a doubt\|it'?s clear that\|it is clear that\|suffice it to say\|needless to say\|make no mistake about it)\b` |
 | `assistant-opener` | `(?im)^\s{0,3}(?:certainly\|absolutely\|great question\|i'?d be happy to\|happy to help)\b` |
 | `assistant-signoff` | `(?i)\b(?:i hope this helps\|hope this helps\|don'?t hesitate to\|feel free to reach out)\b` |
-| `bold-bullet-run` | `(?m)(?:^[ \t]*[-*][ \t]+\*\*[^*\n]{1,60}\*\*.*\n){2}[ \t]*[-*][ \t]+\*\*[^*\n]{1,60}\*\*` |
-| `bold-number-run` | `(?m)(?:^[ \t]*\d+[.)][ \t]+\*\*[^*\n]{1,60}\*\*.*\n){2}[ \t]*\d+[.)][ \t]+\*\*[^*\n]{1,60}\*\*` |
+| `bold-bullet-run` | `(?m)(?:^[ \t]*[-*][ \t]+\*\*[\p{L}\p{N}][^*\n]{0,59}\*\*.*\n){2}[ \t]*[-*][ \t]+\*\*[\p{L}\p{N}][^*\n]{0,59}\*\*` |
+| `bold-number-run` | `(?m)(?:^[ \t]*\d+[.)][ \t]+\*\*[\p{L}\p{N}][^*\n]{0,59}\*\*.*\n){2}[ \t]*\d+[.)][ \t]+\*\*[\p{L}\p{N}][^*\n]{0,59}\*\*` |
 | `chat-signoff` | `(?i)\b(?:happy (?:coding\|building\|shipping\|writing)!\|thanks for reading\|until next time\|let me know if you have any questions\|if you have any questions,? (?:just )?ask\|hopefully this (?:gives\|helps))` |
 | `chatbot-scaffolding` | `(?i)\blet me (?:explain\|break (?:this\|it) down\|walk you through\|show you\|start by)\b\|\bhere'?s how (?:it works\|this works\|you do it)\b` |
-| `conclusion-heading` | `(?im)^#{1,6}[ \t]+(?:conclusion\|final thoughts\|wrapping up\|in closing\|key takeaways)\b` |
+| `conclusion-heading` | `(?im)^#{1,6}[ \t]+(?:final thoughts\|wrapping up\|in closing\|key takeaways)\b` |
 | `contracted-not-just` | `(?i)\b(?:is\|are\|was\|were\|do\|does\|did\|has\|have)n'?t\b[^.!?\n]{1,60}[.,]\s*(?:it'?s\|they'?re\|you'?re\|we'?re\|that'?s\|this is)\b` |
 | `emoji-decoration` | `(?m)^[ \t]*(?:[-*][ \t]+\|#{1,6}[ \t]+)\*{0,2}[\x{2600}-\x{27BF}\x{2B00}-\x{2BFF}\x{1F000}-\x{1FAFF}]` |
 | `enter-the-product` | `(?:^\|[.!?]\s+)Enter \p{Lu}[\p{L}-]+,\s+(?:the\|a\|an)\b` |
 | `fragment-reveal` | `(?i)\bthe (?:best part\|result\|catch\|takeaway\|upshot\|kicker\|bottom line\|good news\|bad news\|verdict\|payoff)\?` |
-| `hedge-stack` | `(?i)\b(?:may\|might\|could\|possibly\|perhaps\|arguably\|generally\|potentially\|somewhat\|seemingly\|presumably\|conceivably)\b[^.!?\n]{1,50}\b(?:may\|might\|could\|possibly\|perhaps\|arguably\|generally\|potentially\|somewhat\|seemingly\|presumably\|conceivably)\b` |
+| `hedge-stack` | `\b(?:[Mm]ay\|[Mm]ight\|[Cc]ould\|[Pp]ossibly\|[Pp]erhaps\|[Aa]rguably\|[Gg]enerally\|[Pp]otentially\|[Ss]omewhat\|[Ss]eemingly\|[Pp]resumably\|[Cc]onceivably)\b[^.!?\n]{1,50}\b(?:[Mm]ay\|[Mm]ight\|[Cc]ould\|[Pp]ossibly\|[Pp]erhaps\|[Aa]rguably\|[Gg]enerally\|[Pp]otentially\|[Ss]omewhat\|[Ss]eemingly\|[Pp]resumably\|[Cc]onceivably)\b` |
 | `here-are-n` | `(?i)\bhere are (?:\d+\|a few\|some\|several\|three\|four\|five\|six\|seven\|eight\|nine\|ten) (?:key \|simple \|quick \|easy \|practical \|common )?(?:reasons\|ways\|things\|tips\|steps\|takeaways\|strategies\|examples\|benefits\|best practices)\b` |
 | `heres-the-thing` | `(?i)\bhere'?s the (thing\|kicker\|deal\|catch\|secret\|problem)\b` |
-| `in-an-era` | `(?i)\bin an? (?:era\|age\|world) (?:where\|when\|of)\b` |
-| `its-not-x-its-y` | `(?i)\b(?:it\|this\|that)(?:'?s\|\s+(?:is\|was\|are\|were))(?:\s+not\|n'?t)\b[^.!?\n]{1,40}[,;]\s*it'?s\b` |
+| `in-an-era` | `(?i)\bin an? (?:era\|age\|world) (?:where\|when)\b` |
+| `its-not-x-its-y` | `(?i)\b(?:it\|this\|that)(?:'?s\|\s+(?:is\|was\|are\|were))(?:\s+not\|n'?t)\b[^.!?\n]{1,40}[,;.]\s*(?:it'?s\|that'?s\|this is)\b` |
 | `lets-be-clear` | `(?i)\b(?:let'?s be clear\|make no mistake\|the truth is\|here'?s the reality)\b` |
 | `lets-dive-in` | `(?i)\blet'?s (dive\|delve\|jump) in(to)?\b` |
 | `lets-take-a-look` | `(?i)\blet'?s (?:take a (?:closer )?look\|explore\|unpack\|break (?:it\|this) down)\b` |
 | `manufactured-turn` | `(?i)\b(?:here'?s where it gets (?:interesting\|good\|tricky\|fun)\|but here'?s the (?:twist\|thing))\b` |
 | `marketing-reveal` | `(?i)\b(?:say (?:goodbye\|hello) to\|gone are the days\|no more (?:wrestling\|fighting\|struggling) with\|imagine a world where\|picture this:)` |
+| `mixed-script` | `(?:\p{Latin}[\p{Cyrillic}\p{Greek}]\|[\p{Cyrillic}\p{Greek}]\p{Latin})` |
 | `never-been-more` | `(?i)\b(?:has\|have) never been more (?:important\|critical\|relevant\|urgent\|clear\|apparent\|necessary)\b` |
+| `not-about-about` | `(?i)\b(?:it\|this)'?s not about\b[^.!?\n]{1,50}\.\s+it'?s about\b` |
+| `not-just-a-but` | `(?i)\bnot (?:just\|merely\|simply) (?:a\|an\|the)\b[^.!?\n]{1,40}\bbut (?:a\|an\|the)\b` |
 | `not-just-but-also` | `(?i)\bnot (just\|only)\b[^.!?\n]{1,60}\bbut\b[^.!?\n]{0,25}\balso\b` |
 | `not-just-sentence-split` | `(?i)\bnot just\b[^.!?\n]{1,60}\.[ \t]+(?:it'?s\|you'?re\|we'?re\|they'?re\|this is\|that'?s)\b` |
 | `not-only-inversion` | `(?i)\bnot only (?:does\|do\|did\|is\|are\|was\|were\|can\|could\|will\|would)\b` |
+| `ordinal-enumeration` | `(?i)\b(?:firstly\|secondly\|thirdly\|fourthly\|lastly),` |
 | `plays-a-role` | `(?i)\bplay(?:s\|ed\|ing)? an? (?:crucial\|key\|vital\|pivotal\|central\|significant\|essential) role\b` |
+| `question-isnt-is` | `(?i)\bthe (?:question\|point\|problem\|issue\|goal\|answer) isn'?t\b[^.!?\n]{1,60}\.\s+the (?:question\|point\|problem\|issue\|goal\|answer) is\b` |
 | `reader-instruction` | `(?i)\b(?:it'?s important to (?:understand\|remember\|realize)\|one thing to keep in mind\|the (?:one )?thing to remember)\b` |
 | `reader-mind-reading` | `(?i)\b(?:you (?:might\|may\|could) be (?:wondering\|asking\|thinking)\|you'?re probably (?:wondering\|thinking)\|so,? what does this mean for you)\b` |
-| `rhetorical-hook` | `(?i)\b(?:ever wondered\|have you ever wondered\|what if i told you\|sound familiar\?\|why does (?:this\|it) matter\?\|the question is:)` |
-| `spaced-hyphen` | `\p{L} - \p{L}` |
+| `reversal-aphorism` | `(?i)\b(?:don'?t\|doesn'?t\|isn'?t\|aren'?t\|never\|not)\b[^.!?\n]{0,40}\.\s+\p{Lu}[^.!?\n]{2,35}\s(?:do(?:es)?\|did\|is\|are\|was\|were\|will\|can)\.` |
+| `rhetorical-hook` | `(?i)\b(?:ever wondered\|have you ever wondered\|what if i told you\|sound familiar\?\|why does (?:this\|it) matter\?\|worth asking (?:yourself\|whether\|if)\b)` |
+| `spaced-hyphen` | `\p{Ll} -{1,2} \p{Ll}` |
 | `summary-flourish` | `(?i)\b(?:the bottom line is\|long story short\|at its heart\|the beauty of (?:it\|this)\|that'?s the beauty of\|the best part is)\b` |
 | `thats-where-comes-in` | `(?i)\bthat'?s where\b[^.!?\n]{1,30}\bcomes? in\b` |
 | `the-answer-lies` | `(?i)\bthe (?:answer\|secret\|key\|difference\|trick) (?:lies in\|is (?:simple\|straightforward)\|comes down to)\b` |
 | `think-of-it-as` | `(?i)\bthink of (?:it\|this\|them) as\b` |
+| `triad-fragment` | `(?m)(?:^\|[.!?][ \t]+)\p{Lu}\p{Ll}{2,14}, \p{Ll}{2,14}, \p{Ll}{2,14}\.` |
 | `ultimate-guide` | `(?i)\bthe (?:ultimate\|complete\|definitive\|essential) guide to\b` |
 | `underscores-the` | `(?i)\b(?:underscore\|underscores\|underscoring\|highlights\|underlines) the (?:importance\|need\|value\|fact\|reality\|significance)\b` |
+| `until-it-didnt` | `(?i)[.!?]\s+until (?:it\|they\|we\|that) (?:didn'?t\|wasn'?t\|weren'?t\|doesn'?t\|couldn'?t\|stopped)\b` |
 | `what-if-better-way` | `(?i)\bwhat if (?:there (?:were\|was)\|i told you\|you could)\b` |
 | `whether-youre` | `(?i)\bwhether you'?re an? [^.!?\n]{1,40}\bor an? \p{L}` |
 

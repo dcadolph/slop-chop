@@ -74,6 +74,7 @@ func (s *Sanitizer) Check(text string) []Finding {
 			})
 		}
 	}
+	findings = append(findings, anaphoraFindings(text, protected)...)
 	slices.SortFunc(findings, func(a, b Finding) int {
 		return cmp.Or(cmp.Compare(a.Offset, b.Offset), cmp.Compare(a.Rule, b.Rule))
 	})
@@ -83,18 +84,26 @@ func (s *Sanitizer) Check(text string) []Finding {
 
 // dedupeFindings collapses findings that mark the same text at the same offset, which
 // happens when more than one rule matches one word. It keeps the finding Fix would act on,
-// so the report never contradicts the output. Findings arrive sorted by offset, so
-// duplicates sit next to each other.
+// so the report never contradicts the output. Findings arrive sorted by offset, so every
+// candidate duplicate sits in the run of findings sharing an offset; the whole run is
+// checked, since a third rule sorting between two duplicates must not hide them from
+// each other.
 func dedupeFindings(findings []Finding) []Finding {
 	out := findings[:0]
 	for _, f := range findings {
-		if n := len(out); n > 0 && out[n-1].Offset == f.Offset && strings.EqualFold(out[n-1].Match, f.Match) {
-			if preferFinding(f, out[n-1]) {
-				out[n-1] = f
+		dup := false
+		for j := len(out) - 1; j >= 0 && out[j].Offset == f.Offset; j-- {
+			if strings.EqualFold(out[j].Match, f.Match) {
+				if preferFinding(f, out[j]) {
+					out[j] = f
+				}
+				dup = true
+				break
 			}
-			continue
 		}
-		out = append(out, f)
+		if !dup {
+			out = append(out, f)
+		}
 	}
 	return out
 }

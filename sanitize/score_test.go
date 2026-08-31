@@ -61,8 +61,9 @@ func TestScoreEmpty(t *testing.T) {
 	}
 }
 
-// TestScoreFlatCadence checks that a perfectly uniform sentence rhythm, the flattest and
-// most machine-like cadence, earns the cadence penalty instead of escaping it as a zero.
+// TestScoreFlatCadence checks that a perfectly uniform sentence rhythm is still reported
+// as a zero coefficient of variation, while carrying no score weight: plain, even
+// sentences are common in competent human writing, so clean flat prose must score clean.
 func TestScoreFlatCadence(t *testing.T) {
 	t.Parallel()
 	s, err := New(DefaultProfile())
@@ -73,8 +74,8 @@ func TestScoreFlatCadence(t *testing.T) {
 	if got.CadenceCV != 0 {
 		t.Errorf("cadenceCV = %v, want 0 for equal-length sentences (%+v)", got.CadenceCV, got)
 	}
-	if got.Value < 15 {
-		t.Errorf("flat cadence score = %d, want the cadence penalty applied (%+v)", got.Value, got)
+	if got.Value != 0 {
+		t.Errorf("clean flat prose score = %d, want 0 (%+v)", got.Value, got)
 	}
 }
 

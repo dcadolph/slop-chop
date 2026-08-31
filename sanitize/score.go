@@ -8,9 +8,10 @@ import (
 )
 
 // Score is a read on how much a text reads like AI wrote it, from 0 for clean to 100 for
-// heavy slop. It sums named signals: the density of rule tells, how flat the sentence
-// cadence is, and how hedge-heavy the register is, so a robotic rhythm or a noncommittal
-// voice still counts where a word list finds nothing.
+// heavy slop. It sums named signals: the weighted density of rule tells and how
+// hedge-heavy the register is. Typography normalization and house-style cleanups are
+// reported as findings but carry no score weight, so a professionally typeset human page
+// never reads as slop for its curly quotes.
 type Score struct {
 	// Value is the 0 to 100 score, the capped sum of the signals below.
 	Value int `json:"value"`
@@ -20,15 +21,15 @@ type Score struct {
 	Words int `json:"words"`
 	// TellsPer100 is tells per hundred words, the density the score leans on.
 	TellsPer100 float64 `json:"tellsPer100"`
-	// CadenceCV is the coefficient of variation of sentence length. A low value means a
-	// flat, even rhythm, which reads as machine written; 0 is the flattest. It is -1 when
-	// there are too few sentences to judge a rhythm, distinct from a measured 0.
+	// CadenceCV is the coefficient of variation of sentence length, reported for
+	// context but carrying no score weight: modern model prose varies its rhythm on
+	// purpose, so a flat cadence marks old machine output while penalizing plain,
+	// competent human writing. It is -1 when there are too few sentences to judge.
 	CadenceCV float64 `json:"cadenceCv"`
-	// Density is the points tell density added to Value, with a structural tell counted
-	// double since a stock sentence shape is stronger evidence than one word.
+	// Density is the points weighted tell density added to Value. A structural tell
+	// counts double, since a stock sentence shape is stronger evidence than one word,
+	// and typography swaps count nothing.
 	Density int `json:"density"`
-	// Cadence is the points a flat sentence rhythm added to Value.
-	Cadence int `json:"cadence"`
 	// Hedging is the points a hedge-heavy register added to Value.
 	Hedging int `json:"hedging"`
 }
@@ -48,50 +49,99 @@ var hedges = map[string]bool{
 	"likely": true, "roughly": true, "fairly": true,
 }
 
-// Score rates text from 0 to 100 by tell density, cadence flatness, and hedge density.
+// tidyRuleNames are the cleanup rules whose findings are house style, not evidence of
+// machine writing, so they carry no score weight.
+//
+//nolint:gochecknoglobals // Immutable set.
+var tidyRuleNames = map[string]bool{
+	"semicolon": true, "orphan-comma": true, "space-before-punct": true,
+	"comma-before-stop": true, "comma-run": true, "double-space": true, "article": true,
+}
+
+// weightedChars are the character swaps that still count toward the score: the em-dash,
+// the model tell itself, and the invisible characters that smuggle words past a word
+// list. Every other character swap is typography normalization, evidence of typesetting
+// rather than of a model, and counts nothing.
+//
+//nolint:gochecknoglobals // Immutable set.
+var weightedChars = map[string]bool{
+	"char:—":      true,
+	"char:\u200b": true,
+	"char:\u2060": true,
+	"char:\ufeff": true,
+	"char:\u00ad": true,
+}
+
+// Score rates text from 0 to 100 by weighted tell density and hedge density.
 func (s *Sanitizer) Score(text string) Score {
 	findings := s.Check(text)
 	tells := len(findings)
-	// A structural tell counts double toward density: a stock sentence shape is stronger
-	// evidence of machine writing than any one word.
-	weighted := tells
-	for _, f := range findings {
-		if strings.HasPrefix(f.Rule, "structural:") {
-			weighted++
-		}
-	}
+	weighted := weightTells(findings)
 	// Measure the densities against prose only. Code is blanked so a large fenced block
 	// cannot dilute the word count the signals are weighed against.
 	prose := maskCode(text)
 	words := len(strings.Fields(prose))
 
-	// Tell density is the main signal. Each tell per hundred words adds eight points, capped
-	// so a dense page saturates near eighty.
-	density := math.Min(80, per100(weighted, words)*8)
-
-	// A flat, even rhythm reads as machine written. A coefficient of variation under 0.5
-	// penalizes, cv == 0 the most. A negative cv means too few sentences to judge.
-	cv := cadenceCV(prose)
-	cadence := 0.0
-	if cv >= 0 {
-		cadence = math.Max(0, math.Min(1, (0.5-cv)/0.5)) * 20
+	// Weighted tell density is the main signal. Each weighted tell per hundred words adds
+	// eight points, capped so a dense page saturates near eighty.
+	density := 0.0
+	if words > 0 {
+		density = math.Min(80, weighted/float64(words)*100*8)
 	}
 
 	// A hedge-heavy register, the noncommittal "may generally" voice, is a structural tell a
 	// word list misses. Hedge density adds up to ten points.
 	hedging := math.Min(10, per100(countHedges(prose), words)*2.5)
 
-	value := int(math.Round(math.Min(100, density+cadence+hedging)))
+	value := int(math.Round(math.Min(100, density+hedging)))
 	return Score{
 		Value:       value,
 		Tells:       tells,
 		Words:       words,
 		TellsPer100: math.Round(per100(tells, words)*100) / 100,
-		CadenceCV:   cadenceReport(cv),
+		CadenceCV:   cadenceReport(cadenceCV(prose)),
 		Density:     int(math.Round(density)),
-		Cadence:     int(math.Round(cadence)),
 		Hedging:     int(math.Round(hedging)),
 	}
+}
+
+// weightTells sums the score weight of every finding. Structural tells count double, and
+// structural findings whose spans overlap count once, so two patterns firing on the same
+// sentence do not quadruple its weight. Typography swaps and house-style cleanups count
+// nothing.
+func weightTells(findings []Finding) float64 {
+	total := 0.0
+	structStart, structEnd := -1, -1
+	for _, f := range findings {
+		if strings.HasPrefix(f.Rule, "structural:") {
+			start, end := f.Offset, f.Offset+len(f.Match)
+			if structStart >= 0 && start < structEnd {
+				if end > structEnd {
+					structEnd = end
+				}
+				continue
+			}
+			structStart, structEnd = start, end
+			total += 2
+			continue
+		}
+		total += tellWeight(f.Rule)
+	}
+	return total
+}
+
+// tellWeight returns the score weight of one non-structural finding by its rule name.
+func tellWeight(rule string) float64 {
+	switch {
+	case strings.HasPrefix(rule, "char:"):
+		if weightedChars[rule] {
+			return 1
+		}
+		return 0
+	case tidyRuleNames[rule]:
+		return 0
+	}
+	return 1
 }
 
 // per100 returns n per hundred of d, or 0 when d is zero.
@@ -103,9 +153,14 @@ func per100(n, d int) float64 {
 }
 
 // countHedges counts hedge words in text, matched case-insensitively on word boundaries.
+// An all-caps word is skipped: MAY and SHOULD in a spec are RFC 2119 normative keywords,
+// the opposite of hedging.
 func countHedges(text string) int {
 	n := 0
 	for _, w := range strings.FieldsFunc(text, func(r rune) bool { return !unicode.IsLetter(r) }) {
+		if len(w) > 1 && w == strings.ToUpper(w) {
+			continue
+		}
 		if hedges[strings.ToLower(w)] {
 			n++
 		}
