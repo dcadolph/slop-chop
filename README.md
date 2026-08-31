@@ -278,9 +278,12 @@ with `--profile`, or drop a `.slop-chop.json` in the directory you run from and 
 picked up on its own. With neither, a built-in default runs.
 
 Presets are curated packs you overlay with `--preset`. The built-in packs are `plain`,
-`corporate`, `academic`, and `marketing`. `--preset plain` turns corporate phrasing into
-plain English on top of whatever profile you already have, and the others target the stock
-phrasing of their own worlds. Overlay more than one with a comma: `--preset corporate,plain`.
+`corporate`, `academic`, `marketing`, `no-dashes`, and `typography`. `--preset plain`
+turns corporate phrasing into plain English on top of whatever profile you already have,
+and the others target the stock phrasing of their own worlds. The last two set dash
+policy: `no-dashes` converts every dash posing as an em-dash to a comma, and `typography`
+keeps typeset dashes, curly quotes, and ellipses for text where they are deliberate.
+Overlay more than one with a comma: `--preset corporate,plain`.
 
 [docs/PROFILE.md](docs/PROFILE.md) is the full reference: every field, the presets, the
 spelling dialects, the allow list, and the inline ignore directives.

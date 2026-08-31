@@ -272,18 +272,27 @@ any entry it also sets, so a preset never overwrites a decision you made.
 
 The packs that ship:
 
-| Preset      | What it adds                                                                  |
-| ----------- | ----------------------------------------------------------------------------- |
-| `academic`  | Swaps for the padded verbs papers lean on, like `utilize` and `demonstrate`.  |
-| `cleaver`   | Rewrites for the buzzwords the default profile only flags: `leverage` to `use`, `robust` to `solid`, `meticulously` to `carefully`, and dozens more. The strongest cut. |
-| `corporate` | A corporate-to-plain phrase and word map, plus a jargon blacklist.            |
-| `marketing` | Swaps for launch-copy words like `bespoke` and `curated`.                     |
-| `plain`     | A general jargon-to-plain map for everyday prose.                             |
+| Preset       | What it adds                                                                  |
+| ------------ | ----------------------------------------------------------------------------- |
+| `academic`   | Swaps for the padded verbs papers lean on, like `utilize` and `demonstrate`.  |
+| `cleaver`    | Rewrites for the buzzwords the default profile only flags: `leverage` to `use`, `robust` to `solid`, `meticulously` to `carefully`, and dozens more. The strongest cut. |
+| `corporate`  | A corporate-to-plain phrase and word map, plus a jargon blacklist.            |
+| `marketing`  | Swaps for launch-copy words like `bespoke` and `curated`.                     |
+| `no-dashes`  | Converts every dash standing in for an em-dash to a comma: ` - `, ` -- `, and the typed `word--word`. Compound words keep their hyphens. |
+| `plain`      | A general jargon-to-plain map for everyday prose.                             |
+| `typography` | Keeps typeset characters as they are: em- and en-dashes, curly quotes, and ellipses stay while the word, phrase, and structure rules still run. For published or professionally typeset text. |
 
 The default profile flags words like `leverage` and `robust` but leaves them in place,
 since the right swap depends on context. `cleaver` takes a position on each one and
 rewrites it. With `cleaver`, `we leverage robust workflows` comes back as `we use solid
 workflows`. The web app at [slop-chop.com](https://slop-chop.com/) ships with `cleaver` on.
+
+The dash presets are the two ends of one dial. The default already turns an em-dash into
+a comma and flags the spaced hyphen imitating one. `no-dashes` goes further and rewrites
+every imitation too. `typography` goes the other way for text whose dashes and curly
+quotes are deliberate typesetting, not model output. The same dial is available piecemeal:
+put a character in your profile's `allow` list to keep it, or add your own `regexReplace`
+to convert a form the presets do not cover.
 
 ## Ignore directives
 
