@@ -11,7 +11,9 @@ import (
 // heavy slop. It sums named signals: the weighted density of rule tells and how
 // hedge-heavy the register is. Typography normalization and house-style cleanups are
 // reported as findings but carry no score weight, so a professionally typeset human page
-// never reads as slop for its curly quotes.
+// never reads as slop for its curly quotes. Repeats of one rule count with halving
+// weight, so a poet's em-dashes or a writer's pet word read as a habit, while the same
+// density spread across distinct tells reads as a machine.
 type Score struct {
 	// Value is the 0 to 100 score, the capped sum of the signals below.
 	Value int `json:"value"`
@@ -113,10 +115,14 @@ func (s *Sanitizer) Score(text string) Score {
 }
 
 // weightTells sums the score weight of every finding. Structural findings whose spans
-// overlap count once, so two patterns firing on the same sentence do not double up.
+// overlap count once, so two patterns firing on the same sentence do not double up. A
+// rule firing again counts half of its previous occurrence: machine writing shows many
+// different tells, so the twelfth em-dash in a poem or a writer's one pet buzzword
+// repeated is weak evidence, while the same total from distinct tells keeps full weight.
 func (s *Sanitizer) weightTells(findings []Finding) float64 {
 	total := 0.0
 	structStart, structEnd := -1, -1
+	seen := make(map[string]float64, len(findings))
 	for _, f := range findings {
 		if strings.HasPrefix(f.Rule, "structural:") {
 			start, end := f.Offset, f.Offset+len(f.Match)
@@ -128,7 +134,12 @@ func (s *Sanitizer) weightTells(findings []Finding) float64 {
 			}
 			structStart, structEnd = start, end
 		}
-		total += s.tellWeight(f.Rule)
+		w := s.tellWeight(f.Rule)
+		if prev, ok := seen[f.Rule]; ok {
+			w = prev / 2
+		}
+		seen[f.Rule] = w
+		total += w
 	}
 	return total
 }

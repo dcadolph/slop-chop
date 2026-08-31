@@ -230,6 +230,11 @@ The profile above says em-dashes are no evidence of machine writing in this proj
 buzzwords count half again as much as usual, and `delve` counts half. Set a class to `0`
 to take a whole kind of finding out of the score without silencing its findings.
 
+Repeats of one rule always decay: the second occurrence counts half the first, the third
+half of that, and so on. Machine writing shows many different tells at once, so a dozen
+em-dashes in a poem or one pet buzzword repeated is a habit, not a bot. The weight you
+set is the starting weight of that decay.
+
 ## dialect
 
 Enforces a spelling variant. `"american"` flags British spellings and rewrites them,
