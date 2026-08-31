@@ -441,6 +441,8 @@ Adds 12 buzzwords: `best practice` `core competency` `deep dive` `double-click` 
 
 Adds 16 buzzwords: `effortless` `game-changer` `guru` `hassle-free` `hidden gem` `level up` `must-have` `ninja` `no-brainer` `one-stop shop` `power user` `rockstar` `second to none` `secret weapon` `unmatched` `unrivaled`
 
+### no-dashes
+
 ### plain
 
 #### Word swaps (24)
@@ -497,4 +499,8 @@ Adds 16 buzzwords: `effortless` `game-changer` `guru` `hassle-free` `hidden gem`
 | `with regard to` | `about` |
 
 Adds 25 buzzwords: `actionable` `bandwidth` `best practice` `boil the ocean` `circle back` `core competency` `deep dive` `deliverable` `deliverables` `double-click` `ideate` `learnings` `low-hanging fruit` `mission-critical` `move the needle` `north star` `operationalize` `paradigm` `synergies` `synergy` `table stakes` `thought leadership` `touch base` `value-add` `win-win`
+
+### typography
+
+Allows 7 words: `–` `—` `‘` `’` `“` `”` `…`
 

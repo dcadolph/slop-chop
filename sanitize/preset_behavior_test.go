@@ -102,3 +102,58 @@ func TestCleaverCleanup(t *testing.T) {
 		})
 	}
 }
+
+// TestTypographyPreset checks that the typography preset keeps typeset characters, the
+// em-dash included, while the word and phrase rules still clean the prose around them.
+func TestTypographyPreset(t *testing.T) {
+	t.Parallel()
+	p, err := ApplyPresets(DefaultProfile(), "typography")
+	if err != nil {
+		t.Fatalf("ApplyPresets: %v", err)
+	}
+	s, err := New(p)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	in := "In summary, the plan—which shipped—works. “Well,” she said…"
+	got, _ := s.Fix(in)
+	want := "The plan—which shipped—works. “Well,” she said…"
+	if got != want {
+		t.Errorf("Fix = %q, want %q", got, want)
+	}
+}
+
+// TestNoDashesPreset checks that the no-dashes preset converts spaced hyphens, spaced
+// double hyphens, and typed double hyphens to commas, while compound words keep theirs.
+func TestNoDashesPreset(t *testing.T) {
+	t.Parallel()
+	p, err := ApplyPresets(DefaultProfile(), "no-dashes")
+	if err != nil {
+		t.Fatalf("ApplyPresets: %v", err)
+	}
+	s, err := New(p)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	tests := []struct {
+		In   string
+		Want string
+	}{{ // Test 0: A spaced hyphen becomes a comma.
+		In: "The build is quick - a relief for everyone.", Want: "The build is quick, a relief for everyone.",
+	}, { // Test 1: A spaced double hyphen becomes a comma.
+		In: "The plan -- which shipped -- works.", Want: "The plan, which shipped, works.",
+	}, { // Test 2: A typed double hyphen becomes a comma.
+		In: "The plan--which shipped--works.", Want: "The plan, which shipped, works.",
+	}, { // Test 3: A compound word keeps its hyphen.
+		In: "A well-known so-called shortcut.", Want: "A well-known so-called shortcut.",
+	}}
+	for testNum, test := range tests {
+		t.Run(fmt.Sprintf("test %d", testNum), func(t *testing.T) {
+			t.Parallel()
+			got, _ := s.Fix(test.In)
+			if got != test.Want {
+				t.Errorf("Fix(%q) = %q, want %q", test.In, got, test.Want)
+			}
+		})
+	}
+}
