@@ -164,3 +164,23 @@ func TestScoreWeights(t *testing.T) {
 		t.Errorf("word:delve weight 0 density = %d, want 0 (%+v)", withDelve.Density, withDelve)
 	}
 }
+
+// TestScoreRepetitionDecay checks that repeats of one rule count with halving weight
+// while the same number of distinct tells keeps full weight, so a repeated habit scores
+// below diverse slop of equal density.
+func TestScoreRepetitionDecay(t *testing.T) {
+	t.Parallel()
+	s, err := New(DefaultProfile())
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	filler := " The road ran west between low fences and the light held until supper."
+	repeated := s.Score("They delve and delve and delve and delve into it." + strings.Repeat(filler, 3))
+	diverse := s.Score("They delve into robust, seamless, comprehensive work." + strings.Repeat(filler, 3))
+	if repeated.Tells != 4 || diverse.Tells != 4 {
+		t.Fatalf("tells = %d and %d, want 4 and 4 (%+v / %+v)", repeated.Tells, diverse.Tells, repeated, diverse)
+	}
+	if repeated.Density >= diverse.Density {
+		t.Errorf("repeated density %d not below diverse density %d", repeated.Density, diverse.Density)
+	}
+}
