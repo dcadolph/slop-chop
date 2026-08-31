@@ -20,6 +20,7 @@ profile, see [Your voice](VOICE.md).
 - [blockWords](#blockwords)
 - [flagPatterns](#flagpatterns)
 - [allow](#allow)
+- [scoreWeights](#scoreweights)
 - [dialect](#dialect)
 - [collapseSpaces and splitSemicolons](#collapsespaces-and-splitsemicolons)
 - [tone](#tone)
@@ -64,6 +65,7 @@ key both set, so a preset adds without overwriting what you wrote. See
 | `blockWords`      | array of strings    | no       | Flag a word or term but leave it in place.    |
 | `flagPatterns`    | object              | no       | Flag a structural tell by regex, no rewrite.  |
 | `allow`           | array of strings    | n/a      | Exempt a word from every rule.                |
+| `scoreWeights`    | object              | n/a      | Tune how much each rule adds to the score.    |
 | `dialect`         | string              | yes      | Enforce American or British spelling.         |
 | `collapseSpaces`  | boolean             | yes      | Fold repeated spaces and tidy punctuation.    |
 | `splitSemicolons` | boolean             | yes      | Turn a joining semicolon into two sentences.  |
@@ -203,6 +205,30 @@ raised it.
 
 The pair above is contrived on purpose to show the shape. In practice you would allow a
 word the default profile flags but that you have a reason to keep in one project.
+
+## scoreWeights
+
+How much a finding adds to the score's tell density. A key is an exact rule name, like
+`char:—` or `word:robust`, or a rule class, the part before the colon: `word`, `phrase`,
+`structural`, `char`, `regex`, or `drop`. The cleanup rules with no colon in their name
+share the class `tidy`. An exact name wins over its class, and both win over the built-in
+defaults: structural tells count 2, typography swaps and cleanups count 0, and everything
+else counts 1. Findings themselves never change, and neither does what `fix` rewrites.
+Only the score moves.
+
+```json
+{
+  "scoreWeights": {
+    "char:—": 0,
+    "word": 1.5,
+    "word:delve": 0.5
+  }
+}
+```
+
+The profile above says em-dashes are no evidence of machine writing in this project,
+buzzwords count half again as much as usual, and `delve` counts half. Set a class to `0`
+to take a whole kind of finding out of the score without silencing its findings.
 
 ## dialect
 
