@@ -80,8 +80,10 @@ func TestTellsMarkdown(t *testing.T) {
 			}
 		})
 	}
-	if strings.Contains(stdout, "\n## Word swaps") {
-		t.Error("default profile has no word swaps, section should be absent at top level")
+	// The default profile carries the ordinal-adverb swaps, so the section must render
+	// with them in it.
+	if !strings.Contains(stdout, "\n## Word swaps") || !strings.Contains(stdout, "`firstly`") {
+		t.Error("default profile's ordinal word swaps missing from the word swaps section")
 	}
 }
 

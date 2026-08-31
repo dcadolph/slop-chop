@@ -150,3 +150,35 @@ func assertFloor(t *testing.T, name string, got, floor float64) {
 		t.Errorf("%s regressed: %.2f is below the floor of %.2f", name, got, floor)
 	}
 }
+
+// BenchmarkScoreLarge measures throughput on a megabyte of mixed prose, the guard for
+// pathological growth on big inputs.
+func BenchmarkScoreLarge(b *testing.B) {
+	s, err := New(DefaultProfile())
+	if err != nil {
+		b.Fatalf("New: %v", err)
+	}
+	lines := []string{
+		"In summary, the comprehensive plan leverages robust synergy.",
+		"The mail arrived late and nobody minded much at all.",
+		"It is worth noting that we delve into the details.",
+		"Rain fell through the afternoon and the roads emptied.",
+		"The system is not just fast, it's seamless.",
+	}
+	var sb strings.Builder
+	for sb.Len() < 1<<20 {
+		for i, l := range lines {
+			sb.WriteString(l)
+			sb.WriteString(" ")
+			if i%3 == 2 {
+				sb.WriteString("\n\n")
+			}
+		}
+	}
+	text := sb.String()
+	b.SetBytes(int64(len(text)))
+	b.ResetTimer()
+	for range b.N {
+		s.Score(text)
+	}
+}

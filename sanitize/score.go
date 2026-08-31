@@ -76,7 +76,7 @@ var weightedChars = map[string]bool{
 func (s *Sanitizer) Score(text string) Score {
 	findings := s.Check(text)
 	tells := len(findings)
-	weighted := weightTells(findings)
+	weighted := s.weightTells(findings)
 	// Measure the densities against prose only. Code is blanked so a large fenced block
 	// cannot dilute the word count the signals are weighed against.
 	prose := maskCode(text)
@@ -105,11 +105,9 @@ func (s *Sanitizer) Score(text string) Score {
 	}
 }
 
-// weightTells sums the score weight of every finding. Structural tells count double, and
-// structural findings whose spans overlap count once, so two patterns firing on the same
-// sentence do not quadruple its weight. Typography swaps and house-style cleanups count
-// nothing.
-func weightTells(findings []Finding) float64 {
+// weightTells sums the score weight of every finding. Structural findings whose spans
+// overlap count once, so two patterns firing on the same sentence do not double up.
+func (s *Sanitizer) weightTells(findings []Finding) float64 {
 	total := 0.0
 	structStart, structEnd := -1, -1
 	for _, f := range findings {
@@ -122,17 +120,46 @@ func weightTells(findings []Finding) float64 {
 				continue
 			}
 			structStart, structEnd = start, end
-			total += 2
-			continue
 		}
-		total += tellWeight(f.Rule)
+		total += s.tellWeight(f.Rule)
 	}
 	return total
 }
 
-// tellWeight returns the score weight of one non-structural finding by its rule name.
-func tellWeight(rule string) float64 {
+// tellWeight resolves the score weight for one finding by its rule name. An exact entry
+// in the profile's scoreWeights wins, then the rule's class, then the built-in default:
+// structural tells count double, since a stock sentence shape is stronger evidence than
+// one word, typography swaps and house-style cleanups count nothing, and everything else
+// counts one.
+func (s *Sanitizer) tellWeight(rule string) float64 {
+	if w, ok := s.weights[rule]; ok {
+		return w
+	}
+	if class, ok := ruleClass(rule); ok {
+		if w, ok := s.weights[class]; ok {
+			return w
+		}
+	}
+	return defaultTellWeight(rule)
+}
+
+// ruleClass returns the class a rule name belongs to for weight lookup: the part before
+// the colon, or "tidy" for the colonless cleanup rules.
+func ruleClass(rule string) (string, bool) {
+	if class, _, ok := strings.Cut(rule, ":"); ok {
+		return class, true
+	}
+	if tidyRuleNames[rule] {
+		return "tidy", true
+	}
+	return "", false
+}
+
+// defaultTellWeight returns the built-in score weight for a rule name.
+func defaultTellWeight(rule string) float64 {
 	switch {
+	case strings.HasPrefix(rule, "structural:"):
+		return 2
 	case strings.HasPrefix(rule, "char:"):
 		if weightedChars[rule] {
 			return 1

@@ -79,7 +79,6 @@ func TestFlagPatterns(t *testing.T) {
 		{Name: "not x thats y across stop", In: "That's not a tooling problem. That's a visibility problem.", WantRule: "structural:its-not-x-its-y", WantHit: true},
 		{Name: "triad fragment", In: "The system stayed up. Simple, boring, reliable.", WantRule: "structural:triad-fragment", WantHit: true},
 		{Name: "triad with and", In: "The system stayed up. Simple, boring, and reliable.", WantRule: "structural:triad-fragment", WantHit: false},
-		{Name: "ordinal enumeration", In: "Firstly, install the binary.", WantRule: "structural:ordinal-enumeration", WantHit: true},
 		{Name: "as an ai", In: "As an AI language model, I cannot browse the web.", WantRule: "structural:as-an-ai", WantHit: true},
 		{Name: "not just a but", In: "It's not just a library but a whole platform.", WantRule: "structural:not-just-a-but", WantHit: true},
 		{Name: "not just for fun", In: "She plays not just for fun but because it pays.", WantRule: "structural:not-just-a-but", WantHit: false},

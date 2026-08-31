@@ -132,3 +132,18 @@ func TestDedupeInterleaved(t *testing.T) {
 		}
 	}
 }
+
+// TestOrdinalAdverbs checks that the essay-skeleton ordinals rewrite to their bare forms
+// with case carried over, since that fix is mechanical.
+func TestOrdinalAdverbs(t *testing.T) {
+	t.Parallel()
+	s, err := New(DefaultProfile())
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	got, _ := s.Fix("Firstly, install it. Secondly, run it. Lastly, read the report.")
+	want := "First, install it. Second, run it. Last, read the report."
+	if got != want {
+		t.Errorf("Fix = %q, want %q", got, want)
+	}
+}

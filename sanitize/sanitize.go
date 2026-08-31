@@ -18,8 +18,10 @@ package sanitize
 import (
 	"cmp"
 	"regexp"
+	"runtime"
 	"slices"
 	"strings"
+	"sync"
 	"unicode/utf8"
 )
 
@@ -31,6 +33,9 @@ type Sanitizer struct {
 	// every rule, so a term of art like "robust regression" keeps its word even when the
 	// bare word is a tell. It is nil when the profile has no multi-word allow entries.
 	allowPhrases *regexp.Regexp
+	// weights are the profile's score weight overrides, or nil for the defaults. It
+	// mirrors Profile.ScoreWeights.
+	weights map[string]float64
 	// protectQuotes leaves double-quoted spans unedited when set, so a quoted source is not
 	// reworded. It mirrors Profile.ProtectQuotes.
 	protectQuotes bool
@@ -46,18 +51,30 @@ func New(p Profile) (*Sanitizer, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Sanitizer{rules: rules, allowPhrases: phrases, protectQuotes: p.ProtectQuotes}, nil
+	return &Sanitizer{
+		rules:         rules,
+		allowPhrases:  phrases,
+		weights:       p.ScoreWeights,
+		protectQuotes: p.ProtectQuotes,
+	}, nil
 }
+
+// parallelCheckBytes is the input size above which Check scans its rules concurrently.
+// Below it, goroutine overhead outweighs the scan and the serial path wins.
+const parallelCheckBytes = 1 << 16
 
 // Check reports every rule match in text without changing it. Findings are computed
 // against the original text, so their positions are exact, and they come back in text
 // order rather than rule order. Structural rules also see a copy with the soft line wraps
-// joined, so a tell a hard wrap split across two lines is still reported.
+// joined, so a tell a hard wrap split across two lines is still reported. On large inputs
+// the rules scan concurrently; each rule's scan is read-only, so the only coordination is
+// collecting the per-rule findings.
 func (s *Sanitizer) Check(text string) []Finding {
-	var findings []Finding
 	protected := s.protectedRanges(text)
 	unwrapped := unwrapProse(text)
-	for ri, r := range s.rules {
+	perRule := make([][]Finding, len(s.rules))
+	scan := func(ri int) {
+		r := s.rules[ri]
 		for _, loc := range r.matches(text, unwrapped, protected) {
 			match := text[loc[0]:loc[1]]
 			var repl *string
@@ -65,7 +82,7 @@ func (s *Sanitizer) Check(text string) []Finding {
 				v := r.replacement(text, loc)
 				repl = &v
 			}
-			findings = append(findings, Finding{
+			perRule[ri] = append(perRule[ri], Finding{
 				Rule:        r.findingName(match),
 				Match:       match,
 				Replacement: repl,
@@ -73,6 +90,28 @@ func (s *Sanitizer) Check(text string) []Finding {
 				order:       ri,
 			})
 		}
+	}
+	if len(text) >= parallelCheckBytes {
+		sem := make(chan struct{}, runtime.GOMAXPROCS(0))
+		var wg sync.WaitGroup
+		for ri := range s.rules {
+			sem <- struct{}{}
+			wg.Add(1)
+			go func(ri int) {
+				defer wg.Done()
+				defer func() { <-sem }()
+				scan(ri)
+			}(ri)
+		}
+		wg.Wait()
+	} else {
+		for ri := range s.rules {
+			scan(ri)
+		}
+	}
+	var findings []Finding
+	for _, fs := range perRule {
+		findings = append(findings, fs...)
 	}
 	findings = append(findings, anaphoraFindings(text, protected)...)
 	slices.SortFunc(findings, func(a, b Finding) int {

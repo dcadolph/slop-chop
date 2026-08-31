@@ -115,3 +115,52 @@ func TestScoreExcludesCode(t *testing.T) {
 		t.Errorf("code padding diluted the score: bare %d, padded %d", bare.Value, padded.Value)
 	}
 }
+
+// TestScoreWeights checks that a profile's scoreWeights overrides move the score: an
+// exact rule name silences one tell, a class entry rescales a whole kind, and an exact
+// name wins over its class.
+func TestScoreWeights(t *testing.T) {
+	t.Parallel()
+
+	// Test 0: zeroing the em-dash by exact name drops its density to nothing.
+	quiet, err := New(Profile{
+		CharReplace:  map[string]string{"—": ", "},
+		ScoreWeights: map[string]float64{"char:—": 0},
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if got := quiet.Score("The plan—which shipped—works fine for us all today."); got.Density != 0 {
+		t.Errorf("silenced em-dash density = %d, want 0 (%+v)", got.Density, got)
+	}
+
+	// Test 1: a class entry rescales every rule in the class.
+	loud, err := New(Profile{
+		BlockWords:   []string{"robust"},
+		ScoreWeights: map[string]float64{"word": 3},
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	base, err := New(Profile{BlockWords: []string{"robust"}})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	text := "A robust plan needs more than words to hold up in the field."
+	if l, b := loud.Score(text).Density, base.Score(text).Density; l <= b {
+		t.Errorf("word weight 3 density = %d, want above the default %d", l, b)
+	}
+
+	// Test 2: an exact name wins over its class.
+	mixed, err := New(Profile{
+		BlockWords:   []string{"robust", "delve"},
+		ScoreWeights: map[string]float64{"word": 2, "word:delve": 0},
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	withDelve := mixed.Score("They delve into the plan before lunch arrives for everyone.")
+	if withDelve.Density != 0 {
+		t.Errorf("word:delve weight 0 density = %d, want 0 (%+v)", withDelve.Density, withDelve)
+	}
+}

@@ -86,6 +86,18 @@ comma and space, and when it opened the sentence the next word gets its capital 
 | `with that said,` | dropped |
 | `without further ado,` | dropped |
 
+## Word swaps (5)
+
+Whole words rewritten with the original casing kept.
+
+| From | To |
+| ---- | -- |
+| `firstly` | `first` |
+| `fourthly` | `fourth` |
+| `lastly` | `last` |
+| `secondly` | `second` |
+| `thirdly` | `third` |
+
 ## Buzzwords (161)
 
 Flagged wherever they appear, never rewritten, because the right replacement depends
@@ -94,7 +106,7 @@ that done for you.
 
 `a beacon of` `a marathon, not a sprint` `a world of possibilities` `actionable insights` `at the forefront` `bespoke` `best of both worlds` `best-in-class` `blast radius` `blazing fast` `blazingly fast` `boast` `boasted` `boasting` `boasts` `breath of fresh air` `bustling` `changing landscape` `competitive landscape` `comprehensive` `crucial` `current landscape` `cutting edge` `cutting-edge` `daunting` `deep dive` `delve` `delved` `delves` `delving` `digital landscape` `dive deeper` `double-edged sword` `effortless` `effortlessly` `elegant` `elevate` `elevates` `elevating` `embark` `embarked` `embarking` `embarks` `empower` `empowering` `empowers` `ever-changing` `ever-evolving` `evolving landscape` `facilitate` `facilitates` `facilitating` `fascinating` `fast-paced` `foster` `fostering` `fosters` `frictionless` `future-proof` `future-proofing` `future-proofs` `game changer` `game changers` `game-changer` `game-changers` `game-changing` `groundbreaking` `harness the power` `has something for everyone` `holistic` `in the realm of` `in the world of` `innovative` `invaluable` `leverage` `leveraged` `leverages` `leveraging` `look no further` `meticulous` `meticulously` `more than ever` `multifaceted` `must-see` `must-visit` `myriad` `navigate the complexities` `navigating the complexities` `nestled` `opens up a world of` `paradigm shift` `pave the way` `paved the way` `paves the way` `paving the way` `peace of mind` `perfect blend` `pivotal` `plethora` `powerful` `revolutionize` `revolutionized` `revolutionizes` `revolutionizing` `robust` `scratching the surface` `seamless` `seamlessly` `shed light on` `sheds light on` `showcase` `showcased` `showcases` `showcasing` `speak for themselves` `stands as a` `stark contrast` `stark reality` `stark reminder` `state-of-the-art` `streamline` `streamlined` `streamlines` `streamlining` `supercharge` `supercharged` `synergies` `synergy` `tailored to your` `tapestry` `testament to` `the intersection of` `the possibilities are endless` `the proof is in the pudding` `the results speak` `the writing is on the wall` `time will tell` `tip of the iceberg` `to the next level` `top-notch` `transformative` `treasure trove` `unleash` `unleashed` `unleashes` `unleashing` `unlock the full potential` `unlock the potential` `unparalleled` `unprecedented` `utilize` `utilized` `utilizes` `utilizing` `vibrant` `we've got you covered` `when it comes to` `where the rubber meets the road` `whopping` `world-class` `you're in good hands`
 
-## Structural patterns (48)
+## Structural patterns (47)
 
 Sentence shapes a word list cannot catch, like the setup-and-reveal cadence. Flag
 only: the fix depends on the whole sentence, so it is left to you or the rewrite pass.
@@ -131,7 +143,6 @@ only: the fix depends on the whole sentence, so it is left to you or the rewrite
 | `not-just-but-also` | `(?i)\bnot (just\|only)\b[^.!?\n]{1,60}\bbut\b[^.!?\n]{0,25}\balso\b` |
 | `not-just-sentence-split` | `(?i)\bnot just\b[^.!?\n]{1,60}\.[ \t]+(?:it'?s\|you'?re\|we'?re\|they'?re\|this is\|that'?s)\b` |
 | `not-only-inversion` | `(?i)\bnot only (?:does\|do\|did\|is\|are\|was\|were\|can\|could\|will\|would)\b` |
-| `ordinal-enumeration` | `(?i)\b(?:firstly\|secondly\|thirdly\|fourthly\|lastly),` |
 | `plays-a-role` | `(?i)\bplay(?:s\|ed\|ing)? an? (?:crucial\|key\|vital\|pivotal\|central\|significant\|essential) role\b` |
 | `question-isnt-is` | `(?i)\bthe (?:question\|point\|problem\|issue\|goal\|answer) isn'?t\b[^.!?\n]{1,60}\.\s+the (?:question\|point\|problem\|issue\|goal\|answer) is\b` |
 | `reader-instruction` | `(?i)\b(?:it'?s important to (?:understand\|remember\|realize)\|one thing to keep in mind\|the (?:one )?thing to remember)\b` |
