@@ -159,7 +159,8 @@ func TestProtectQuotes(t *testing.T) {
 }
 
 // TestProperNounGuard checks that a Title-case word mid-sentence, like a brand, is left
-// alone, while the same word at a sentence start and the lower-case form are still deslopped.
+// alone, that a mid-sentence use proves the word is a name so its sentence-start uses are
+// spared too, and that the lower-case form is still deslopped.
 func TestProperNounGuard(t *testing.T) {
 	t.Parallel()
 	p, err := ApplyPresets(DefaultProfile(), "cleaver")
@@ -170,9 +171,19 @@ func TestProperNounGuard(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
+
+	// Test 0: "on Seamless" mid-sentence proves the name, so "Seamless helps." keeps it,
+	// while the lower-case "seamless tools" is still swapped.
 	got, _ := s.Fix("I ordered on Seamless. Ask Delve about it. Seamless helps. We use seamless tools.")
-	want := "I ordered on Seamless. Ask Delve about it. Smooth helps. We use smooth tools."
+	want := "I ordered on Seamless. Ask Delve about it. Seamless helps. We use smooth tools."
 	if got != want {
+		t.Errorf("Fix = %q, want %q", got, want)
+	}
+
+	// Test 1: with no mid-sentence use anywhere, a sentence-start Title-case word is
+	// ordinary capitalization and is still swapped.
+	got, _ = s.Fix("Seamless updates ship weekly.")
+	if want := "Smooth updates ship weekly."; got != want {
 		t.Errorf("Fix = %q, want %q", got, want)
 	}
 }
