@@ -177,10 +177,13 @@ jobs:
           fi
           git commit -m "Update to ${VER}"
           git push
-          GH_TOKEN="${PLUGIN_TOKEN}" gh release create "${VER}" \
-            main.js manifest.json \
-            --title "${VER}" \
-            --notes "Ships the slop-chop ${VER} engine. See https://github.com/dcadolph/slop-chop/releases/tag/${TAG}."
+          # Push the tag and stop. The plugin repo's own workflow builds from the pin
+          # written above, gates the bundle, attests its provenance, and creates the
+          # release. Creating the release here instead would win the race and publish
+          # these unattested bytes, leaving that workflow to fail on a tag it cannot
+          # reuse.
+          git tag "${VER}"
+          git push origin "${VER}"
 
       # OIDC publishing needs npm 11.5.1 or newer, which is ahead of the npm the runner
       # ships with its default Node.
