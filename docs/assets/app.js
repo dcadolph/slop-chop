@@ -713,6 +713,12 @@
 
     const MAX_ROWS = 400;
 
+    /* Long matches and rule names are cut for the list so every finding stays one tidy
+       pair of rows on a phone. The full text rides along in the title attribute. */
+    function clip(s, n) {
+      return s.length > n ? s.slice(0, n - 1) + "…" : s;
+    }
+
     function renderFindings(findings) {
       findingsList.textContent = "";
       if (!findings.length) {
@@ -728,25 +734,36 @@
         pos.textContent = f.line + ":" + f.col;
         const rule = document.createElement("span");
         rule.className = "sc-rule";
-        rule.textContent = f.rule;
+        rule.textContent = clip(f.rule, 44);
+        rule.title = f.rule;
         const match = document.createElement("code");
         match.className = "sc-match";
-        match.textContent = f.match;
-        li.append(pos, rule, match);
+        match.textContent = clip(f.match, 36);
+        match.title = f.match;
+        /* Where and what it is on one row, the change itself on another, so a narrow
+           screen never strands the arrow or the replacement on a line of their own. */
+        const head = document.createElement("span");
+        head.className = "sc-find-head";
+        head.append(pos, rule);
+        const change = document.createElement("span");
+        change.className = "sc-find-change";
+        change.append(match);
         if (f.replacement !== undefined && f.replacement !== null) {
           const arrow = document.createElement("span");
           arrow.className = "sc-arrow";
           arrow.textContent = "→";
           const repl = document.createElement("code");
           repl.className = "sc-repl";
-          repl.textContent = f.replacement === "" ? "(removed)" : f.replacement;
-          li.append(arrow, repl);
+          repl.textContent = f.replacement === "" ? "(removed)" : clip(f.replacement, 36);
+          repl.title = f.replacement;
+          change.append(arrow, repl);
         } else {
           const flag = document.createElement("span");
           flag.className = "sc-flag";
           flag.textContent = "flagged";
-          li.append(flag);
+          change.append(flag);
         }
+        li.append(head, change);
         findingsList.appendChild(li);
       }
       if (findings.length > MAX_ROWS) {

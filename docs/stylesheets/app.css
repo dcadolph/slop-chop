@@ -158,13 +158,16 @@ body:has(#sc-app) .md-grid {
   color: #b3261e;
 }
 
-/* Buttons share one small, quiet look. */
+/* Buttons share one small, quiet look. The appearance reset keeps iOS Safari from
+   drawing its native control chrome over the border and label set here. */
 .sc-app button {
   font: inherit;
   font-size: 0.72rem;
   font-weight: 600;
   color: var(--md-default-fg-color);
   background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
   border: 1px solid var(--md-default-fg-color--lighter);
   border-radius: 0.4rem;
   padding: 0.22rem 0.6rem;
@@ -187,10 +190,14 @@ body:has(#sc-app) .md-grid {
   color: var(--md-default-fg-color, currentColor);
 }
 
+/* The icon is drawn with filled bars rather than a stroked path: iOS Safari leaves a
+   stroke of currentColor unpainted inside a button, which showed the settings control as
+   an empty square on the phone while every text button rendered. */
 .sc-iconbtn svg {
   width: 1.05rem;
   height: 1.05rem;
   display: block;
+  fill: currentColor;
 }
 
 /* The two panes. */
@@ -398,9 +405,20 @@ body:has(#sc-app) .md-grid {
 .sc-findings li {
   display: flex;
   align-items: baseline;
-  gap: 0.5rem;
+  gap: 0.2rem 0.5rem;
   padding: 0.14rem 0;
   flex-wrap: wrap;
+}
+
+/* Each finding is two groups: where and what it is, then the change. Keeping them whole
+   stops a wrap from stranding the arrow or the replacement on its own line. */
+.sc-find-head,
+.sc-find-change {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  min-width: 0;
 }
 
 .sc-findings code {
@@ -408,6 +426,9 @@ body:has(#sc-app) .md-grid {
   border-radius: 0.25rem;
   padding: 0.05rem 0.35rem;
   font-size: 0.72rem;
+  /* A long match, like a whole stock phrase, wraps inside its own chip rather than
+     stretching the row. */
+  overflow-wrap: anywhere;
 }
 
 .sc-pos {
@@ -419,6 +440,7 @@ body:has(#sc-app) .md-grid {
   color: var(--md-accent-fg-color);
   font-family: var(--md-code-font, monospace);
   font-size: 0.7rem;
+  overflow-wrap: anywhere;
 }
 
 .sc-arrow {
@@ -575,5 +597,19 @@ body:has(#sc-app) .md-grid {
     right: 0.7rem;
     width: auto;
     z-index: 20;
+  }
+  /* A phone has no room for one finding on one line, so the change sits under the rule
+     that found it and a rule between rows keeps the pairs apart. */
+  .sc-findings li {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.2rem;
+    padding: 0.35rem 0;
+  }
+  .sc-findings li + li {
+    border-top: 1px solid var(--md-default-fg-color--lightest);
+  }
+  .sc-findings ul {
+    max-height: 20rem;
   }
 }
