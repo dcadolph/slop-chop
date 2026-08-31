@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
 // Profile declares what a sanitizer bans and how it rewrites. It is the user-editable
@@ -40,6 +41,14 @@ type Profile struct {
 	// Allow lists words a rule must never flag or rewrite, matched case-insensitively
 	// against the exact text a rule matched. It silences false positives.
 	Allow []string `json:"allow"`
+	// ScoreWeights tunes how much a finding adds to the score's tell density. A key is
+	// an exact rule name, like "char:—" or "word:robust", or a rule class, the part
+	// before the colon, like "word", "phrase", "structural", or "char"; cleanup rules
+	// with no colon share the class "tidy". An exact name wins over its class, and both
+	// win over the built-in defaults: structural tells count 2, typography swaps 0,
+	// cleanups 0, and everything else 1. Findings themselves are unaffected; only the
+	// score moves.
+	ScoreWeights map[string]float64 `json:"scoreWeights"`
 	// CollapseSpaces collapses runs of two or more spaces into one and removes spaces
 	// and stray commas left before closing punctuation, like the debris an em-dash swap
 	// or a dropped word leaves behind. Runs at the start of a line are indentation and
@@ -131,6 +140,16 @@ func DefaultProfile() Profile {
 			"in conclusion: ":                   "",
 			"ultimately, ":                      "",
 			"without further ado, ":             "",
+		},
+		WordReplace: map[string]string{
+			// The essay-skeleton ordinals have one mechanical fix: the bare ordinal reads
+			// the same and drops the -ly flourish, so these rewrite instead of only
+			// flagging.
+			"firstly":  "first",
+			"secondly": "second",
+			"thirdly":  "third",
+			"fourthly": "fourth",
+			"lastly":   "last",
 		},
 		BlockWords: []string{
 			"best-in-class", "blast radius", "blazing fast", "blazingly fast",
@@ -291,8 +310,6 @@ func DefaultProfile() Profile {
 			// the triad fragment models drop in for punch. A human list nearly always takes
 			// an "and" before its last item, so the bare form is the tell.
 			"triad-fragment": `(?m)(?:^|[.!?][ \t]+)\p{Lu}\p{Ll}{2,14}, \p{Ll}{2,14}, \p{Ll}{2,14}\.`,
-			// "Firstly, ... Secondly, ..." enumeration adverbs, the essay-skeleton tell.
-			"ordinal-enumeration": `(?i)\b(?:firstly|secondly|thirdly|fourthly|lastly),`,
 			// The canonical assistant self-reference.
 			"as-an-ai": `(?i)\bas an ai(?: language)? model\b`,
 			// The uncontracted "not just a library but a whole platform" form, which the
@@ -640,35 +657,24 @@ func flexPatternSpaces(pattern string) string {
 	return b.String()
 }
 
-// blockWordRule compiles every block word into one flag-only rule. Folding them into a
-// single alternation turns a full-text scan per word into one scan, and nameByMatch keeps
-// each finding named for the word it caught. Longer words sort first so a longer term wins
-// over a shorter one it contains at the same spot. It returns ok false for an empty list.
+// blockWordRule folds every block word into one flag-only rule backed by the word-start
+// scanner, so hundreds of terms cost one linear pass instead of one giant alternation.
+// nameByMatch keeps each finding named for the word it caught, and the scanner gives a
+// longer term the win over a shorter one it contains at the same spot. It returns ok
+// false for an empty list.
 func blockWordRule(words []string) (Rule, bool, error) {
-	alts := make([]string, 0, len(words))
 	for _, w := range words {
-		if w != "" {
-			alts = append(alts, w)
+		// The scanner matches bytes and cannot trip on a malformed term the way a regex
+		// compile did, so a garbage profile is rejected here instead of failing silently.
+		if !utf8.ValidString(w) {
+			return Rule{}, false, fmt.Errorf("%w: block word %q: invalid UTF-8", ErrCompile, w)
 		}
 	}
-	if len(alts) == 0 {
+	idx := newBlockIndex(words)
+	if len(idx) == 0 {
 		return Rule{}, false, nil
 	}
-	slices.SortFunc(alts, func(a, b string) int {
-		if d := len(b) - len(a); d != 0 {
-			return d
-		}
-		return strings.Compare(a, b)
-	})
-	parts := make([]string, len(alts))
-	for i, w := range alts {
-		parts[i] = `\b` + flexSpaces(regexp.QuoteMeta(w)) + `\b`
-	}
-	re, err := regexp.Compile(`(?i)(?:` + strings.Join(parts, "|") + `)`)
-	if err != nil {
-		return Rule{}, false, fmt.Errorf("%w: block words: %w", ErrCompile, err)
-	}
-	return Rule{Name: "word", re: re, rewrite: false, nameByMatch: true}, true, nil
+	return Rule{Name: "word", matchFunc: idx.scan, rewrite: false, nameByMatch: true}, true, nil
 }
 
 // endsWithWordChar reports whether s ends in an ASCII word character, so a closing \b
@@ -932,13 +938,21 @@ func notProperNoun(text string, start, end int) bool {
 	return !titleCaseMidSentence(text, match, start)
 }
 
+// properNounWindow bounds how far around a match titleCaseMidSentence looks for proof.
+// Any document a person actually writes fits inside it, so the search is effectively
+// whole-document there, while a generated multi-megabyte input stays linear instead of
+// rescanning everything for every sentence-start match.
+const properNounWindow = 1 << 16
+
 // titleCaseMidSentence reports whether match, kept in its exact casing, appears as a whole
-// word at a non-sentence-start position anywhere else in text. One such occurrence proves
-// the word is a proper noun in this document, so its sentence-start occurrences are names
-// too, like "Delve is a debugger" in a document that later says "attach Delve".
+// word at a non-sentence-start position near its occurrence at self. One such occurrence
+// proves the word is a proper noun in this document, so its sentence-start occurrences are
+// names too, like "Delve is a debugger" in a document that later says "attach Delve".
 func titleCaseMidSentence(text, match string, self int) bool {
-	for i := 0; ; {
-		j := strings.Index(text[i:], match)
+	lo := max(0, self-properNounWindow)
+	hi := min(len(text), self+properNounWindow)
+	for i := lo; ; {
+		j := strings.Index(text[i:hi], match)
 		if j < 0 {
 			return false
 		}

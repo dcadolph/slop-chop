@@ -12,8 +12,12 @@ import (
 type Rule struct {
 	// Name identifies the rule in findings.
 	Name string
-	// re is the compiled pattern the rule matches.
+	// re is the compiled pattern the rule matches. It is nil when matchFunc is set.
 	re *regexp.Regexp
+	// matchFunc scans text directly and returns match ranges in FindAll shape. It
+	// replaces re for rules whose match set is too large for one regex to scan cheaply,
+	// like the block-word list.
+	matchFunc func(text string) [][]int
 	// repl is the static replacement string when replFunc is nil.
 	repl string
 	// replFunc computes a replacement from the text and the submatch index slice of the
@@ -53,9 +57,14 @@ type Rule struct {
 // Callers with no unwrapped copy pass text itself, which costs one extra scan of a string
 // that cannot match anything the first scan missed.
 func (r Rule) matches(text, unwrapped string, protected [][2]int) [][]int {
-	locs := r.re.FindAllStringSubmatchIndex(text, -1)
-	if r.unwrap && unwrapped != text {
-		locs = mergeLocs(locs, r.re.FindAllStringSubmatchIndex(unwrapped, -1))
+	var locs [][]int
+	if r.matchFunc != nil {
+		locs = r.matchFunc(text)
+	} else {
+		locs = r.re.FindAllStringSubmatchIndex(text, -1)
+		if r.unwrap && unwrapped != text {
+			locs = mergeLocs(locs, r.re.FindAllStringSubmatchIndex(unwrapped, -1))
+		}
 	}
 	kept := locs[:0]
 	for _, loc := range locs {
@@ -112,11 +121,13 @@ func (r Rule) apply(text string, protected [][2]int) string {
 // mergeLocs folds the matches found on the unwrapped copy into those found on the original,
 // keeping the list sorted by start offset. A match that overlaps one already held is
 // dropped, so a tell a wrap split reports once rather than once per copy it was found in.
-// The originals win every overlap, since they mark the text exactly as it is written.
+// The originals win every overlap, since they mark the text exactly as it is written. Both
+// inputs arrive sorted and internally non-overlapping, the shape FindAll produces, so each
+// extra needs one binary search against base rather than a scan of everything held.
 func mergeLocs(base, extra [][]int) [][]int {
 	out := base
 	for _, loc := range extra {
-		if !locOverlaps(out, loc) {
+		if !locOverlaps(base, loc) {
 			out = append(out, loc)
 		}
 	}
@@ -124,12 +135,12 @@ func mergeLocs(base, extra [][]int) [][]int {
 	return out
 }
 
-// locOverlaps reports whether loc shares any byte with a match already in locs.
+// locOverlaps reports whether loc shares any byte with a match in locs, which must be
+// sorted by start offset and non-overlapping. Only the last range starting at or before
+// loc's end can overlap it, so a binary search finds the one candidate.
 func locOverlaps(locs [][]int, loc []int) bool {
-	for _, o := range locs {
-		if loc[0] < o[1] && o[0] < loc[1] {
-			return true
-		}
-	}
-	return false
+	i, _ := slices.BinarySearchFunc(locs, loc, func(a, b []int) int { return cmp.Compare(a[0], b[1]) })
+	// locs[i-1] is the last range with start < loc[1]; every later range starts at or
+	// past loc's end and cannot overlap.
+	return i > 0 && locs[i-1][1] > loc[0]
 }
