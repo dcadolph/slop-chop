@@ -26,7 +26,7 @@ hide:
 <div class="sc-app-actions">
 <button id="sc-score" class="sc-score" type="button" title="Click for the breakdown." aria-expanded="false" aria-controls="sc-score-pop" hidden></button>
 <span id="sc-score-after" class="sc-score sc-score-after" title="Slop score after the chop." hidden></span>
-<button id="sc-settings-btn" class="sc-iconbtn" type="button" aria-label="Settings" aria-expanded="false" aria-controls="sc-drawer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+<button id="sc-settings-btn" class="sc-iconbtn" type="button" aria-label="Settings" aria-expanded="false" aria-controls="sc-drawer"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
 <div id="sc-score-pop" class="sc-score-pop" hidden>
 <div class="sc-score-pop-head"><strong>Slop score: <span id="sc-pop-value"></span> of 100</strong></div>
 <p class="sc-score-pop-what">How much the input reads like AI wrote it. It weighs the density of tells, with sentence shapes counted double, against flat rhythm and hedging.</p>

@@ -181,6 +181,10 @@ body:has(#sc-app) .md-grid {
   display: inline-flex;
   align-items: center;
   padding: 0.3rem 0.45rem;
+  /* Buttons do not inherit text color, and the icon strokes are currentColor. Stated
+     here too so the icon survives even when the shared button rule is missing, as on a
+     phone holding a stale cached stylesheet. */
+  color: var(--md-default-fg-color, currentColor);
 }
 
 .sc-iconbtn svg {
