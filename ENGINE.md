@@ -70,6 +70,8 @@ swaps appear only when a profile lists them. See
 | Word swap           | a whole word, any casing    | rewrite     | `utilize` becomes `use`        |
 | Regex swap          | your own pattern            | rewrite     | `50%` becomes `50 percent`     |
 | Block word          | a whole word or term        | flag only   | `comprehensive`, `blast radius`|
+| Structural pattern  | a stock sentence shape      | flag only   | `not just X, but also Y`       |
+| Anaphora run        | three sentences opening alike | flag only | `We needed X. We needed Y. We needed Z.` |
 | Semicolon split     | `;` then space, a letter    | rewrite     | `; it` becomes `. It`          |
 | Punctuation cleanup | spaces before punctuation   | rewrite     | `word ,` becomes `word,`       |
 | Space collapse      | two or more spaces          | rewrite     | two spaces become one          |
@@ -85,6 +87,14 @@ A few notes on the matching:
 - Deleting a phrase that opened a sentence restores the capital on the word after it, so
   `In summary, it works.` becomes `It works.` and not `it works.`. A phrase deleted
   mid-sentence leaves the next word lowercase.
+- A period that closes an abbreviation or an ellipsis is not a sentence end. The engine
+  knows `e.g.`, `i.e.`, `etc.`, titles like `Dr.`, single-letter initials, and `...`, so
+  the restored capital and the comma cleanups never fire after one.
+- Structural patterns only flag. They catch the sentence shapes of model prose, from
+  `not just X, but also Y` to the reversal snap of `It worked. Until it didn't.`, and the
+  anaphora walk flags three or more short sentences in a row that open with the same two
+  words. The safe rewording is a judgment call, so those spans are left to you or to the
+  rewrite pass.
 - Block words match on word boundaries, so `robust` matches the standalone word and not
   the middle of a longer one. Multi-word terms like `blast radius` work the same way.
 - Spelling swaps are a word-for-word lookup, not a suffix rule, so a word that shares an
@@ -221,11 +231,12 @@ captured letter back as a capital. So `it works; it ships` turns into `it works.
 ships`.
 
 It only fires when the semicolon joins two clauses. Before splitting, it looks at the
-sentence around the semicolon. If that sentence holds more than one semicolon, or if a
-coordinating conjunction like "and" or "or" follows, the semicolon is treated as a list
-separator and left alone. So `we support Go; Python; and Rust` is not touched. The match
-also stays within one line, so a semicolon at the end of a line never swallows the line
-break after it. This is a heuristic, not a parser, so a rare case can still slip
+sentence around the semicolon, following the sentence across hard line wraps, so a
+deliberate list keeps its guard even when each item sits on its own line. If that
+sentence holds more than one semicolon, or if a coordinating conjunction like "and" or
+"or" follows, the semicolon is treated as a list separator and left alone. So `we support
+Go; Python; and Rust` is not touched. The match itself stays within one line, so a
+semicolon at the end of a line never swallows the line break after it. This is a heuristic, not a parser, so a rare case can still slip
 through, and matching a voice or reworking a clause more deeply is a job for the
 rewrite pass.
 
@@ -238,6 +249,8 @@ A deletion phrase matches one letter past the phrase itself. When the phrase sat
 start of a sentence, at the start of the text, or right after a period, an exclamation
 point, a question mark, or a line break, the kept letter is written back as a capital.
 Anywhere else it keeps its case, so `and to be honest, it works` becomes `and it works`.
+A period that closes an abbreviation, like `e.g.` or `Dr.`, does not count as a sentence
+end, so no capital appears after one.
 
 </details>
 

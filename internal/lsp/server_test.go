@@ -206,3 +206,123 @@ func mustUnmarshal(t *testing.T, body []byte, v any) {
 		t.Fatalf("unmarshal %s: %v", body, err)
 	}
 }
+
+// TestServerLifecycle drives didChange, codeAction, didClose, an unknown method, and
+// shutdown, checking the reply or diagnostic each one produces.
+func TestServerLifecycle(t *testing.T) {
+	t.Parallel()
+	san, err := sanitize.New(sanitize.Profile{
+		WordReplace:    map[string]string{"leverage": "use"},
+		CollapseSpaces: true,
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	var in strings.Builder
+	for _, body := range []string{
+		`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}`,
+		`{"jsonrpc":"2.0","method":"textDocument/didOpen","params":` +
+			`{"textDocument":{"uri":"file:///a","text":"clean text"}}}`,
+		`{"jsonrpc":"2.0","method":"textDocument/didChange","params":` +
+			`{"textDocument":{"uri":"file:///a"},"contentChanges":[{"text":"we leverage it"}]}}`,
+		`{"jsonrpc":"2.0","id":2,"method":"textDocument/codeAction","params":` +
+			`{"textDocument":{"uri":"file:///a"}}}`,
+		`{"jsonrpc":"2.0","method":"textDocument/didClose","params":` +
+			`{"textDocument":{"uri":"file:///a"}}}`,
+		`{"jsonrpc":"2.0","id":3,"method":"unknown/method","params":{}}`,
+		`{"jsonrpc":"2.0","id":4,"method":"shutdown"}`,
+		`{"jsonrpc":"2.0","method":"exit"}`,
+	} {
+		fmt.Fprintf(&in, "Content-Length: %d\r\n\r\n%s", len(body), body)
+	}
+
+	var out bytes.Buffer
+	if err := NewServer(san, strings.NewReader(in.String()), &out).Run(); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	frames := splitFrames(t, out.Bytes())
+	// init, open diag, change diag, code action reply, close diag, error reply, shutdown reply.
+	if len(frames) != 7 {
+		t.Fatalf("frames = %d, want 7", len(frames))
+	}
+
+	// Test 0: didChange republishes diagnostics for the new text.
+	var diag struct {
+		Params publishDiagnosticsParams `json:"params"`
+	}
+	mustUnmarshal(t, frames[2], &diag)
+	if len(diag.Params.Diagnostics) != 1 {
+		t.Errorf("didChange diagnostics = %d, want 1", len(diag.Params.Diagnostics))
+	}
+
+	// Test 1: codeAction offers one whole-document chop.
+	var action struct {
+		Result []codeAction `json:"result"`
+	}
+	mustUnmarshal(t, frames[3], &action)
+	if len(action.Result) != 1 || action.Result[0].Kind != "quickfix" {
+		t.Fatalf("code actions = %+v, want one quickfix", action.Result)
+	}
+	if edits := action.Result[0].Edit.Changes["file:///a"]; len(edits) != 1 || edits[0].NewText != "we use it" {
+		t.Errorf("action edits = %+v, want one edit to \"we use it\"", edits)
+	}
+
+	// Test 2: didClose clears the document's diagnostics.
+	mustUnmarshal(t, frames[4], &diag)
+	if len(diag.Params.Diagnostics) != 0 {
+		t.Errorf("didClose diagnostics = %d, want 0", len(diag.Params.Diagnostics))
+	}
+
+	// Test 3: an unknown request gets a method-not-found error.
+	var errReply struct {
+		Error *responseError `json:"error"`
+	}
+	mustUnmarshal(t, frames[5], &errReply)
+	if errReply.Error == nil || errReply.Error.Code != methodNotFound {
+		t.Errorf("unknown method reply = %+v, want code %d", errReply.Error, methodNotFound)
+	}
+
+	// Test 4: shutdown replies with a null result.
+	var shut struct {
+		Result json.RawMessage `json:"result"`
+	}
+	mustUnmarshal(t, frames[6], &shut)
+	if string(shut.Result) != "null" {
+		t.Errorf("shutdown result = %s, want null", shut.Result)
+	}
+}
+
+// TestCodeActionsClean checks that a clean document offers no code action.
+func TestCodeActionsClean(t *testing.T) {
+	t.Parallel()
+	san, err := sanitize.New(sanitize.Profile{
+		WordReplace:    map[string]string{"leverage": "use"},
+		CollapseSpaces: true,
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	var in strings.Builder
+	for _, body := range []string{
+		`{"jsonrpc":"2.0","method":"textDocument/didOpen","params":` +
+			`{"textDocument":{"uri":"file:///a","text":"clean text"}}}`,
+		`{"jsonrpc":"2.0","id":1,"method":"textDocument/codeAction","params":` +
+			`{"textDocument":{"uri":"file:///a"}}}`,
+		`{"jsonrpc":"2.0","method":"exit"}`,
+	} {
+		fmt.Fprintf(&in, "Content-Length: %d\r\n\r\n%s", len(body), body)
+	}
+	var out bytes.Buffer
+	if err := NewServer(san, strings.NewReader(in.String()), &out).Run(); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	frames := splitFrames(t, out.Bytes())
+	var action struct {
+		Result []codeAction `json:"result"`
+	}
+	mustUnmarshal(t, frames[1], &action)
+	if len(action.Result) != 0 {
+		t.Errorf("code actions on clean text = %+v, want none", action.Result)
+	}
+}

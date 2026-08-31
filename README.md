@@ -6,6 +6,7 @@
   <a href="https://slop-chop.com"><img src="https://img.shields.io/badge/try_it-slop--chop.com-9bcf1a" alt="Try it at slop-chop.com"></a>
   <a href="https://github.com/dcadolph/slop-chop/releases/latest"><img src="https://img.shields.io/github/v/release/dcadolph/slop-chop?color=9bcf1a" alt="Latest release"></a>
   <a href="https://github.com/dcadolph/slop-chop/actions/workflows/ci.yml"><img src="https://github.com/dcadolph/slop-chop/actions/workflows/ci.yml/badge.svg" alt="ci status"></a>
+  <a href="https://pkg.go.dev/github.com/dcadolph/slop-chop/sanitize"><img src="https://pkg.go.dev/badge/github.com/dcadolph/slop-chop/sanitize.svg" alt="Go reference"></a>
 </p>
 
 # slop-chop
@@ -18,7 +19,7 @@ Try it without installing anything: [slop-chop.com](https://slop-chop.com/) runs
 engine in your browser.
 
 AI writing has patterns. It loves em-dashes, drops a semicolon into every other sentence,
-reaches for words like `comprehensive` and `substrate`, and clears its throat with
+reaches for words like `comprehensive` and `leverage`, and clears its throat with
 openers like "In summary" or "Giving it to you honestly."
 
 slop-chop removes those patterns in a single pass. You can also hand it your own list of
