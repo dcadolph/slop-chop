@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/dcadolph/slop-chop/cmd/config"
+	"github.com/dcadolph/slop-chop/internal/jsonutil"
 	"github.com/dcadolph/slop-chop/rewrite"
 	"github.com/dcadolph/slop-chop/sanitize"
 )
@@ -99,6 +100,10 @@ func runFix(cmd *cobra.Command, args []string) error {
 
 	if config.Write() {
 		for _, path := range args {
+			if sourceFile(path) {
+				warnSourceSkip(cmd.ErrOrStderr(), path)
+				continue
+			}
 			text, err := readInput(path, cmd.InOrStdin())
 			if err != nil {
 				return err
@@ -113,6 +118,9 @@ func runFix(cmd *cobra.Command, args []string) error {
 	path := ""
 	if len(args) == 1 {
 		path = args[0]
+	}
+	if path != "" && sourceFile(path) {
+		return fmt.Errorf("%s is source code, not prose; pipe it through stdin to fix it anyway", path)
 	}
 	text, err := readInput(path, cmd.InOrStdin())
 	if err != nil {
@@ -138,7 +146,7 @@ func fixOne(ctx context.Context, s *sanitize.Sanitizer, tone []string, text, pat
 		out, verdict = rw, v
 	}
 	if config.JSON() {
-		report := fixReport{Cleaned: out, Findings: orEmpty(findings), Verify: verdict}
+		report := fixReport{Cleaned: out, Findings: jsonutil.OrEmpty(findings), Verify: verdict}
 		if err := writeJSON(stdout, report, config.Pretty()); err != nil {
 			return err
 		}
@@ -438,6 +446,12 @@ func writeFile(path, out string) error {
 	tmpName := tmp.Name()
 	defer func() { _ = os.Remove(tmpName) }()
 	if _, err := tmp.WriteString(out); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("write file: %w", err)
+	}
+	// Sync before the rename so a crash between the two cannot leave an empty file
+	// renamed over the original.
+	if err := tmp.Sync(); err != nil {
 		_ = tmp.Close()
 		return fmt.Errorf("write file: %w", err)
 	}

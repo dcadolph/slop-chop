@@ -10,6 +10,7 @@ import (
 	"errors"
 	"syscall/js"
 
+	"github.com/dcadolph/slop-chop/internal/jsonutil"
 	"github.com/dcadolph/slop-chop/rewrite/prompt"
 	"github.com/dcadolph/slop-chop/sanitize"
 )
@@ -84,7 +85,7 @@ func chop(_ js.Value, args []js.Value) any {
 	out, findings := s.Fix(req.Text)
 	return marshal(chopResult{
 		Output:     out,
-		Findings:   orEmpty(findings),
+		Findings:   jsonutil.OrEmpty(findings),
 		Score:      s.Score(req.Text),
 		ScoreAfter: s.Score(out),
 	})
@@ -144,12 +145,4 @@ func errJSON(err error) string {
 		return `{"error":"encode failed"}`
 	}
 	return string(b)
-}
-
-// orEmpty returns a non-nil slice so the JSON shows an empty array instead of null.
-func orEmpty(f []sanitize.Finding) []sanitize.Finding {
-	if f == nil {
-		return []sanitize.Finding{}
-	}
-	return f
 }

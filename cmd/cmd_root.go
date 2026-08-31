@@ -179,11 +179,3 @@ func writeJSON(w io.Writer, v any, pretty bool) error {
 	_, err = fmt.Fprintln(w, string(b))
 	return err
 }
-
-// orEmpty returns a non-nil slice so JSON shows an empty array instead of null.
-func orEmpty(f []sanitize.Finding) []sanitize.Finding {
-	if f == nil {
-		return []sanitize.Finding{}
-	}
-	return f
-}
