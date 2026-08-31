@@ -72,6 +72,11 @@ func DefaultProfile() Profile {
 			"\u200b": "",    // zero-width space, usually paste cruft
 			"\u2060": "",    // word joiner, usually paste cruft
 			"\ufeff": "",    // zero-width no-break space or a stray byte-order mark
+			"\u00ad": "",    // soft hyphen, invisible and a word-smuggling channel
+			"\u2010": "-",   // unicode hyphen to the ASCII one
+			"\u2011": "-",   // non-breaking hyphen to the ASCII one
+			"\u2012": "-",   // figure dash to a hyphen
+			"\u2015": ", ",  // horizontal bar doing an em-dash's job
 			"—":      ", ",  // em-dash
 			"–":      "-",   // en-dash
 			"‘":      "'",   // left single quote
@@ -119,6 +124,12 @@ func DefaultProfile() Profile {
 			"to be honest, ":                    "",
 			"to put it simply, ":                "",
 			"to recap, ":                        "",
+			"to recap: ":                        "",
+			"to summarize, ":                    "",
+			"to summarize: ":                    "",
+			"in summary: ":                      "",
+			"in conclusion: ":                   "",
+			"ultimately, ":                      "",
 			"without further ado, ":             "",
 		},
 		BlockWords: []string{
@@ -129,7 +140,8 @@ func DefaultProfile() Profile {
 			"effortless", "effortlessly", "elegant", "elevate", "elevates", "elevating",
 			"embark", "embarked", "embarking", "embarks", "empower", "empowering", "empowers",
 			"ever-changing", "ever-evolving", "facilitate", "facilitates", "facilitating",
-			"fast-paced", "foster", "fostering", "fosters", "frictionless",
+			"fascinating", "fast-paced", "foster", "fostering", "fosters", "frictionless",
+			"future-proof", "future-proofing", "future-proofs",
 			"game changer", "game changers", "game-changer", "game-changers", "game-changing",
 			"groundbreaking", "harness the power", "has something for everyone", "holistic",
 			"in the realm of", "in the world of", "innovative", "invaluable",
@@ -139,11 +151,12 @@ func DefaultProfile() Profile {
 			"powerful", "revolutionize", "revolutionized", "revolutionizes", "revolutionizing",
 			"robust", "seamless", "seamlessly", "showcase", "showcased", "showcases",
 			"showcasing", "state-of-the-art", "streamline", "streamlined", "streamlines",
-			"streamlining", "substrate", "supercharge", "supercharged", "synergies", "synergy",
+			"streamlining", "supercharge", "supercharged", "synergies", "synergy",
 			"stands as a", "tapestry", "testament to", "the possibilities are endless",
 			"to the next level", "top-notch", "transformative", "treasure trove",
 			"unleash", "unleashed", "unleashes", "unleashing",
 			"unlock the full potential", "unlock the potential", "unparalleled",
+			"unprecedented",
 			"utilize", "utilized", "utilizes", "utilizing", "vibrant", "whopping",
 			"world-class",
 			// Stock metaphors and set phrases that carry no information of their own.
@@ -166,8 +179,10 @@ func DefaultProfile() Profile {
 		},
 		FlagPatterns: map[string]string{
 			// "It's not just X, it's Y" and its "this is not X, it's Y" cousin, matched in
-			// the contracted "it's" and the spelled-out "this is not" forms alike.
-			"its-not-x-its-y": `(?i)\b(?:it|this|that)(?:'?s|\s+(?:is|was|are|were))(?:\s+not|n'?t)\b[^.!?\n]{1,40}[,;]\s*it'?s\b`,
+			// the contracted "it's" and the spelled-out "this is not" forms alike. The join
+			// may be a comma, a semicolon, or a full stop, so "That's not a tooling problem.
+			// That's a visibility problem." is the same tell across a sentence break.
+			"its-not-x-its-y": `(?i)\b(?:it|this|that)(?:'?s|\s+(?:is|was|are|were))(?:\s+not|n'?t)\b[^.!?\n]{1,40}[,;.]\s*(?:it'?s|that'?s|this is)\b`,
 			// "not just X but also Y" and "not only X but also Y".
 			"not-just-but-also": `(?i)\bnot (just|only)\b[^.!?\n]{1,60}\bbut\b[^.!?\n]{0,25}\balso\b`,
 			// Throat-clearing openers that promise a payoff.
@@ -179,16 +194,20 @@ func DefaultProfile() Profile {
 			"assistant-opener": `(?im)^\s{0,3}(?:certainly|absolutely|great question|i'?d be happy to|happy to help)\b`,
 			// Chatbot sign-offs, unanchored since they land at the end of a paragraph.
 			"assistant-signoff": `(?i)\b(?:i hope this helps|hope this helps|don'?t hesitate to|feel free to reach out)\b`,
-			// A stack of hedges in one breath, the noncommittal AI register.
-			"hedge-stack": `(?i)\b(?:may|might|could|possibly|perhaps|arguably|generally|potentially|somewhat|seemingly|presumably|conceivably)\b[^.!?\n]{1,50}\b(?:may|might|could|possibly|perhaps|arguably|generally|potentially|somewhat|seemingly|presumably|conceivably)\b`,
+			// A stack of hedges in one breath, the noncommittal AI register. Matched in
+			// lower case and sentence case only: an all-caps MAY or SHOULD is an RFC 2119
+			// normative keyword, the opposite of a hedge.
+			"hedge-stack": `\b(?:[Mm]ay|[Mm]ight|[Cc]ould|[Pp]ossibly|[Pp]erhaps|[Aa]rguably|[Gg]enerally|[Pp]otentially|[Ss]omewhat|[Ss]eemingly|[Pp]resumably|[Cc]onceivably)\b[^.!?\n]{1,50}\b(?:[Mm]ay|[Mm]ight|[Cc]ould|[Pp]ossibly|[Pp]erhaps|[Aa]rguably|[Gg]enerally|[Pp]otentially|[Ss]omewhat|[Ss]eemingly|[Pp]resumably|[Cc]onceivably)\b`,
 			// "That's where X comes in", the setup-and-reveal move.
 			"thats-where-comes-in": `(?i)\bthat'?s where\b[^.!?\n]{1,30}\bcomes? in\b`,
 			// The fragment-question reveal, "The best part? It's free."
 			"fragment-reveal": `(?i)\bthe (?:best part|result|catch|takeaway|upshot|kicker|bottom line|good news|bad news|verdict|payoff)\?`,
 			// "Here are five ways to ..." enumeration openers.
 			"here-are-n": `(?i)\bhere are (?:\d+|a few|some|several|three|four|five|six|seven|eight|nine|ten) (?:key |simple |quick |easy |practical |common )?(?:reasons|ways|things|tips|steps|takeaways|strategies|examples|benefits|best practices)\b`,
-			// Three or more consecutive bullets that each open with a bold label.
-			"bold-bullet-run": `(?m)(?:^[ \t]*[-*][ \t]+\*\*[^*\n]{1,60}\*\*.*\n){2}[ \t]*[-*][ \t]+\*\*[^*\n]{1,60}\*\*`,
+			// Three or more consecutive bullets that each open with a bold label. The label
+			// must open on a letter or digit, so a reference list of bolded flags or code
+			// tokens like "**--json**" is left alone.
+			"bold-bullet-run": `(?m)(?:^[ \t]*[-*][ \t]+\*\*[\p{L}\p{N}][^*\n]{0,59}\*\*.*\n){2}[ \t]*[-*][ \t]+\*\*[\p{L}\p{N}][^*\n]{0,59}\*\*`,
 			// The audience-flattering "whether you're a novice or an expert" frame. Requiring
 			// the articles keeps the ordinary "whether you're coming or not" out of reach.
 			"whether-youre": `(?i)\bwhether you'?re an? [^.!?\n]{1,40}\bor an? \p{L}`,
@@ -197,17 +216,20 @@ func DefaultProfile() Profile {
 			// Negative parallelism split across a sentence break, "not just a tool. You're
 			// investing", the form the comma version turned into once it became a known tell.
 			"not-just-sentence-split": `(?i)\bnot just\b[^.!?\n]{1,60}\.[ \t]+(?:it'?s|you'?re|we'?re|they'?re|this is|that'?s)\b`,
-			// A spaced hyphen doing an em-dash's job mid-sentence, the swap models reached
-			// for once the em-dash itself became a tell.
-			"spaced-hyphen": `\p{L} - \p{L}`,
-			// "In an era where ..." grand-context opener.
-			"in-an-era": `(?i)\bin an? (?:era|age|world) (?:where|when|of)\b`,
+			// A spaced hyphen or double hyphen doing an em-dash's job mid-sentence, the
+			// swap models reached for once the em-dash itself became a tell. Lower-case
+			// letters on both sides keep a range like "Monday - Friday" out of reach.
+			"spaced-hyphen": `\p{Ll} -{1,2} \p{Ll}`,
+			// "In an era where ..." grand-context opener. The "of" form is not listed:
+			// "in an age of sail" is ordinary historical prose.
+			"in-an-era": `(?i)\bin an? (?:era|age|world) (?:where|when)\b`,
 			// The "not only does X" inversion, a formal flourish models overuse.
 			"not-only-inversion": `(?i)\bnot only (?:does|do|did|is|are|was|were|can|could|will|would)\b`,
 			// "Plays a crucial role in ..." importance-claiming filler.
 			"plays-a-role": `(?i)\bplay(?:s|ed|ing)? an? (?:crucial|key|vital|pivotal|central|significant|essential) role\b`,
-			// Stock closing headings on generated articles.
-			"conclusion-heading": `(?im)^#{1,6}[ \t]+(?:conclusion|final thoughts|wrapping up|in closing|key takeaways)\b`,
+			// Stock closing headings on generated articles. A plain "Conclusion" heading is
+			// not listed: it is near-mandatory in academic and report writing.
+			"conclusion-heading": `(?im)^#{1,6}[ \t]+(?:final thoughts|wrapping up|in closing|key takeaways)\b`,
 			// An emoji decorating a bullet or heading, the generated-listicle look.
 			"emoji-decoration": `(?m)^[ \t]*(?:[-*][ \t]+|#{1,6}[ \t]+)\*{0,2}[\x{2600}-\x{27BF}\x{2B00}-\x{2BFF}\x{1F000}-\x{1FAFF}]`,
 			// The contracted negative parallelism, "it isn't a perk. It's an expectation",
@@ -215,15 +237,16 @@ func DefaultProfile() Profile {
 			"contracted-not-just": `(?i)\b(?:is|are|was|were|do|does|did|has|have)n'?t\b[^.!?\n]{1,60}[.,]\s*(?:it'?s|they'?re|you'?re|we'?re|that'?s|this is)\b`,
 			// "Let's be clear" and the other throat-clearing declaratives.
 			"lets-be-clear": `(?i)\b(?:let'?s be clear|make no mistake|the truth is|here'?s the reality)\b`,
-			// A rhetorical question aimed at the reader, the engagement-bait opener.
-			"rhetorical-hook": `(?i)\b(?:ever wondered|have you ever wondered|what if i told you|sound familiar\?|why does (?:this|it) matter\?|the question is:)`,
+			// A rhetorical question aimed at the reader, the engagement-bait opener. The
+			// ordinary "the question is:" is not listed; it is common human phrasing.
+			"rhetorical-hook": `(?i)\b(?:ever wondered|have you ever wondered|what if i told you|sound familiar\?|why does (?:this|it) matter\?|worth asking (?:yourself|whether|if)\b)`,
 			// "The answer lies in" and its cousins, the manufactured reveal.
 			"the-answer-lies": `(?i)\bthe (?:answer|secret|key|difference|trick) (?:lies in|is (?:simple|straightforward)|comes down to)\b`,
 			// "Has never been more important", the urgency claim with no evidence.
 			"never-been-more": `(?i)\b(?:has|have) never been more (?:important|critical|relevant|urgent|clear|apparent|necessary)\b`,
 			// A numbered list whose items each open with a bold label, the ordered twin of
-			// bold-bullet-run.
-			"bold-number-run": `(?m)(?:^[ \t]*\d+[.)][ \t]+\*\*[^*\n]{1,60}\*\*.*\n){2}[ \t]*\d+[.)][ \t]+\*\*[^*\n]{1,60}\*\*`,
+			// bold-bullet-run, with the same letter-or-digit opener guard.
+			"bold-number-run": `(?m)(?:^[ \t]*\d+[.)][ \t]+\*\*[\p{L}\p{N}][^*\n]{0,59}\*\*.*\n){2}[ \t]*\d+[.)][ \t]+\*\*[\p{L}\p{N}][^*\n]{0,59}\*\*`,
 			// "The ultimate guide to", the stock generated-article title.
 			"ultimate-guide": `(?i)\bthe (?:ultimate|complete|definitive|essential) guide to\b`,
 			// "Underscores the importance", a claim verb standing in for evidence.
@@ -253,6 +276,33 @@ func DefaultProfile() Profile {
 			// Reader-instruction openers, the cousins of "it is important to note" that a
 			// phrase delete cannot swallow because the sentence continues through them.
 			"reader-instruction": `(?i)\b(?:it'?s important to (?:understand|remember|realize)|one thing to keep in mind|the (?:one )?thing to remember)\b`,
+			// The "It worked. Until it didn't." snap, a full sentence of reversal after a
+			// stop, the signature cadence of 2025-era model prose.
+			"until-it-didnt": `(?i)[.!?]\s+until (?:it|they|we|that) (?:didn'?t|wasn'?t|weren'?t|doesn'?t|couldn'?t|stopped)\b`,
+			// The reversal aphorism, "Tools don't fail teams. Blind spots do.": a negated
+			// claim, then a short sentence closing on a bare auxiliary.
+			"reversal-aphorism": `(?i)\b(?:don'?t|doesn'?t|isn'?t|aren'?t|never|not)\b[^.!?\n]{0,40}\.\s+\p{Lu}[^.!?\n]{2,35}\s(?:do(?:es)?|did|is|are|was|were|will|can)\.`,
+			// "The question isn't whether X. The question is whether Y.", the parallel
+			// reframe delivered as two sentences.
+			"question-isnt-is": `(?i)\bthe (?:question|point|problem|issue|goal|answer) isn'?t\b[^.!?\n]{1,60}\.\s+the (?:question|point|problem|issue|goal|answer) is\b`,
+			// "It's not about X. It's about Y.", the same reframe in its "about" form.
+			"not-about-about": `(?i)\b(?:it|this)'?s not about\b[^.!?\n]{1,50}\.\s+it'?s about\b`,
+			// A whole sentence of exactly three bare words, "Simple, boring, reliable.",
+			// the triad fragment models drop in for punch. A human list nearly always takes
+			// an "and" before its last item, so the bare form is the tell.
+			"triad-fragment": `(?m)(?:^|[.!?][ \t]+)\p{Lu}\p{Ll}{2,14}, \p{Ll}{2,14}, \p{Ll}{2,14}\.`,
+			// "Firstly, ... Secondly, ..." enumeration adverbs, the essay-skeleton tell.
+			"ordinal-enumeration": `(?i)\b(?:firstly|secondly|thirdly|fourthly|lastly),`,
+			// The canonical assistant self-reference.
+			"as-an-ai": `(?i)\bas an ai(?: language)? model\b`,
+			// The uncontracted "not just a library but a whole platform" form, which the
+			// "but also" pattern walks past. Articles on both sides keep ordinary "not just
+			// for fun but because" contrasts out of reach.
+			"not-just-a-but": `(?i)\bnot (?:just|merely|simply) (?:a|an|the)\b[^.!?\n]{1,40}\bbut (?:a|an|the)\b`,
+			// A Latin letter pressed against a Cyrillic or Greek one inside a word, the
+			// homoglyph smuggling that hides a tell from every word list. Flag only: the
+			// safe respelling is the author's call.
+			"mixed-script": `(?:\p{Latin}[\p{Cyrillic}\p{Greek}]|[\p{Cyrillic}\p{Greek}]\p{Latin})`,
 		},
 		Allow: []string{
 			// Technical collocations where a flagged word is a term of art, protected so a
@@ -262,6 +312,9 @@ func DefaultProfile() Profile {
 			"optimal substructure", "optimal control", "optimal transport",
 			"optimal policy", "optimal stopping",
 			"comprehensive exam", "comprehensive examination",
+			"comprehensive income", "comprehensive incomes",
+			"leverage ratio", "leverage ratios", "operating leverage",
+			"financial leverage", "leveraged buyout", "leveraged buyouts",
 			"foster care", "foster child", "foster children", "foster family",
 			"foster home", "foster parent", "foster parents",
 		},
@@ -541,9 +594,9 @@ func regexRule(pattern, repl string) (Rule, error) {
 }
 
 // wsGap matches the whitespace between two words: spaces and tabs crossing at most one
-// line break. It lets a phrase or a multi-word term match when a line wrap splits it,
-// without ever reaching across a paragraph break.
-const wsGap = `(?:[ \t]+(?:\n[ \t]*)?|\n[ \t]*)`
+// line break, LF or CRLF. It lets a phrase or a multi-word term match when a line wrap
+// splits it, without ever reaching across a paragraph break.
+const wsGap = `(?:[ \t]+(?:\r?\n[ \t]*)?|\r?\n[ \t]*)`
 
 // flexSpaces widens each literal space in a quoted pattern into wsGap, so the words
 // around it still match when a line wrap sits between them.
@@ -712,7 +765,8 @@ func recapLetter(sub []int) (start, end int) {
 
 // sentenceStart reports whether offset sits at the start of a sentence: at the start of
 // the text, or after sentence-ending punctuation or a line break, with any spaces in
-// between ignored.
+// between ignored. A period that closes an abbreviation or an ellipsis does not end a
+// sentence, so "e.g., a hammer" is never read as a sentence opening on a comma.
 func sentenceStart(text string, offset int) bool {
 	i := offset - 1
 	for i >= 0 && (text[i] == ' ' || text[i] == '\t') {
@@ -722,10 +776,64 @@ func sentenceStart(text string, offset int) bool {
 		return true
 	}
 	switch text[i] {
-	case '\n', '.', '!', '?':
+	case '\n', '\r', '!', '?':
 		return true
+	case '.':
+		return !abbreviationEnd(text, i)
 	}
 	return false
+}
+
+// abbreviations are dotted shortenings whose period ends the word rather than the
+// sentence, lower-cased without their final dot. Dotted forms like "e.g." and "i.e."
+// are recognized by their internal dot and need no entry.
+//
+//nolint:gochecknoglobals // Immutable lookup.
+var abbreviations = map[string]bool{
+	"etc": true, "vs": true, "cf": true, "ca": true, "al": true, "st": true,
+	"no": true, "nos": true, "dr": true, "mr": true, "mrs": true, "ms": true,
+	"prof": true, "jr": true, "sr": true, "rev": true, "hon": true, "gen": true,
+	"sgt": true, "capt": true, "lt": true, "col": true, "inc": true, "ltd": true,
+	"co": true, "corp": true, "dept": true, "est": true, "fig": true, "figs": true,
+	"vol": true, "vols": true, "pp": true, "ed": true, "eds": true, "misc": true,
+	"approx": true, "appt": true, "apt": true, "ave": true, "blvd": true, "rd": true,
+	"ft": true, "oz": true, "lb": true, "lbs": true, "hr": true, "hrs": true,
+	"sec": true, "min": true, "yr": true, "yrs": true, "mo": true,
+	"jan": true, "feb": true, "mar": true, "apr": true, "jun": true, "jul": true,
+	"aug": true, "sep": true, "sept": true, "oct": true, "nov": true, "dec": true,
+	"mon": true, "tue": true, "tues": true, "wed": true, "thu": true, "thurs": true,
+	"fri": true, "sat": true, "sun": true,
+}
+
+// abbreviationEnd reports whether the period at i closes an abbreviation, an initial, or
+// an ellipsis rather than a sentence. The destructive cleanups key off sentence starts, so
+// an ambiguous period is read as an abbreviation: leaving a comma in place is recoverable,
+// while capitalizing mid-sentence is corruption.
+func abbreviationEnd(text string, i int) bool {
+	if i > 0 && text[i-1] == '.' {
+		return true
+	}
+	j := i - 1
+	for j >= 0 {
+		c := text[j]
+		if c == '.' || c == '_' || ('0' <= c && c <= '9') ||
+			('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') {
+			j--
+			continue
+		}
+		break
+	}
+	token := text[j+1 : i]
+	if token == "" {
+		return false
+	}
+	if strings.Contains(token, ".") {
+		return true
+	}
+	if len(token) == 1 && unicode.IsLetter(rune(token[0])) {
+		return true
+	}
+	return abbreviations[strings.ToLower(token)]
 }
 
 // trimLeadingSpace returns the match without its leading spaces and tabs, leaving just
@@ -935,20 +1043,38 @@ func inParens(prefix string) bool {
 }
 
 // sentenceBounds returns the byte range of the sentence around offset, bounded by
-// sentence-ending punctuation or a newline.
+// sentence-ending punctuation or a block break. A newline that is only a soft line wrap
+// does not end the sentence, so a hard-wrapped sentence keeps its full extent and the
+// semicolon list guard sees every semicolon it holds, not just the ones on one line. A
+// period that closes an abbreviation does not end the sentence either.
 func sentenceBounds(text string, offset int) (start, end int) {
 	for i := offset - 1; i >= 0; i-- {
-		if c := text[i]; c == '\n' || c == '.' || c == '!' || c == '?' {
+		if sentenceBoundary(text, i) {
 			start = i + 1
 			break
 		}
 	}
 	end = len(text)
 	for i := offset + 1; i < len(text); i++ {
-		if c := text[i]; c == '\n' || c == '.' || c == '!' || c == '?' {
+		if sentenceBoundary(text, i) {
 			end = i
 			break
 		}
 	}
 	return start, end
+}
+
+// sentenceBoundary reports whether the byte at i ends a sentence: sentence punctuation
+// that is not an abbreviation, or a newline that breaks a block rather than wrapping a
+// line.
+func sentenceBoundary(text string, i int) bool {
+	switch text[i] {
+	case '!', '?':
+		return true
+	case '.':
+		return !abbreviationEnd(text, i)
+	case '\n':
+		return !softWrap(text, i)
+	}
+	return false
 }

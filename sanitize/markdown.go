@@ -245,12 +245,14 @@ func backtickRun(text string, i int) int {
 	return j - i
 }
 
-// blankFrom reports whether the line starting at i is blank: only spaces and tabs
-// before the next newline or the end of the text.
+// blankFrom reports whether the line starting at i is blank: only spaces, tabs, and a
+// carriage return before the next newline or the end of the text. Counting the carriage
+// return keeps a CRLF blank line blank, so a Windows-authored paragraph break is a real
+// break and not a soft wrap.
 func blankFrom(text string, i int) bool {
 	for ; i < len(text); i++ {
 		switch text[i] {
-		case ' ', '\t':
+		case ' ', '\t', '\r':
 		case '\n':
 			return true
 		default:

@@ -18,6 +18,11 @@ func unwrapProse(text string) string {
 	for i := range b {
 		if b[i] == '\n' && softWrap(text, i) {
 			b[i] = ' '
+			// A CRLF wrap joins as two spaces, so the copy stays byte for byte as long
+			// as the original and a rule's gap of plain spaces matches across it.
+			if i > 0 && b[i-1] == '\r' {
+				b[i-1] = ' '
+			}
 		}
 	}
 	return string(b)
