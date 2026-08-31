@@ -58,6 +58,13 @@ var tidyRuleNames = map[string]bool{
 	"comma-before-stop": true, "comma-run": true, "double-space": true, "article": true,
 }
 
+// TidyRule reports whether name is a punctuation or spacing cleanup rule rather than an
+// AI tell. Callers scanning code comments use it to drop findings that only make sense
+// in prose the tool is allowed to rewrite.
+func TidyRule(name string) bool {
+	return tidyRuleNames[name]
+}
+
 // weightedChars are the character swaps that still count toward the score: the em-dash,
 // the model tell itself, and the invisible characters that smuggle words past a word
 // list. Every other character swap is typography normalization, evidence of typesetting

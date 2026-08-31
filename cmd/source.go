@@ -5,6 +5,8 @@ import (
 	"io"
 	"path/filepath"
 	"strings"
+
+	"github.com/dcadolph/slop-chop/sanitize"
 )
 
 // sourceExts lists file extensions whose content is source code or machine-read data
@@ -47,4 +49,37 @@ func sourceFile(path string) bool {
 func warnSourceSkip(stderr io.Writer, path string) {
 	_, _ = fmt.Fprintf(stderr,
 		"slop-chop: skipping %s: source code, not prose; pipe it through stdin to run anyway\n", path)
+}
+
+// readProse returns the text of path ready for the prose rules: a prose file as it is,
+// and a source file as its comment mask, so check and score read the comments without
+// exposing the code. ok is false when the file was skipped because its type has no
+// comments to scan. An empty path reads stdin unmasked.
+func readProse(path string, stdin io.Reader, stderr io.Writer) (text string, ok bool, err error) {
+	text, err = readInput(path, stdin)
+	if err != nil {
+		return "", false, err
+	}
+	if path == "" || !sourceFile(path) {
+		return text, true, nil
+	}
+	masked, scannable := maskSource(path, text)
+	if !scannable {
+		warnSourceSkip(stderr, path)
+		return "", false, nil
+	}
+	return masked, true, nil
+}
+
+// dropTidyFindings removes cleanup findings from a source file's report. The comments
+// are scanned for tells, and a spacing or punctuation cleanup inside one is neither a
+// tell nor something fix will ever rewrite there.
+func dropTidyFindings(findings []sanitize.Finding) []sanitize.Finding {
+	out := findings[:0]
+	for _, f := range findings {
+		if !sanitize.TidyRule(f.Rule) {
+			out = append(out, f)
+		}
+	}
+	return out
 }
