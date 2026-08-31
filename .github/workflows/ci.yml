@@ -18,7 +18,25 @@ jobs:
       - run: GOOS=js GOARCH=wasm go build -o /dev/null ./wasm
       - run: go vet ./...
       - run: test -z "$(gofmt -l .)"
-      - run: go test ./...
+      - run: go test -cover -coverprofile=coverage.out ./... | tee coverage.txt
+      - name: Coverage must stay at or above 80 percent in every tested package
+        # The root package is main only and the wasm package needs a js target, so the
+        # gate applies to every package the test run actually measured.
+        run: |
+          awk '
+            $1 == "ok" {
+              v = ""
+              for (i = 1; i <= NF; i++) if ($i == "coverage:") { v = $(i+1); gsub("%", "", v) }
+              if (v != "" && v + 0 < 80) { printf "below 80%%: %s at %s%%\n", $2, v; fail = 1 }
+            }
+            END { exit fail }' coverage.txt
+      - run: go tool cover -html=coverage.out -o coverage.html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage.out
+            coverage.html
       - name: The tells page must match the profile it documents
         run: go run . tells --markdown | diff - docs/TELLS.md
       # Share the compiled binary so the check jobs need no Go toolchain, which keeps them off

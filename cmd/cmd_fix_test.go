@@ -450,3 +450,46 @@ func TestFixRewriteNewline(t *testing.T) {
 		})
 	}
 }
+
+// TestFeedbackNotes checks that judge issues turn into retry instructions, each shape
+// getting its own wording, and that the note count and field length are capped.
+func TestFeedbackNotes(t *testing.T) {
+	t.Parallel()
+	issues := []rewrite.Issue{
+		{Kind: "changed", Was: "42%", Now: "43%", Note: "figure changed"},
+		{Kind: "removed", Was: "the caveat", Note: "dropped"},
+		{Kind: "added", Now: "a new claim", Note: "invented"},
+		{Note: "only a note"},
+		{},
+	}
+	notes := feedbackNotes(issues)
+	if len(notes) != 4 {
+		t.Fatalf("notes = %d, want 4 (the empty issue contributes nothing)", len(notes))
+	}
+	for testNum, want := range []string{
+		`keep "42%", do not change it to "43%"`,
+		`keep "the caveat", do not drop it`,
+		`do not add "a new claim"`,
+		"only a note",
+	} {
+		if !strings.Contains(notes[testNum], want) {
+			t.Errorf("note %d = %q, want it to contain %q", testNum, notes[testNum], want)
+		}
+	}
+
+	// A flood of issues is capped at maxFeedbackNotes.
+	flood := make([]rewrite.Issue, maxFeedbackNotes+10)
+	for i := range flood {
+		flood[i] = rewrite.Issue{Note: "n"}
+	}
+	if got := feedbackNotes(flood); len(got) != maxFeedbackNotes {
+		t.Errorf("flood notes = %d, want the cap %d", len(got), maxFeedbackNotes)
+	}
+
+	// An oversized field is clipped with an ellipsis marker.
+	long := strings.Repeat("x", maxFeedbackField+50)
+	clipped := feedbackNotes([]rewrite.Issue{{Note: long}})
+	if len(clipped) != 1 || len([]rune(clipped[0])) > maxFeedbackField+1 {
+		t.Errorf("clipped note length = %d, want at most %d", len([]rune(clipped[0])), maxFeedbackField+1)
+	}
+}

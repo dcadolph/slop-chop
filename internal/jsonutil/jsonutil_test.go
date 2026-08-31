@@ -39,3 +39,16 @@ func TestMarshal(t *testing.T) {
 		})
 	}
 }
+
+// TestOrEmpty checks that a nil slice becomes an empty one and a populated slice passes
+// through unchanged.
+func TestOrEmpty(t *testing.T) {
+	t.Parallel()
+	if got := OrEmpty[int](nil); got == nil || len(got) != 0 {
+		t.Errorf("OrEmpty(nil) = %v, want empty non-nil slice", got)
+	}
+	in := []string{"a", "b"}
+	if diff := cmp.Diff(in, OrEmpty(in)); diff != "" {
+		t.Errorf("mismatch (-want +got):\n%s", diff)
+	}
+}
