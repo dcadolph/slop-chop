@@ -161,10 +161,14 @@ jobs:
           make obsidian
           git clone "https://x-access-token:${PLUGIN_TOKEN}@github.com/dcadolph/slop-chop-obsidian.git" plugin
           cp obsidian/dist/main.js obsidian/manifest.json obsidian/versions.json plugin/
+          # The plugin repo rebuilds the bundle from the monorepo for provenance. Its pin
+          # lives in the ENGINE_REF file, updated here so the rebuild always uses the
+          # commit this release was cut from.
+          printf '%s\n' "${GITHUB_SHA}" > plugin/ENGINE_REF
           cd plugin
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add main.js manifest.json versions.json
+          git add main.js manifest.json versions.json ENGINE_REF
           # A rebuild with no engine change produces the same bytes, so there is nothing to
           # commit and nothing to release.
           if git diff --cached --quiet; then
