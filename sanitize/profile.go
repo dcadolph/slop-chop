@@ -671,14 +671,10 @@ func blockWordRule(words []string) (Rule, bool, error) {
 	return Rule{Name: "word", re: re, rewrite: false, nameByMatch: true}, true, nil
 }
 
-// endsWithWordChar reports whether s ends in an ASCII word character, the set the \b
-// boundary recognizes, so a closing boundary is added only where it would hold.
+// endsWithWordChar reports whether s ends in an ASCII word character, so a closing \b
+// boundary is added only where it would hold.
 func endsWithWordChar(s string) bool {
-	if s == "" {
-		return false
-	}
-	c := s[len(s)-1]
-	return c == '_' || ('0' <= c && c <= '9') || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
+	return s != "" && isWordByte(s[len(s)-1])
 }
 
 // phraseRule builds the rule for one phrase swap. A leading word boundary keeps the
@@ -918,8 +914,9 @@ func fixArticle(text string, loc []int) string {
 
 // notProperNoun reports whether a match should be acted on rather than skipped as a likely
 // proper noun. A Title-case word mid-sentence, like a brand name, is skipped, while the same
-// word at a sentence start is ordinary capitalization and still counts. A lower-case or an
-// all-caps match always counts.
+// word at a sentence start is ordinary capitalization and still counts, unless the document
+// itself proves the word is a name by using it Title-cased mid-sentence somewhere else. A
+// lower-case or an all-caps match always counts.
 func notProperNoun(text string, start, end int) bool {
 	match := text[start:end]
 	r := []rune(match)
@@ -929,7 +926,43 @@ func notProperNoun(text string, start, end int) bool {
 	if match == strings.ToUpper(match) {
 		return true
 	}
-	return sentenceStart(text, start)
+	if !sentenceStart(text, start) {
+		return false
+	}
+	return !titleCaseMidSentence(text, match, start)
+}
+
+// titleCaseMidSentence reports whether match, kept in its exact casing, appears as a whole
+// word at a non-sentence-start position anywhere else in text. One such occurrence proves
+// the word is a proper noun in this document, so its sentence-start occurrences are names
+// too, like "Delve is a debugger" in a document that later says "attach Delve".
+func titleCaseMidSentence(text, match string, self int) bool {
+	for i := 0; ; {
+		j := strings.Index(text[i:], match)
+		if j < 0 {
+			return false
+		}
+		pos := i + j
+		i = pos + 1
+		if pos == self {
+			continue
+		}
+		if pos > 0 && isWordByte(text[pos-1]) {
+			continue
+		}
+		if e := pos + len(match); e < len(text) && isWordByte(text[e]) {
+			continue
+		}
+		if !sentenceStart(text, pos) {
+			return true
+		}
+	}
+}
+
+// isWordByte reports whether c is an ASCII word character, the set the \b boundary
+// recognizes.
+func isWordByte(c byte) bool {
+	return c == '_' || ('0' <= c && c <= '9') || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
 }
 
 // articleNeedsFix reports whether the article in the match disagrees with the sound of the
