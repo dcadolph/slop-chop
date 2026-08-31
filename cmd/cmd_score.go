@@ -49,6 +49,10 @@ func runScore(cmd *cobra.Command, args []string) error {
 	}
 	over := false
 	for _, path := range args {
+		if sourceFile(path) {
+			warnSourceSkip(cmd.ErrOrStderr(), path)
+			continue
+		}
 		text, err := readInput(path, cmd.InOrStdin())
 		if err != nil {
 			return err

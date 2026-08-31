@@ -11,6 +11,7 @@ import (
 
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/dcadolph/slop-chop/internal/jsonutil"
 	"github.com/dcadolph/slop-chop/sanitize"
 )
 
@@ -211,7 +212,7 @@ func (srv *Server) chop(ctx context.Context, _ *mcpsdk.CallToolRequest, in chopI
 	}
 	out := chopOutput{
 		Text:         cleaned,
-		Findings:     orEmpty(findings),
+		Findings:     jsonutil.OrEmpty(findings),
 		Score:        san.Score(in.Text).Value,
 		ScoreAfter:   san.Score(cleaned).Value,
 		ModelRewrite: in.ModelRewrite,
@@ -229,7 +230,7 @@ func (srv *Server) check(_ context.Context, _ *mcpsdk.CallToolRequest, in checkI
 		return nil, checkOutput{}, err
 	}
 	findings := san.Check(in.Text)
-	return nil, checkOutput{Findings: orEmpty(findings), Score: san.Score(in.Text).Value}, nil
+	return nil, checkOutput{Findings: jsonutil.OrEmpty(findings), Score: san.Score(in.Text).Value}, nil
 }
 
 // presets lists the built-in preset names.
@@ -275,13 +276,4 @@ func (srv *Server) modelPass(ctx context.Context, san *sanitize.Sanitizer, clean
 	}
 	out, _ := san.Fix(rewritten)
 	return out, nil
-}
-
-// orEmpty returns a non-nil slice so the structured output shows an empty array rather than
-// null when the text is clean.
-func orEmpty(f []sanitize.Finding) []sanitize.Finding {
-	if f == nil {
-		return []sanitize.Finding{}
-	}
-	return f
 }

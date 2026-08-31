@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/dcadolph/slop-chop/cmd/config"
+	"github.com/dcadolph/slop-chop/internal/jsonutil"
 	"github.com/dcadolph/slop-chop/sanitize"
 )
 
@@ -54,6 +55,10 @@ func runCheck(cmd *cobra.Command, args []string) error {
 	}
 	found := false
 	for _, path := range args {
+		if sourceFile(path) {
+			warnSourceSkip(cmd.ErrOrStderr(), path)
+			continue
+		}
 		text, err := readInput(path, cmd.InOrStdin())
 		if err != nil {
 			return err
@@ -76,7 +81,7 @@ func runCheck(cmd *cobra.Command, args []string) error {
 func checkOne(s *sanitize.Sanitizer, text, path string, stdout, stderr io.Writer) error {
 	findings := s.Check(text)
 	if config.JSON() {
-		if err := writeJSON(stdout, checkReport{Findings: orEmpty(findings)}, config.Pretty()); err != nil {
+		if err := writeJSON(stdout, checkReport{Findings: jsonutil.OrEmpty(findings)}, config.Pretty()); err != nil {
 			return err
 		}
 	} else {

@@ -12,3 +12,11 @@ func Marshal(v any, pretty bool) ([]byte, error) {
 	}
 	return json.Marshal(v)
 }
+
+// OrEmpty returns a non-nil slice so JSON output shows an empty array instead of null.
+func OrEmpty[T any](s []T) []T {
+	if s == nil {
+		return []T{}
+	}
+	return s
+}
