@@ -53,7 +53,7 @@ async function smoke(name, browserType) {
 
   await page.click("#sc-settings-btn");
   const presets = await page.locator(".sc-preset").count();
-  if (presets !== 5) throw new Error(name + ": presets not rendered");
+  if (presets !== 7) throw new Error(name + ": presets not rendered");
   await page.selectOption("#sc-rw-provider", "anthropic");
   await page.fill("#sc-rw-key", "sk-ant-test");
   await page.waitForTimeout(200);
