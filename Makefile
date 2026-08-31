@@ -113,9 +113,9 @@ worker: wasm
 site: wasm
 	mkdocs build --strict
 
-## site-deploy: build the site and publish it to Cloudflare Pages
+## site-deploy: build the site and publish it to the Worker that serves slop-chop.com
 site-deploy: site
-	npx -y wrangler pages deploy site --project-name slop-chop --branch main --commit-dirty=true
+	npx -y wrangler@4 deploy --config wrangler.site.jsonc
 
 ## clean: remove the built binary, wasm artifacts, and coverage profile
 clean:

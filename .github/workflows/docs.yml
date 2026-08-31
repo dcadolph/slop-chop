@@ -49,9 +49,21 @@ jobs:
       # instead, which nothing points at, and the live site sat frozen at whatever someone
       # last deployed by hand.
       - name: Deploy the site
+        env:
+          CANONICAL: dcadolph/slop-chop
         run: |
           set -euo pipefail
           if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
+            # A fork has no deploy credentials and should still get a green build. On the
+            # repository that owns slop-chop.com a missing token is a broken deploy, and
+            # skipping it quietly turned every run green while the live site went stale,
+            # so here it fails loudly instead.
+            if [ "${GITHUB_REPOSITORY}" = "${CANONICAL}" ]; then
+              echo "::error::CLOUDFLARE_API_TOKEN is not set on ${CANONICAL}, so the site" \
+                "was built but never deployed. Add the CLOUDFLARE_API_TOKEN and" \
+                "CLOUDFLARE_ACCOUNT_ID repository secrets."
+              exit 1
+            fi
             echo "::warning::CLOUDFLARE_API_TOKEN is not set, so the site was built but not"
             echo "::warning::deployed. slop-chop.com keeps serving whatever it served before."
             exit 0
