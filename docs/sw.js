@@ -5,7 +5,7 @@
    touched. */
 "use strict";
 
-const NAME = "slop-chop-shell-v3";
+const NAME = "slop-chop-shell-v4";
 
 /* CORE is everything the chopper itself needs. The theme's hashed bundles are
    discovered from the built page at install time, since their names change. */
