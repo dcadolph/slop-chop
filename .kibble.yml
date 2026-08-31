@@ -6,3 +6,5 @@ examples:
   steps:
     - match: "--profile myprofile.json"
       skip: "points at a profile the reader writes themselves"
+    - match: "posts/*.md"
+      skip: "globs the reader's own posts"
