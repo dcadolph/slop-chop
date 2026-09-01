@@ -616,6 +616,17 @@ body:has(#sc-app) .md-grid {
     width: auto;
     z-index: 20;
   }
+  /* The head is one row on a wide screen. On a phone the title and the controls each
+     want the full width, and squeezing them side by side broke the heading onto three
+     lines, so they stack instead. */
+  .sc-app-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  .sc-app-actions {
+    justify-content: flex-start;
+  }
   /* A phone has no room for one finding on one line, so the change sits under the rule
      that found it and a rule between rows keeps the pairs apart. */
   .sc-findings li {
