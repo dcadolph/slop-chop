@@ -48,7 +48,9 @@ var hedges = map[string]bool{
 	"may": true, "might": true, "could": true, "possibly": true, "perhaps": true,
 	"arguably": true, "generally": true, "potentially": true, "somewhat": true,
 	"seemingly": true, "presumably": true, "conceivably": true, "relatively": true,
-	"likely": true, "roughly": true, "fairly": true,
+	"likely": true, "roughly": true, "fairly": true, "probably": true,
+	"apparently": true, "seems": true, "appears": true, "plausibly": true,
+	"tends": true,
 }
 
 // tidyRuleNames are the cleanup rules whose findings are house style, not evidence of
@@ -81,6 +83,28 @@ var weightedChars = map[string]bool{
 	"char:\u00ad": true,
 }
 
+// weighers are the balance-and-defer connectors of the weighing register: prose that
+// presents every side and lands nowhere. A couple are ordinary in argument; a density of
+// them is the assistant's on-the-one-hand voice.
+//
+//nolint:gochecknoglobals // Immutable lookup.
+var weighers = []string{
+	"on the one hand", "on the other hand", "at the same time", "cuts both ways",
+	"is another consideration", "is worth considering", "matters as well",
+	"on balance", "in the end", "on the benefits side", "on the costs side",
+	"worth weighing", "trade-offs to consider",
+}
+
+// countWeighers counts weighing connectors in text, case-insensitively.
+func countWeighers(text string) int {
+	lower := strings.ToLower(text)
+	n := 0
+	for _, w := range weighers {
+		n += strings.Count(lower, w)
+	}
+	return n
+}
+
 // Score rates text from 0 to 100 by weighted tell density and hedge density.
 func (s *Sanitizer) Score(text string) Score {
 	findings := s.Check(text)
@@ -102,7 +126,24 @@ func (s *Sanitizer) Score(text string) Score {
 	// word list misses. Hedge density adds up to ten points.
 	hedging := math.Min(10, per100(countHedges(prose), words)*2.5)
 
-	value := int(math.Round(math.Min(100, density+hedging)))
+	// The weighing register, every side presented and nothing chosen, is the polished
+	// assistant voice that carries no lexical tells at all. Its connector density adds
+	// up to eight points, and one connector is free, since a single "on the other hand"
+	// is ordinary argument.
+	weighing := 0.0
+	if w := countWeighers(prose); w > 1 {
+		weighing = math.Min(8, per100(w, words)*4)
+	}
+
+	// A very short text with one weak tell cannot carry a verdict: a lone em-dash in a
+	// seven-word message is not an eighty. Density scales down below twenty-five words
+	// when the evidence is a single ordinary tell. Stronger evidence, a structural
+	// shape or several tells, keeps its score even in a short chat reply.
+	if words < 25 && weighted < 2 {
+		density *= float64(words) / 25
+	}
+
+	value := int(math.Round(math.Min(100, density+hedging+weighing)))
 	return Score{
 		Value:       value,
 		Tells:       tells,
@@ -122,10 +163,17 @@ func (s *Sanitizer) Score(text string) Score {
 func (s *Sanitizer) weightTells(findings []Finding) float64 {
 	total := 0.0
 	structStart, structEnd := -1, -1
+	countedStart := -1
 	seen := make(map[string]float64, len(findings))
 	for _, f := range findings {
+		start, end := f.Offset, f.Offset+len(f.Match)
+		// Two rules firing from the same offset are one tell read twice: "needless to
+		// say" trips a phrase rule and a structural rule on the same breath. A finding
+		// merely inside a wider span is different evidence and still counts.
+		if start == countedStart {
+			continue
+		}
 		if strings.HasPrefix(f.Rule, "structural:") {
-			start, end := f.Offset, f.Offset+len(f.Match)
 			if structStart >= 0 && start < structEnd {
 				if end > structEnd {
 					structEnd = end
@@ -140,6 +188,9 @@ func (s *Sanitizer) weightTells(findings []Finding) float64 {
 		}
 		seen[f.Rule] = w
 		total += w
+		if w > 0 {
+			countedStart = start
+		}
 	}
 	return total
 }

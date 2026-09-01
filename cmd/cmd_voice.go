@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -295,7 +296,12 @@ numbers, links, or acronyms is treated as a corrected fact and ignored, so only 
 is read as style.
 
 It proposes and never writes. Merge the entries you agree with into your voice file.`,
-		Args: cobra.ExactArgs(2),
+		Args: func(_ *cobra.Command, args []string) error {
+			if len(args) != 2 {
+				return fmt.Errorf("usage: slop-chop voice diff <draft> <final>")
+			}
+			return nil
+		},
 		RunE: runVoiceDiff,
 	}
 	f := cmd.Flags()
@@ -325,9 +331,10 @@ func runVoiceDiff(cmd *cobra.Command, args []string) error {
 	}
 	candidates := s.Candidates(draft, final)
 	if config.JSON() {
+		suggested, _ := suggestedVoice(candidates)
 		report := diffReport{
 			Candidates: jsonutil.OrEmpty(candidates),
-			Suggested:  suggestedVoice(candidates),
+			Suggested:  suggested,
 		}
 		return writeJSON(cmd.OutOrStdout(), report, config.Pretty())
 	}
@@ -335,11 +342,14 @@ func runVoiceDiff(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// suggestedVoice turns the proposals into the voice they would add. A kept tell becomes a
-// keep entry, and a change nothing flagged becomes a prefer entry, where an empty
-// replacement drops the word. A confirmation adds nothing, since the rule already exists.
-func suggestedVoice(candidates []sanitize.Candidate) sanitize.Voice {
+// suggestedVoice turns the proposals into the voice they would add, and separately
+// names the words whose edits conflict. A kept tell becomes a keep entry, and a change
+// nothing flagged becomes a prefer entry, where an empty replacement drops the word. A
+// confirmation adds nothing, since the rule already exists, and a word edited two
+// different ways is reported rather than silently resolved by document order.
+func suggestedVoice(candidates []sanitize.Candidate) (sanitize.Voice, []string) {
 	var v sanitize.Voice
+	conflict := map[string]bool{}
 	for _, c := range candidates {
 		switch c.Kind {
 		case sanitize.CandidateKeep:
@@ -348,18 +358,30 @@ func suggestedVoice(candidates []sanitize.Candidate) sanitize.Voice {
 			if v.Prefer == nil {
 				v.Prefer = make(map[string]string)
 			}
-			v.Prefer[c.Pair.Was] = c.Pair.Now
+			key := strings.ToLower(c.Pair.Was)
+			if prev, ok := v.Prefer[key]; ok && prev != c.Pair.Now {
+				conflict[key] = true
+				continue
+			}
+			v.Prefer[key] = c.Pair.Now
 		case sanitize.CandidateConfirms:
 		}
 	}
-	return v
+	var conflicts []string
+	for w := range conflict {
+		delete(v.Prefer, w)
+		conflicts = append(conflicts, w)
+	}
+	slices.Sort(conflicts)
+	return v, conflicts
 }
 
 // writeDiffReport prints the proposals grouped by what they mean, keeps first, since a
 // tell you read and shipped is the rules being wrong rather than a fact about your voice.
 func writeDiffReport(w io.Writer, candidates []sanitize.Candidate, draftPath, finalPath string) {
 	if len(candidates) == 0 {
-		_, _ = fmt.Fprintf(w, "no candidates: %s and %s differ only in facts or not at all\n",
+		_, _ = fmt.Fprintf(w, "no proposals from %s and %s: identical texts, fact fixes, moves,\n"+
+			"case or punctuation edits, insertions, and large restructures are not turned into rules\n",
 			draftPath, finalPath)
 		return
 	}
@@ -393,7 +415,10 @@ func writeDiffReport(w io.Writer, candidates []sanitize.Candidate, draftPath, fi
 			}
 		}
 	}
-	v := suggestedVoice(candidates)
+	v, conflicts := suggestedVoice(candidates)
+	for _, c := range conflicts {
+		_, _ = fmt.Fprintf(w, "\nedited two different ways, not proposed: %q\n", c)
+	}
 	if v.Empty() {
 		return
 	}
@@ -401,5 +426,6 @@ func writeDiffReport(w io.Writer, candidates []sanitize.Candidate, draftPath, fi
 	if err != nil {
 		return
 	}
-	_, _ = fmt.Fprintf(w, "\nmerge what you agree with into your voice file:\n%s\n", string(b))
+	_, _ = fmt.Fprintf(w, "\nmerge what you agree with into ~/.slop-chop/voice.json\n"+
+		"(create one with 'slop-chop voice init'):\n%s\n", string(b))
 }

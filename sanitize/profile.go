@@ -78,25 +78,37 @@ type Profile struct {
 
 // DefaultProfile returns the built-in profile that targets common AI tells.
 func DefaultProfile() Profile {
-	return Profile{
+	p := Profile{
 		CharReplace: map[string]string{
-			"\u00a0": " ",   // non-breaking space to a normal space
-			"\u202f": " ",   // narrow non-breaking space to a normal space
-			"\u200b": "",    // zero-width space, usually paste cruft
-			"\u2060": "",    // word joiner, usually paste cruft
-			"\ufeff": "",    // zero-width no-break space or a stray byte-order mark
-			"\u00ad": "",    // soft hyphen, invisible and a word-smuggling channel
-			"\u2010": "-",   // unicode hyphen to the ASCII one
-			"\u2011": "-",   // non-breaking hyphen to the ASCII one
-			"\u2012": "-",   // figure dash to a hyphen
-			"\u2015": ", ",  // horizontal bar doing an em-dash's job
-			"—":      ", ",  // em-dash
-			"–":      "-",   // en-dash
-			"‘":      "'",   // left single quote
-			"’":      "'",   // right single quote
-			"“":      `"`,   // left double quote
-			"”":      `"`,   // right double quote
-			"…":      "...", // ellipsis
+			"\u00a0":   " ",   // non-breaking space to a normal space
+			"\u202f":   " ",   // narrow non-breaking space to a normal space
+			"\u200b":   "",    // zero-width space, usually paste cruft
+			"\u2060":   "",    // word joiner, usually paste cruft
+			"\ufeff":   "",    // zero-width no-break space or a stray byte-order mark
+			"\u00ad":   "",    // soft hyphen, invisible and a word-smuggling channel
+			"\u2010":   "-",   // unicode hyphen to the ASCII one
+			"\u2011":   "-",   // non-breaking hyphen to the ASCII one
+			"\u2012":   "-",   // figure dash to a hyphen
+			"\u2015":   ", ",  // horizontal bar doing an em-dash's job
+			"\u200c":   "",    // zero-width non-joiner smuggled between Latin letters
+			"\u200d":   "",    // zero-width joiner smuggled between Latin letters
+			"\ufe58":   ", ",  // small em dash doing an em-dash's job
+			"\u2e3a":   ", ",  // two-em dash doing an em-dash's job
+			"－":        "-",   // fullwidth hyphen-minus to the ASCII one
+			"ſ":        "s",   // long s, a Latin homoglyph that dodges the word lists
+			"&mdash;":  ", ",  // an em-dash that arrived as a raw HTML entity
+			"&ndash;":  "-",   // an en-dash that arrived as a raw HTML entity
+			"&hellip;": "...", // an ellipsis that arrived as a raw HTML entity
+			"&nbsp;":   " ",   // a non-breaking space that arrived as a raw HTML entity
+			"&#8212;":  ", ",  // the numeric em-dash entity
+			"&#8211;":  "-",   // the numeric en-dash entity
+			"—":        ", ",  // em-dash
+			"–":        "-",   // en-dash
+			"‘":        "'",   // left single quote
+			"’":        "'",   // right single quote
+			"“":        `"`,   // left double quote
+			"”":        `"`,   // right double quote
+			"…":        "...", // ellipsis
 		},
 		PhraseReplace: map[string]string{
 			"additionally, ":                    "",
@@ -110,6 +122,7 @@ func DefaultProfile() Profile {
 			"notably, ":                         "",
 			"rest assured, ":                    "",
 			"that being said, ":                 "",
+			"that said, ":                       "",
 			"with that said, ":                  "",
 			"at its core, ":                     "",
 			"at the end of the day, ":           "",
@@ -205,7 +218,7 @@ func DefaultProfile() Profile {
 			// the contracted "it's" and the spelled-out "this is not" forms alike. The join
 			// may be a comma, a semicolon, or a full stop, so "That's not a tooling problem.
 			// That's a visibility problem." is the same tell across a sentence break.
-			"its-not-x-its-y": `(?i)\b(?:it|this|that)(?:'?s|\s+(?:is|was|are|were))(?:\s+not|n'?t)\b[^.!?\n]{1,40}[,;.]\s*(?:it'?s|that'?s|this is)\b`,
+			"its-not-x-its-y": `(?i)\b(?:it|this|that)(?:'?s|\s+(?:is|was|are|were))(?:\s+not|n'?t)\b[^.!?\n]{1,40}(?:[,;.]\s*|\s*[—–]\s*)(?:it'?s|that'?s|this is)\b`,
 			// "not just X but also Y" and "not only X but also Y".
 			"not-just-but-also": `(?i)\bnot (just|only)\b[^.!?\n]{1,60}\bbut\b[^.!?\n]{0,25}\balso\b`,
 			// Throat-clearing openers that promise a payoff.
@@ -214,7 +227,7 @@ func DefaultProfile() Profile {
 			"lets-dive-in":     `(?i)\blet'?s (dive|delve|jump) in(to)?\b`,
 			"lets-take-a-look": `(?i)\blet'?s (?:take a (?:closer )?look|explore|unpack|break (?:it|this) down)\b`,
 			// Chatbot reply openers, anchored to a line start where an opener lives.
-			"assistant-opener": `(?im)^\s{0,3}(?:certainly|absolutely|great question|i'?d be happy to|happy to help)\b`,
+			"assistant-opener": `(?im)^\s{0,3}(?:certainly|absolutely|great question|great (?:point|catch|call)|good (?:point|catch|question)|that'?s a (?:great|good|fair|valid) (?:point|question|concern)|thanks for (?:flagging|raising|catching|sharing)|i'?d be happy to|happy to help)\b`,
 			// Chatbot sign-offs, unanchored since they land at the end of a paragraph.
 			"assistant-signoff": `(?i)\b(?:i hope this helps|hope this helps|don'?t hesitate to|feel free to reach out)\b`,
 			// A stack of hedges in one breath, the noncommittal AI register. Matched in
@@ -230,7 +243,7 @@ func DefaultProfile() Profile {
 			// Three or more consecutive bullets that each open with a bold label. The label
 			// must open on a letter or digit, so a reference list of bolded flags or code
 			// tokens like "**--json**" is left alone.
-			"bold-bullet-run": `(?m)(?:^[ \t]*[-*][ \t]+\*\*[\p{L}\p{N}][^*\n]{0,59}\*\*.*\n){2}[ \t]*[-*][ \t]+\*\*[\p{L}\p{N}][^*\n]{0,59}\*\*`,
+			"bold-bullet-run": `(?m)(?:^[ \t]*[-*][ \t]+\*\*[\p{L}\p{N}][^*\n]{0,59}\*\*.*\n(?:[ \t]*\n)*){2}[ \t]*[-*][ \t]+\*\*[\p{L}\p{N}][^*\n]{0,59}\*\*`,
 			// The audience-flattering "whether you're a novice or an expert" frame. Requiring
 			// the articles keeps the ordinary "whether you're coming or not" out of reach.
 			"whether-youre": `(?i)\bwhether you'?re an? [^.!?\n]{1,40}\bor an? \p{L}`,
@@ -242,7 +255,7 @@ func DefaultProfile() Profile {
 			// A spaced hyphen or double hyphen doing an em-dash's job mid-sentence, the
 			// swap models reached for once the em-dash itself became a tell. Lower-case
 			// letters on both sides keep a range like "Monday - Friday" out of reach.
-			"spaced-hyphen": `\p{Ll} -{1,2} \p{Ll}`,
+			"spaced-hyphen": `\p{Ll} -- \p{Ll}`,
 			// "In an era where ..." grand-context opener. The "of" form is not listed:
 			// "in an age of sail" is ordinary historical prose.
 			"in-an-era": `(?i)\bin an? (?:era|age|world) (?:where|when)\b`,
@@ -257,7 +270,7 @@ func DefaultProfile() Profile {
 			"emoji-decoration": `(?m)^[ \t]*(?:[-*][ \t]+|#{1,6}[ \t]+)\*{0,2}[\x{2600}-\x{27BF}\x{2B00}-\x{2BFF}\x{1F000}-\x{1FAFF}]`,
 			// The contracted negative parallelism, "it isn't a perk. It's an expectation",
 			// which the spelled-out "not just" patterns walk straight past.
-			"contracted-not-just": `(?i)\b(?:is|are|was|were|do|does|did|has|have)n'?t\b[^.!?\n]{1,60}[.,]\s*(?:it'?s|they'?re|you'?re|we'?re|that'?s|this is)\b`,
+			"contracted-not-just": `(?i)\b(?:is|are|was|were|do|does|did|has|have)n'?t (?:just |only |merely |simply )?(?:a|an|the|your|about)\b[^.!?\n]{1,60}(?:[.,]\s*|\s*[—–]\s*)(?:it'?s|they'?re|you'?re|we'?re|that'?s|this is)\b`,
 			// "Let's be clear" and the other throat-clearing declaratives.
 			"lets-be-clear": `(?i)\b(?:let'?s be clear|make no mistake|the truth is|here'?s the reality)\b`,
 			// A rhetorical question aimed at the reader, the engagement-bait opener. The
@@ -269,7 +282,7 @@ func DefaultProfile() Profile {
 			"never-been-more": `(?i)\b(?:has|have) never been more (?:important|critical|relevant|urgent|clear|apparent|necessary)\b`,
 			// A numbered list whose items each open with a bold label, the ordered twin of
 			// bold-bullet-run, with the same letter-or-digit opener guard.
-			"bold-number-run": `(?m)(?:^[ \t]*\d+[.)][ \t]+\*\*[\p{L}\p{N}][^*\n]{0,59}\*\*.*\n){2}[ \t]*\d+[.)][ \t]+\*\*[\p{L}\p{N}][^*\n]{0,59}\*\*`,
+			"bold-number-run": `(?m)(?:^[ \t]*\d+[.)][ \t]+\*\*[\p{L}\p{N}][^*\n]{0,59}\*\*.*\n(?:[ \t]*\n)*){2}[ \t]*\d+[.)][ \t]+\*\*[\p{L}\p{N}][^*\n]{0,59}\*\*`,
 			// "The ultimate guide to", the stock generated-article title.
 			"ultimate-guide": `(?i)\bthe (?:ultimate|complete|definitive|essential) guide to\b`,
 			// "Underscores the importance", a claim verb standing in for evidence.
@@ -324,6 +337,27 @@ func DefaultProfile() Profile {
 			// homoglyph smuggling that hides a tell from every word list. Flag only: the
 			// safe respelling is the author's call.
 			"mixed-script": `(?:\p{Latin}[\p{Cyrillic}\p{Greek}]|[\p{Cyrillic}\p{Greek}]\p{Latin})`,
+			// The pasted-assistant-answer artifacts: a document that talks about its own
+			// delivery the way a chat reply does.
+			"below-is-requested": `(?im)^(?:\w+[.!] )?below (?:is|are) (?:the|a|an|your) (?:requested|updated|revised|complete|full|final)\b`,
+			"ive-structured":     `(?i)\bi'?ve (?:structured|organized|formatted|arranged) (?:this|the|it|each)\b`,
+			"would-you-like":     `(?i)\bwould you like me to\b`,
+			"let-me-know-if":     `(?i)\blet me know if you(?:'?d like| want| need)\b`,
+			// The AI pull-request register.
+			"pr-introduces":   `(?im)^this (?:pr|pull request|mr|commit|change|patch) (?:introduces|implements|adds|enhances)\b`,
+			"key-changes":     `(?i)\bkey (?:changes|updates|highlights|features) include\b`,
+			"backward-compat": `(?i)\bwhile maintaining (?:full )?backwards? compatibility\b`,
+			"no-breaking":     `(?i)\bno breaking changes (?:are|were) introduced\b`,
+			"future-could":    `(?i)\bfuture (?:enhancements|improvements) could include\b`,
+			// The outline-driven listicle skeleton.
+			"in-this-section": `(?im)^in this section,? we\b`,
+			"is-practice-of":  `(?i)\bis the (?:practice|process|technique|art) of\b`,
+			// The balanced 2026 register: restating the question, and verdicts that
+			// commit to nothing.
+			"question-restate": `(?im)^you asked (?:whether|about|if|for)\b[^.\n]{5,80}, and\b`,
+			"no-commitment":    `(?i)\b(?:depends? on (?:several|many|a number of) factors|the right choice will vary|a defensible choice|will vary based on your)\b`,
+			// An emoji closing a heading, the decorated-section look.
+			"emoji-heading-suffix": `(?m)^#{1,6}[ \t].{0,60}[\x{2600}-\x{27BF}\x{2B00}-\x{2BFF}\x{1F000}-\x{1FAFF}][ \t]*$`,
 		},
 		Allow: []string{
 			// Technical collocations where a flagged word is a term of art, protected so a
@@ -336,6 +370,7 @@ func DefaultProfile() Profile {
 			"comprehensive income", "comprehensive incomes",
 			"leverage ratio", "leverage ratios", "operating leverage",
 			"financial leverage", "leveraged buyout", "leveraged buyouts",
+			"it's not you, it's me",
 			"foster care", "foster child", "foster children", "foster family",
 			"foster home", "foster parent", "foster parents",
 		},
@@ -343,6 +378,16 @@ func DefaultProfile() Profile {
 		SplitSemicolons: true,
 		FixArticles:     true,
 	}
+	// Fullwidth Latin letters fold to ASCII so a tell spelled in fullwidth forms cannot
+	// slip past the word lists. Only letters fold: fullwidth punctuation is ordinary CJK
+	// typesetting and stays.
+	for r := 'A'; r <= 'Z'; r++ {
+		p.CharReplace[string(r+0xFEE0)] = string(r)
+	}
+	for r := 'a'; r <= 'z'; r++ {
+		p.CharReplace[string(r+0xFEE0)] = string(r)
+	}
+	return p
 }
 
 // Load reads a profile from JSON. Any field left unset keeps its zero value, so a
@@ -389,6 +434,11 @@ func (p Profile) compile() ([]Rule, error) {
 			r.replFunc = emDashSwap(r.repl)
 			r.keep = emDashKeep
 		}
+		// The zero-width joiners are stripped only when smuggled between Latin
+		// letters. Inside an emoji sequence or a complex script they are load-bearing.
+		if from == "\u200c" || from == "\u200d" {
+			r.keep = zwBetweenLetters
+		}
 		rules = append(rules, r)
 	}
 
@@ -408,7 +458,19 @@ func (p Profile) compile() ([]Rule, error) {
 		rules = append(rules, spelling)
 	}
 
-	swaps, drops := splitDrops(p.WordReplace)
+	wordSwaps := p.WordReplace
+	if p.Dialect == DialectBritish {
+		// "Firstly, ... Secondly, ..." is ordinary British enumeration, so the default
+		// ordinal swaps stand down under a British dialect. A user's own different
+		// mapping for these words is kept.
+		wordSwaps = maps.Clone(wordSwaps)
+		for from, to := range britishOrdinals {
+			if wordSwaps[from] == to {
+				delete(wordSwaps, from)
+			}
+		}
+	}
+	swaps, drops := splitDrops(wordSwaps)
 	casing, swaps := splitCasing(swaps)
 	for _, from := range slices.Sorted(maps.Keys(casing)) {
 		r, err := casingRule(from, casing[from])
@@ -1377,4 +1439,22 @@ func casingRule(from, to string) (Rule, error) {
 		},
 		rewrite: true,
 	}, nil
+}
+
+// zwBetweenLetters reports whether a zero-width joiner or non-joiner sits between two
+// ASCII letters, the smuggling position, so only there is it stripped.
+func zwBetweenLetters(text string, start, end int) bool {
+	if start == 0 || end >= len(text) {
+		return false
+	}
+	prev, next := text[start-1], text[end]
+	return isWordByte(prev) && prev < 128 && isWordByte(next) && next < 128
+}
+
+// britishOrdinals are the default ordinal swaps suppressed under a British dialect.
+//
+//nolint:gochecknoglobals // Immutable lookup.
+var britishOrdinals = map[string]string{
+	"firstly": "first", "secondly": "second", "thirdly": "third",
+	"fourthly": "fourth", "lastly": "last",
 }
