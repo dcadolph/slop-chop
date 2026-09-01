@@ -21,6 +21,9 @@ func runCLI(t *testing.T, args []string, stdin string) (string, string, error) {
 	t.Helper()
 	config.Reset()
 	t.Cleanup(config.Reset)
+	// A developer's personal ~/.slop-chop/voice.json merges into every run, so without
+	// a scratch HOME the suite fails on any machine with a voice file.
+	t.Setenv("HOME", t.TempDir())
 	root := rootCmd()
 	var out, errb bytes.Buffer
 	root.SetIn(strings.NewReader(stdin))

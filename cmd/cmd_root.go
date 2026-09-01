@@ -107,9 +107,14 @@ func sanitizerFor(presetNames []string, dialect string) (*sanitize.Sanitizer, sa
 }
 
 // resolveVoicePath returns the voice file to use: the --voice flag when set, else the
-// personal ~/.slop-chop/voice.json when it exists, else empty for no voice.
+// personal ~/.slop-chop/voice.json when it exists, else empty for no voice. The value
+// "off" disables the voice for one run, which is how a CI script or a doc generator
+// gets the profile with no personal layer.
 func resolveVoicePath() string {
 	if p := config.Voice(); p != "" {
+		if p == "off" {
+			return ""
+		}
 		return p
 	}
 	home, err := os.UserHomeDir()
@@ -120,6 +125,10 @@ func resolveVoicePath() string {
 	if _, err := os.Stat(p); err != nil {
 		return ""
 	}
+	// The personal voice shapes every run it touches, and two machines with different
+	// voice files disagree about the same text. Saying so keeps that from reading as
+	// nondeterminism.
+	fmt.Fprintf(os.Stderr, "slop-chop: voice: %s (disable with --voice off)\n", p)
 	return p
 }
 

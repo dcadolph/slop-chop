@@ -27,6 +27,7 @@ the published catalog is generated from the same source the engine runs.`,
 	}
 	f := cmd.Flags()
 	f.AddFlag(&config.FlagProfile)
+	f.AddFlag(&config.FlagVoice)
 	f.AddFlag(&config.FlagDialect)
 	f.AddFlag(&config.FlagPreset)
 	f.AddFlag(&config.FlagJSON)

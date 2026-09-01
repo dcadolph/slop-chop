@@ -116,7 +116,7 @@ func TestVoiceAsProfile(t *testing.T) {
 	}
 	want := Profile{
 		Allow:         []string{"alpha"},
-		BlockWords:    []string{"beta"},
+		BlockAlways:   []string{"beta"},
 		WordReplace:   map[string]string{"one": "1", "drop": ""},
 		PhraseReplace: map[string]string{"two words": "2"},
 		Tone:          []string{"dry humor"},
