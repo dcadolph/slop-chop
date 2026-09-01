@@ -733,6 +733,29 @@ const wsGap = `(?:[ \t]+(?:\r?\n[ \t]*)?|\r?\n[ \t]*)`
 //nolint:gochecknoglobals // Immutable lookup.
 var flagPatternKeeps = map[string]func(text string, start, end int) bool{
 	"its-not-x-its-y": notXRepeated,
+	"triad-fragment":  triadVaries,
+}
+
+// triadVaries keeps a triad-fragment match only when its three items differ. "Location,
+// location, location." repeats one word on purpose, epizeuxis rather than the model's
+// fast-cheap-reliable fragment, so an identical triad is exempt.
+func triadVaries(text string, start, end int) bool {
+	items := strings.Split(strings.Trim(text[start:end], " \t\n.!?"), ",")
+	if len(items) < 2 {
+		return true
+	}
+	first := strings.ToLower(strings.TrimSpace(items[0]))
+	// The match may open with the previous sentence's closing punctuation, which the
+	// trim above removed along with any lead-in; only the word remains.
+	if i := strings.LastIndexAny(first, " \t"); i >= 0 {
+		first = first[i+1:]
+	}
+	for _, item := range items[1:] {
+		if strings.ToLower(strings.TrimSpace(item)) != first {
+			return true
+		}
+	}
+	return false
 }
 
 // notXNegated pulls the negated phrase out of an its-not-x-its-y match: the text between

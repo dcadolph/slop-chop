@@ -95,7 +95,8 @@ A few notes on the matching:
   anaphora walk flags three or more short sentences in a row that open with the same two
   words. A run that repeats one sentence word for word is exempt, since `It's not fair.
   It's not fair. It's not fair.` is a writer leaning on a line, not a model varying its
-  tails, and the not-X-but-Y pattern steps aside for the same verbatim repetition. The
+  tails, and the not-X-but-Y and comma-triad patterns step aside for the same verbatim
+  repetition, so `Location, location, location.` stays yours. The
   safe rewording is a judgment call, so those spans are left to you or to the rewrite
   pass.
 - Block words match on word boundaries, so `robust` matches the standalone word and not
