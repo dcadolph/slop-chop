@@ -238,3 +238,161 @@ func TestVoiceDiffOnlyFacts(t *testing.T) {
 		t.Errorf("stdout = %q, want no candidates for a fact-only change", stdout)
 	}
 }
+
+// plainWriting builds n short, plain sentences, enough of them to carry a fingerprint.
+func plainWriting(n int) string {
+	var sb strings.Builder
+	for i := range n {
+		fmt.Fprintf(&sb, "I wrote the note on day %d and I sent it. ", i)
+		if i%3 == 2 {
+			sb.WriteString("\n\n")
+		}
+	}
+	return sb.String()
+}
+
+// machineWriting builds n sentences in the long, latinate register a model defaults to.
+func machineWriting(n int) string {
+	var sb strings.Builder
+	for range n {
+		sb.WriteString("The comprehensive implementation of organizational observability " +
+			"strategies demonstrates substantial operational improvements across distributed " +
+			"infrastructure environments throughout the transition period. ")
+	}
+	return sb.String()
+}
+
+// TestVoiceFingerprint checks that fingerprint measures the samples, stores them in the
+// voice file, and leaves the lists that were already there alone.
+func TestVoiceFingerprint(t *testing.T) {
+	dir := t.TempDir()
+	path := writeTemp(t, dir, "voice.json", `{"keep":["gnarly"]}`)
+	a := writeTemp(t, dir, "a.md", plainWriting(25))
+	b := writeTemp(t, dir, "b.md", plainWriting(25))
+
+	stdout, stderr, err := runCLI(t, []string{"voice", "fingerprint", "--voice", path, a, b}, "")
+	if err != nil {
+		t.Fatalf("voice fingerprint: %v", err)
+	}
+	if !strings.Contains(stderr, "across 2 sample(s)") {
+		t.Errorf("stderr = %q, want the sample count", stderr)
+	}
+	for _, want := range []string{"sentence-length", "commas", "give or take"} {
+		if !strings.Contains(stdout, want) {
+			t.Errorf("stdout = %q, want it to hold %q", stdout, want)
+		}
+	}
+	v, err := sanitize.LoadVoiceFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v.Fingerprint == nil || v.Fingerprint.Empty() {
+		t.Fatalf("no fingerprint written to %s", path)
+	}
+	if v.Fingerprint.Samples != 2 {
+		t.Errorf("samples = %d, want 2", v.Fingerprint.Samples)
+	}
+	if diff := cmp.Diff([]string{"gnarly"}, v.Keep); diff != "" {
+		t.Errorf("keep clobbered (-want +got):\n%s", diff)
+	}
+}
+
+// TestVoiceFingerprintShort checks that too little writing is refused with the numbers
+// rather than measured into a fingerprint that means nothing.
+func TestVoiceFingerprintShort(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "voice.json")
+	_, _, err := runCLI(t, []string{"voice", "fingerprint", "--voice", path}, "I wrote this.")
+	if err == nil {
+		t.Fatal("voice fingerprint on one sentence returned no error")
+	}
+	if !strings.Contains(err.Error(), "not enough text") {
+		t.Errorf("err = %v, want it to say there was not enough text", err)
+	}
+	if _, statErr := os.Stat(path); statErr == nil {
+		t.Errorf("a voice file was written for a refused fingerprint")
+	}
+}
+
+// TestVoiceDrift checks the whole loop: measure a voice, then report what reads like it
+// and what does not.
+func TestVoiceDrift(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "voice.json")
+	samples := writeTemp(t, dir, "samples.md", plainWriting(40))
+	if _, _, err := runCLI(t, []string{"voice", "fingerprint", "--voice", path, samples}, ""); err != nil {
+		t.Fatalf("voice fingerprint: %v", err)
+	}
+	mine := writeTemp(t, dir, "mine.md", plainWriting(12))
+	theirs := writeTemp(t, dir, "theirs.md", machineWriting(8))
+
+	stdout, _, err := runCLI(t, []string{"voice", "drift", "--voice", path, mine}, "")
+	if err != nil {
+		t.Fatalf("drift on my own writing: %v", err)
+	}
+	if !strings.Contains(stdout, "reads like you on all") {
+		t.Errorf("stdout = %q, want my own register to read like me", stdout)
+	}
+
+	stdout, _, err = runCLI(t, []string{"voice", "drift", "--voice", path, theirs}, "")
+	if err != nil {
+		t.Fatalf("drift on machine writing: %v", err)
+	}
+	if !strings.Contains(stdout, "reads unlike you on") {
+		t.Errorf("stdout = %q, want the machine register to read unlike me", stdout)
+	}
+	if !strings.Contains(stdout, "vocabulary") {
+		t.Errorf("stdout = %q, want the heavier vocabulary named", stdout)
+	}
+
+	// The gate fails the run only when a trait lands further out than --bands allows.
+	if _, _, err = runCLI(t, []string{"voice", "drift", "--voice", path, "--bands", "1", theirs}, ""); err == nil {
+		t.Error("--bands 1 passed on a text that drifts several bands out")
+	}
+	if _, _, err = runCLI(t, []string{"voice", "drift", "--voice", path, "--bands", "1", mine}, ""); err != nil {
+		t.Errorf("--bands 1 failed on my own writing: %v", err)
+	}
+}
+
+// TestVoiceDriftJSON checks the JSON shape a pipeline reads.
+func TestVoiceDriftJSON(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "voice.json")
+	samples := writeTemp(t, dir, "samples.md", plainWriting(40))
+	if _, _, err := runCLI(t, []string{"voice", "fingerprint", "--voice", path, samples}, ""); err != nil {
+		t.Fatalf("voice fingerprint: %v", err)
+	}
+	theirs := writeTemp(t, dir, "theirs.md", machineWriting(8))
+	stdout, _, err := runCLI(t, []string{"voice", "drift", "--voice", path, "--json", theirs}, "")
+	if err != nil {
+		t.Fatalf("drift --json: %v", err)
+	}
+	var got struct {
+		Drift []sanitize.Drift `json:"drift"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &got); err != nil {
+		t.Fatalf("decode %q: %v", stdout, err)
+	}
+	if len(got.Drift) == 0 {
+		t.Fatal("no drift reported for a machine register")
+	}
+	for _, d := range got.Drift {
+		if d.Metric == "" || d.Note == "" || d.Off <= 1 {
+			t.Errorf("thin drift entry: %+v", d)
+		}
+	}
+}
+
+// TestVoiceDriftNoFingerprint checks that drift without a fingerprint says how to make
+// one instead of reporting nothing.
+func TestVoiceDriftNoFingerprint(t *testing.T) {
+	dir := t.TempDir()
+	path := writeTemp(t, dir, "voice.json", `{"keep":["gnarly"]}`)
+	draft := writeTemp(t, dir, "draft.md", plainWriting(12))
+	_, _, err := runCLI(t, []string{"voice", "drift", "--voice", path, draft}, "")
+	if err == nil {
+		t.Fatal("drift without a fingerprint returned no error")
+	}
+	if !strings.Contains(err.Error(), "voice fingerprint") {
+		t.Errorf("err = %v, want it to name the command that measures one", err)
+	}
+}

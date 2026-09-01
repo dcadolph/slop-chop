@@ -91,6 +91,58 @@ edit is a mood, not a rule.
 Add `--json` for the full candidate list plus the suggested voice, for wiring into
 something else.
 
+## Measure how you write
+
+The three lists hold your words. A model that reads them can hand them straight back, and
+a voice built only from words has that hole in it. So slop-chop also measures the part of
+your writing nobody quotes: sentence rhythm, punctuation habits, and register, as numbers.
+
+```
+slop-chop voice fingerprint posts/*.md notes.md
+```
+
+That reads your own finished writing and stores eleven measurements in your voice file.
+
+```
+  sentence-length       13.71  give or take 4.00  words per sentence
+  sentence-variation     0.72  give or take 0.18  spread of sentence length
+  commas                 0.93  give or take 0.50  commas per sentence
+  contractions           0.00  give or take 1.50  contractions per 100 words
+  long-words             6.22  give or take 4.00  percent of words over eight letters
+```
+
+The give-or-take is the band, how far a text may sit from the measurement before the
+difference means anything. Each band starts wide enough to absorb the ordinary variation
+between two things one person wrote, and widens further when your own samples disagree, so
+a habit that swings from piece to piece is not read as drift later.
+
+Feed it your finished writing, several pieces of it, and no machine drafts. A fingerprint
+taken from a model's prose measures the model. Code, headings, tables, front matter, and
+list markers are stripped before anything is counted, so only prose you composed reaches
+the numbers.
+
+## Find the paragraphs that stopped sounding like you
+
+```
+slop-chop voice drift draft.md
+```
+
+```
+draft.md reads unlike you on 4 of 11 traits
+  a heavier vocabulary than yours              48.57 against your 6.22 (percent of words over eight letters)
+  sentences run flatter than yours             0.41 against your 0.72 (spread of sentence length)
+  starts sentences lowercase less than you do  0.00 against your 24.94 (percent of sentences)
+  longer sentences than you write              20.00 against your 13.71 (words per sentence)
+```
+
+Drift is not slop. A trait outside your range can be good writing that belongs to somebody
+else, which is exactly what a model hands you. The report names the difference and leaves
+the verdict to you, which is why nothing here is rewritten and no score changes.
+
+`--bands 2` fails the run when a trait lands more than two bands out, so a team can gate
+its own house voice in CI the way `score --max` gates slop. `--json` gives the same report
+as data.
+
 ## Teach it your voice
 
 The three lists shape the deterministic pass. A fourth, `tone`, shapes the optional model

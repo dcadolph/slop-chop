@@ -303,6 +303,20 @@ Overlay more than one with a comma: `--preset corporate,plain`.
 [docs/PROFILE.md](docs/PROFILE.md) is the full reference: every field, the presets, the
 spelling dialects, the allow list, and the inline ignore directives.
 
+## Your voice
+
+`voice` is the personal layer: `keep` protects your words from every rule and preset,
+`prefer` swaps a word for the one you would have used, and `avoid` flags your own
+crutches. `slop-chop voice diff draft.md final.md` reads what you changed between a draft
+and the version you shipped and proposes entries from your edits, which is the one voice
+signal a model cannot feed back to you.
+
+`slop-chop voice fingerprint posts/*.md` measures the part nobody quotes: sentence
+rhythm, punctuation habits, and register, as numbers. `slop-chop voice drift draft.md`
+then names every trait where a text stopped sounding like you, and `--bands 2` turns that
+into a CI gate on a house voice. Drift is not slop, so nothing is rewritten and no score
+moves. [docs/VOICE.md](docs/VOICE.md) has all of it.
+
 ## Rewrite pass (optional)
 
 The rules pass is deterministic and free. For the work rules cannot do, like reworking a
@@ -379,11 +393,12 @@ on [pkg.go.dev](https://pkg.go.dev/github.com/dcadolph/slop-chop/sanitize).
 
 ## Docs
 
-- [docs/PLUGIN.md](docs/PLUGIN.md) is the Claude Code plugin guide: install, the skill, the
-  command, backends, and troubleshooting.
-- [docs/PROFILE.md](docs/PROFILE.md) is the profile and preset reference.
-- [ENGINE.md](ENGINE.md) is how the engine works: the rule kinds, the order they run in,
-  and the rewrite pass in detail.
+| Doc                                | What is inside                                                                      |
+|------------------------------------|-------------------------------------------------------------------------------------|
+| [docs/PROFILE.md](docs/PROFILE.md) | Every profile field, the presets, dialects, the allow list, and ignores.            |
+| [docs/VOICE.md](docs/VOICE.md)     | Keep, prefer, and avoid, learning from your edits, and the voice fingerprint.&nbsp; |
+| [docs/PLUGIN.md](docs/PLUGIN.md)   | The Claude Code plugin: install, the skill, the command, and backends.              |
+| [ENGINE.md](ENGINE.md)             | How the engine works: rule kinds, the order they run in, and the rewrite.           |
 
 ## Status
 
