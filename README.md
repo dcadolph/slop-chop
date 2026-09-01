@@ -201,7 +201,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dcadolph/slop-chop@v0.35.0
+      - uses: dcadolph/slop-chop@v0.36.0
         with:
           files: docs/intro.md docs/guide.md
           # profile: myprofile.json   # optional
@@ -223,7 +223,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
-      - uses: dcadolph/slop-chop@v0.35.0
+      - uses: dcadolph/slop-chop@v0.36.0
         with:
           files: docs/intro.md docs/guide.md
           mode: fix
