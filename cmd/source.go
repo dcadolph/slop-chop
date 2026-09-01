@@ -83,3 +83,14 @@ func dropTidyFindings(findings []sanitize.Finding) []sanitize.Finding {
 	}
 	return out
 }
+
+// countFixable counts the findings fix would rewrite, the ones carrying a replacement.
+func countFixable(findings []sanitize.Finding) int {
+	n := 0
+	for _, f := range findings {
+		if f.Replacement != nil {
+			n++
+		}
+	}
+	return n
+}

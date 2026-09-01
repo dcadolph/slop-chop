@@ -96,8 +96,21 @@ func checkOne(s *sanitize.Sanitizer, text, path string, stdout, stderr io.Writer
 		for _, f := range findings {
 			_, _ = fmt.Fprintf(stderr, "%s%s\n", prefix, f)
 		}
-		if len(findings) > 0 {
-			_, _ = fmt.Fprintf(stderr, "slop-chop: %d finding(s)\n", len(findings))
+		switch fixable := countFixable(findings); {
+		case len(findings) == 0:
+			target := path
+			if target == "" {
+				target = "stdin"
+			}
+			_, _ = fmt.Fprintf(stderr, "slop-chop: %s is clean\n", target)
+		case fixable > 0:
+			_, _ = fmt.Fprintf(stderr,
+				"slop-chop: %d finding(s), %d fixable with 'slop-chop fix'; silence a one-off with an allow entry or <!-- slop-chop-ignore -->\n",
+				len(findings), fixable)
+		default:
+			_, _ = fmt.Fprintf(stderr,
+				"slop-chop: %d finding(s), all flag-only; rewrite them with a preset like --preset cleaver, or silence with an allow entry\n",
+				len(findings))
 		}
 	}
 	if len(findings) > 0 {

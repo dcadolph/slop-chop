@@ -29,7 +29,7 @@ hide:
 <button id="sc-settings-btn" class="sc-iconbtn" type="button" aria-label="Settings" aria-expanded="false" aria-controls="sc-drawer"><span class="sc-bars" aria-hidden="true"></span><span class="sc-iconbtn-text">Settings</span></button>
 <div id="sc-score-pop" class="sc-score-pop" hidden>
 <div class="sc-score-pop-head"><strong>Slop score: <span id="sc-pop-value"></span> of 100</strong></div>
-<p class="sc-score-pop-what">How much the input reads like AI wrote it. It weighs the density of tells, with sentence shapes counted double, against flat rhythm and hedging.</p>
+<p class="sc-score-pop-what">The density of AI-writing tells, with sentence shapes counted double, plus hedging and the on-the-one-hand register. High means many machine-writing patterns, not proof of authorship.</p>
 <div class="sc-score-legend">
 <span><i class="dot low"></i>under 25 reads clean</span>
 <span><i class="dot mid"></i>25 to 54 mixed</span>
@@ -212,7 +212,7 @@ There is a second problem a model cannot solve for you. Every tell that gets fam
 
     ---
 
-    Models trained away "delve" and the em-dash, then picked up new habits: the spaced hyphen, the "The best part?" reveal, bold-label bullets, emoji headings. The default profile tracks what models write now, with 114 buzzwords, 39 stock phrases, and 21 sentence shapes.
+    Models trained away "delve" and the em-dash, then picked up new habits: the spaced hyphen, the "The best part?" reveal, bold-label bullets, emoji headings. The default profile tracks what models write now, with 161 buzzwords, 46 stock phrases, and 61 sentence shapes.
 
 -   :material-scale-balance:{ .lg .middle } __Measured, not guessed__
 

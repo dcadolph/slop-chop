@@ -10,7 +10,7 @@ would pick, and flags the words you never want to see.
 |----------|------------------------------------------------------------------------|---------------------------------|
 | `keep`   | Words and phrases to never flag or cut, so your signatures survive.    | `allow`                         |
 | `prefer` | Your own swap, from a word or phrase to the one you want. An empty target drops the word. | `wordReplace` / `phraseReplace` |
-| `avoid`  | Your own words to flag wherever they appear.                           | `blockWords`                    |
+| `avoid`  | Your own words to flag wherever they appear, however capitalized.      | `blockAlways`                   |
 
 A starter `~/.slop-chop/voice.json`:
 
@@ -25,10 +25,22 @@ A starter `~/.slop-chop/voice.json`:
 With this, a preset that would swap a kept word leaves it alone, `utilize` becomes `use`
 instead of whatever a preset picked, and `synergy` is flagged wherever it shows up.
 
+## When your voice needs the profile instead
+
+The three lists cover vocabulary. Two voice traits live in the profile file rather than
+the voice file: if you write with semicolons, `"splitSemicolons": false` in a
+`.slop-chop.json` keeps them. And if you want a tell to count more or less against the
+score, that is the profile's `scoreWeights`. Both are one line. See
+[the profile reference](PROFILE.md). Everything a keep entry protects is protected from
+every rule, so `"keep": ["moreover,"]` preserves a sincere connective exactly as the
+findings display it.
+
 ## Where it lives
 
-- The personal default is `~/.slop-chop/voice.json`. Once it exists it applies to every run.
-- `--voice path.json` points at a different file for a single run.
+- The personal default is `~/.slop-chop/voice.json`. Once it exists it applies to every
+  run, and each run says so on stderr, since a voice changes what the rules report.
+- `--voice path.json` points at a different file for a single run, and `--voice off`
+  disables the voice entirely, which is what a CI script wants for reproducible output.
 - A project's `.slop-chop.json` still outranks your voice, so a repo can pin its house style.
 
 Precedence, highest to lowest: the project profile, then your voice, then a preset, then the
@@ -68,10 +80,13 @@ The report groups what it found three ways:
 | `prefer`   | You changed it and no rule caught it, which is where your profile grows.  |
 | `confirms` | You cut what the rules already flag, so an existing rule matches how you write. |
 
-It proposes and never writes. The fragment at the end holds only the entries that would
-add something, so a confirmation never becomes a duplicate rule. Merge the ones you agree
-with into your voice file by hand, and let a habit show up more than once before you
-promote it: a single edit is a mood, not a rule.
+It proposes and never writes, and it declines to propose what cannot become a safe rule:
+moves, case-only and punctuation-only edits, insertions, fact corrections, restructures
+too large to read as word choice, common words left over from a rewrite, and markdown
+fragments are all filtered out. A word you edited two different ways is reported as a
+conflict instead of silently resolved. Merge the entries you agree with into your voice
+file by hand, and let a habit show up more than once before you promote it: a single
+edit is a mood, not a rule.
 
 Add `--json` for the full candidate list plus the suggested voice, for wiring into
 something else.

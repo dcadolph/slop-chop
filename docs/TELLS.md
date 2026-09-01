@@ -9,7 +9,7 @@ profile acts on, generated straight from the profile the engine compiles, so wha
 read here is exactly what gets chopped. Rebuild it any time with
 `slop-chop tells --markdown`.
 
-## Character swaps (81)
+## Character swaps (80)
 
 Rewritten in place. The usual suspects: the em-dash, smart quotes, the ellipsis.
 
@@ -19,7 +19,6 @@ Rewritten in place. The usual suspects: the em-dash, smart quotes, the ellipsis.
 | `&#8212;` | `, ` |
 | `&hellip;` | `...` |
 | `&mdash;` | `, ` |
-| `&nbsp;` | ` ` |
 | `&ndash;` | `-` |
 | ` ` | ` ` |
 | `­` | dropped |

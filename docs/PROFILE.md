@@ -54,6 +54,12 @@ A `--preset` overlays its rules on top of the active profile. The profile always
 key both set, so a preset adds without overwriting what you wrote. See
 [Presets](#presets).
 
+A project or `--profile` file extends the built-in default: your entries add to and
+override the default rules, so a two-line policy means the default detection plus your
+two decisions. `"standalone": true` makes the file replace the default outright. In the
+extending form, boolean switches can be turned on but not off, since off is also the
+unset value. Turning a default cleanup off takes a standalone profile.
+
 ## Fields
 
 | Field             | Type                | Rewrites | What it does                                  |
@@ -63,6 +69,7 @@ key both set, so a preset adds without overwriting what you wrote. See
 | `wordReplace`     | object              | yes      | Swap a whole word, keeping its case.          |
 | `regexReplace`    | object              | yes      | Swap on your own regular expression.          |
 | `blockWords`      | array of strings    | no       | Flag a word or term but leave it in place.    |
+| `blockAlways`     | array of strings    | no       | Flag a word with no proper-noun exemption.    |
 | `flagPatterns`    | object              | no       | Flag a structural tell by regex, no rewrite.  |
 | `allow`           | array of strings    | n/a      | Exempt a word from every rule.                |
 | `scoreWeights`    | object              | n/a      | Tune how much each rule adds to the score.    |
@@ -70,6 +77,7 @@ key both set, so a preset adds without overwriting what you wrote. See
 | `collapseSpaces`  | boolean             | yes      | Fold repeated spaces and tidy punctuation.    |
 | `splitSemicolons` | boolean             | yes      | Turn a joining semicolon into two sentences.  |
 | `tone`            | array of strings    | n/a      | Notes the rewrite pass feeds to the model.    |
+| `standalone`      | boolean             | n/a      | Replace the default profile instead of extending it. |
 
 ## charReplace
 

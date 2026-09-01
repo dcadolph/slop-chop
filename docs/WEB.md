@@ -2,7 +2,7 @@
 
 slop-chop.com runs the same rules engine as the CLI, compiled to WebAssembly. One
 codebase, two front ends, byte-identical output. Nothing is uploaded and there is no
-server: the page is static files on GitHub Pages.
+server: the page is static files served by a Cloudflare Worker.
 
 ## How the pieces fit
 

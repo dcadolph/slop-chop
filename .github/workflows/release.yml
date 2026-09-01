@@ -47,6 +47,16 @@ jobs:
       - name: Install gox
         run: go install github.com/mitchellh/gox@latest
 
+      - name: README action pin must match this release
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          if ! grep -q "uses: dcadolph/slop-chop@${TAG}" README.md; then
+            echo "::error::README.md pins a different action version than ${TAG}." \
+              "Update the two CI examples before tagging, so copy-pasters get this engine."
+            exit 1
+          fi
+
       - name: Cross-build and package
         env:
           TAG: ${{ github.ref_name }}
@@ -54,20 +64,27 @@ jobs:
           set -euo pipefail
           VER="${TAG#v}"
           mkdir -p build dist
-          gox -osarch="darwin/amd64 darwin/arm64 linux/amd64 linux/arm64" \
+          gox -osarch="darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64 windows/arm64" \
             -ldflags="-s -w -X github.com/dcadolph/slop-chop/cmd.version=${VER}" \
             -output="build/slop-chop_{{.OS}}_{{.Arch}}" .
           for f in build/slop-chop_*; do
             base="${f#build/slop-chop_}"
+            base="${base%.exe}"
             os="${base%%_*}"
             arch="${base##*_}"
-            case "$os" in darwin) osl=Darwin ;; linux) osl=Linux ;; esac
+            case "$os" in darwin) osl=Darwin ;; linux) osl=Linux ;; windows) osl=Windows ;; esac
             case "$arch" in amd64) al=x86_64 ;; arm64) al=arm64 ;; esac
-            cp "$f" build/slop-chop
-            tar -C build -czf "dist/slop-chop_${VER}_${osl}_${al}.tar.gz" slop-chop
-            rm build/slop-chop
+            if [ "$os" = windows ]; then
+              cp "$f" build/slop-chop.exe
+              ( cd build && zip -q "../dist/slop-chop_${VER}_${osl}_${al}.zip" slop-chop.exe )
+              rm build/slop-chop.exe
+            else
+              cp "$f" build/slop-chop
+              tar -C build -czf "dist/slop-chop_${VER}_${osl}_${al}.tar.gz" slop-chop
+              rm build/slop-chop
+            fi
           done
-          ( cd dist && sha256sum *.tar.gz | tee checksums.txt )
+          ( cd dist && sha256sum *.tar.gz *.zip | tee checksums.txt )
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
@@ -75,6 +92,7 @@ jobs:
           generate_release_notes: true
           files: |
             dist/*.tar.gz
+            dist/*.zip
             dist/checksums.txt
           fail_on_unmatched_files: true
 
