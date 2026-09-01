@@ -45,6 +45,37 @@ slop-chop fix draft.md    # your voice applies with no extra flags
 
 `voice init [path]` writes somewhere else, and `--force` overwrites an existing file.
 
+## Learn from your own edits
+
+`voice diff` reads a draft against the version you shipped and proposes entries from what
+you changed.
+
+```
+slop-chop voice diff draft.md final.md
+```
+
+Your edits are the one voice signal a model cannot contaminate. The draft's words are its
+own, but every change to them is yours, so nothing here can teach the tool to imitate
+itself. A change whose two sides carry different numbers, links, or acronyms is read as a
+corrected fact and ignored, which keeps "waits 5s" becoming "waits 30s" out of your style
+rules while `utilize` becoming `use` stays in.
+
+The report groups what it found three ways:
+
+| Group      | What it means                                                            |
+| ---------- | ------------------------------------------------------------------------ |
+| `keep`     | The rules flagged it and you shipped it anyway, so the rules are wrong about this word. |
+| `prefer`   | You changed it and no rule caught it, which is where your profile grows.  |
+| `confirms` | You cut what the rules already flag, so an existing rule matches how you write. |
+
+It proposes and never writes. The fragment at the end holds only the entries that would
+add something, so a confirmation never becomes a duplicate rule. Merge the ones you agree
+with into your voice file by hand, and let a habit show up more than once before you
+promote it: a single edit is a mood, not a rule.
+
+Add `--json` for the full candidate list plus the suggested voice, for wiring into
+something else.
+
 ## Teach it your voice
 
 The three lists shape the deterministic pass. A fourth, `tone`, shapes the optional model
@@ -64,7 +95,7 @@ cat draft.md | slop-chop voice learn
 
 `learn` sends the samples to the configured model (the same provider setup as
 `fix --rewrite`), gets back a handful of tone notes, and merges them into your voice file
-without duplicates. Run it again on new samples any time; edit or prune the lines like any
+without duplicates. Run it again on new samples any time. Edit or prune the lines like any
 other config. The rules pass ignores tone, so scores and deterministic output are unchanged,
 and the rewrite's fail-closed meaning check still applies.
 
