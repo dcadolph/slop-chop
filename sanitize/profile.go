@@ -74,6 +74,11 @@ type Profile struct {
 	// rewrites them, "british" does the reverse, and an empty value or "off" leaves
 	// spelling alone.
 	Dialect Dialect `json:"dialect"`
+	// Standalone makes this profile replace the built-in default outright instead of
+	// extending it. Off by default, because the policy every team actually wants is
+	// the default detection plus their own entries, and a two-line profile that
+	// silently disabled two hundred rules certified slop through CI.
+	Standalone bool `json:"standalone"`
 }
 
 // DefaultProfile returns the built-in profile that targets common AI tells.
