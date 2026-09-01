@@ -15,11 +15,11 @@ import (
 	"github.com/dcadolph/slop-chop/sanitize"
 )
 
-// TestTools checks that the server advertises the three tools, each with a description a
+// TestTools checks that the server advertises the four tools, each with a description a
 // client's tool picker can read and an input schema that requires only the text.
 func TestTools(t *testing.T) {
 	t.Parallel()
-	cs := newTestSession(t, NewServer(testSanitizers(), nil, "test"))
+	cs := newTestSession(t, NewServer(testSanitizers(), nil, nil, "test"))
 
 	res, err := cs.ListTools(t.Context(), nil)
 	if err != nil {
@@ -39,6 +39,8 @@ func TestTools(t *testing.T) {
 		Name: "check", WantRequired: []string{"text"},
 	}, { // Test 2: presets takes no arguments at all.
 		Name: "presets", WantRequired: nil,
+	}, { // Test 3: drift takes the draft and nothing else is mandatory.
+		Name: "drift", WantRequired: []string{"text"},
 	}}
 	for testNum, test := range tests {
 		t.Run(fmt.Sprintf("test %d", testNum), func(t *testing.T) {
@@ -114,7 +116,7 @@ func TestChop(t *testing.T) {
 	for testNum, test := range tests {
 		t.Run(fmt.Sprintf("test %d", testNum), func(t *testing.T) {
 			t.Parallel()
-			cs := newTestSession(t, NewServer(testSanitizers(), nil, "test"))
+			cs := newTestSession(t, NewServer(testSanitizers(), nil, nil, "test"))
 			res, err := cs.CallTool(t.Context(), &mcpsdk.CallToolParams{Name: "chop", Arguments: test.Args})
 			if err != nil {
 				t.Fatalf("CallTool: %v", err)
@@ -162,7 +164,7 @@ func TestChopModelRewrite(t *testing.T) {
 			called = true
 			return "rewritten", nil
 		})
-		cs := newTestSession(t, NewServer(testSanitizers(), rw, "test"))
+		cs := newTestSession(t, NewServer(testSanitizers(), rw, nil, "test"))
 		res, err := cs.CallTool(t.Context(), &mcpsdk.CallToolParams{
 			Name:      "chop",
 			Arguments: map[string]any{"text": "we leverage it"},
@@ -188,7 +190,7 @@ func TestChopModelRewrite(t *testing.T) {
 			gotText, gotTone = text, tone
 			return "we leverage it again", nil
 		})
-		cs := newTestSession(t, NewServer(testSanitizers(), rw, "test"))
+		cs := newTestSession(t, NewServer(testSanitizers(), rw, nil, "test"))
 		res, err := cs.CallTool(t.Context(), &mcpsdk.CallToolParams{
 			Name:      "chop",
 			Arguments: map[string]any{"text": "we leverage it", "model_rewrite": true},
@@ -219,7 +221,7 @@ func TestChopModelRewrite(t *testing.T) {
 	// which would look like the model pass ran when it never did.
 	t.Run("test 2", func(t *testing.T) {
 		t.Parallel()
-		cs := newTestSession(t, NewServer(testSanitizers(), nil, "test"))
+		cs := newTestSession(t, NewServer(testSanitizers(), nil, nil, "test"))
 		res, err := cs.CallTool(t.Context(), &mcpsdk.CallToolParams{
 			Name:      "chop",
 			Arguments: map[string]any{"text": "we leverage it", "model_rewrite": true},
@@ -236,7 +238,7 @@ func TestChopModelRewrite(t *testing.T) {
 		rw := RewriterFunc(func(context.Context, string, []string) (string, error) {
 			return "", errors.New("no api key")
 		})
-		cs := newTestSession(t, NewServer(testSanitizers(), rw, "test"))
+		cs := newTestSession(t, NewServer(testSanitizers(), rw, nil, "test"))
 		res, err := cs.CallTool(t.Context(), &mcpsdk.CallToolParams{
 			Name:      "chop",
 			Arguments: map[string]any{"text": "we leverage it", "model_rewrite": true},
@@ -274,7 +276,7 @@ func TestCheck(t *testing.T) {
 	for testNum, test := range tests {
 		t.Run(fmt.Sprintf("test %d", testNum), func(t *testing.T) {
 			t.Parallel()
-			cs := newTestSession(t, NewServer(testSanitizers(), nil, "test"))
+			cs := newTestSession(t, NewServer(testSanitizers(), nil, nil, "test"))
 			res, err := cs.CallTool(t.Context(), &mcpsdk.CallToolParams{Name: "check", Arguments: test.Args})
 			if err != nil {
 				t.Fatalf("CallTool: %v", err)
@@ -306,7 +308,7 @@ func TestCheck(t *testing.T) {
 // discover the names the other two tools accept.
 func TestPresets(t *testing.T) {
 	t.Parallel()
-	cs := newTestSession(t, NewServer(testSanitizers(), nil, "test"))
+	cs := newTestSession(t, NewServer(testSanitizers(), nil, nil, "test"))
 	res, err := cs.CallTool(t.Context(), &mcpsdk.CallToolParams{Name: "presets"})
 	if err != nil {
 		t.Fatalf("CallTool: %v", err)
@@ -333,7 +335,7 @@ func TestNewServerNilSanitizers(t *testing.T) {
 			t.Error("NewServer with a nil Sanitizers did not panic")
 		}
 	}()
-	NewServer(nil, nil, "test")
+	NewServer(nil, nil, nil, "test")
 }
 
 // testSanitizers builds the small fixed rules engine the tests drive, applying the presets
@@ -417,4 +419,122 @@ func structured(t *testing.T, res *mcpsdk.CallToolResult, v any) {
 	if err := json.Unmarshal(b, v); err != nil {
 		t.Fatalf("unmarshal structured content: %v", err)
 	}
+}
+
+// writerSample builds plain, short, first-person sentences, the register the drift tests
+// treat as the user's own writing.
+func writerSample(n int) string {
+	var sb strings.Builder
+	for i := range n {
+		fmt.Fprintf(&sb, "I wrote the note on day %d and I sent it. ", i)
+		if i%3 == 2 {
+			sb.WriteString("\n\n")
+		}
+	}
+	return sb.String()
+}
+
+// testFingerprints returns a Fingerprints measured from writerSample, the seam the drift
+// tests drive the tool through.
+func testFingerprints(t *testing.T) FingerprintFunc {
+	t.Helper()
+	f, err := sanitize.NewFingerprint(writerSample(40))
+	if err != nil {
+		t.Fatalf("NewFingerprint: %v", err)
+	}
+	return func() (sanitize.Fingerprint, error) { return f, nil }
+}
+
+// TestDrift drives the drift tool: the user's own register, a machine's, and every way the
+// call can fail.
+func TestDrift(t *testing.T) {
+	t.Parallel()
+	machine := strings.Repeat("The comprehensive implementation of organizational observability "+
+		"strategies demonstrates substantial operational improvements across distributed "+
+		"infrastructure environments throughout the transition period. ", 8)
+
+	tests := []struct {
+		Name         string
+		Args         map[string]any
+		Fingerprints Fingerprints
+		WantErr      string
+		WantDrift    bool
+		WantContent  string
+	}{{ // Test 0: More of the user's own writing reads like them.
+		Name: "own register", Args: map[string]any{"text": writerSample(12)},
+		WantDrift: false, WantContent: "reads like the user",
+	}, { // Test 1: A long, formal register reads unlike them, and the report says how.
+		Name: "machine register", Args: map[string]any{"text": machine},
+		WantDrift: true, WantContent: "reads unlike the user",
+	}, { // Test 2: A note is too short to carry a reading.
+		Name: "too short", Args: map[string]any{"text": "I wrote this one."},
+		WantErr: "not enough text",
+	}, { // Test 3: Empty text is refused before any measuring.
+		Name: "empty", Args: map[string]any{"text": ""}, WantErr: "text is required",
+	}, { // Test 4: Text over the cap is refused.
+		Name: "too big", Args: map[string]any{"text": strings.Repeat("a", maxTextBytes+1)},
+		WantErr: "over the",
+	}, { // Test 5: A server wired without a voice says so rather than passing everything.
+		Name: "no voice", Args: map[string]any{"text": writerSample(12)},
+		Fingerprints: FingerprintFunc(func() (sanitize.Fingerprint, error) {
+			return sanitize.Fingerprint{}, errors.New("no fingerprint in voice.json")
+		}),
+		WantErr: "no fingerprint",
+	}}
+	for testNum, test := range tests {
+		t.Run(fmt.Sprintf("test %d %s", testNum, test.Name), func(t *testing.T) {
+			t.Parallel()
+			fps := test.Fingerprints
+			if fps == nil {
+				fps = testFingerprints(t)
+			}
+			cs := newTestSession(t, NewServer(testSanitizers(), nil, fps, "test"))
+			res, err := cs.CallTool(t.Context(), &mcpsdk.CallToolParams{Name: "drift", Arguments: test.Args})
+			if err != nil {
+				t.Fatalf("CallTool: %v", err)
+			}
+			if test.WantErr != "" {
+				assertToolError(t, res, test.WantErr)
+				return
+			}
+			if res.IsError {
+				t.Fatalf("tool error: %s", textContent(t, res))
+			}
+			if got := textContent(t, res); !strings.Contains(got, test.WantContent) {
+				t.Errorf("content = %q, want it to hold %q", got, test.WantContent)
+			}
+			var out driftOutput
+			b, err := json.Marshal(res.StructuredContent)
+			if err != nil {
+				t.Fatalf("marshal structured content: %v", err)
+			}
+			if err := json.Unmarshal(b, &out); err != nil {
+				t.Fatalf("unmarshal structured content: %v", err)
+			}
+			if out.ReadsLikeYou == test.WantDrift {
+				t.Errorf("readsLikeYou = %v with %d drifted traits", out.ReadsLikeYou, len(out.Drift))
+			}
+			if test.WantDrift && len(out.Drift) == 0 {
+				t.Error("drift reported none on a machine register")
+			}
+			if out.Traits == 0 {
+				t.Error("traits = 0, want the number measured")
+			}
+		})
+	}
+}
+
+// TestDriftNoFingerprints checks that a server built without a Fingerprints refuses drift
+// instead of panicking on a nil provider.
+func TestDriftNoFingerprints(t *testing.T) {
+	t.Parallel()
+	cs := newTestSession(t, NewServer(testSanitizers(), nil, nil, "test"))
+	res, err := cs.CallTool(t.Context(), &mcpsdk.CallToolParams{
+		Name:      "drift",
+		Arguments: map[string]any{"text": writerSample(12)},
+	})
+	if err != nil {
+		t.Fatalf("CallTool: %v", err)
+	}
+	assertToolError(t, res, "needs a voice")
 }

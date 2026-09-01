@@ -18,9 +18,10 @@ func mcpCmd() *cobra.Command {
 		Use:   "mcp",
 		Short: "Run as a Model Context Protocol server over stdio.",
 		Long: `mcp speaks the Model Context Protocol on stdin and stdout, so an MCP client such as
-Claude Desktop, Claude Code, or Cursor can chop text on demand. It serves three tools: chop
-cleans text, check reports the tells without changing anything, and presets lists the built-in
-packs. The rules pass runs here on your machine and uploads nothing. The model rewrite stays
+Claude Desktop, Claude Code, or Cursor can chop text on demand. It serves four tools: chop
+cleans text, check reports the tells without changing anything, presets lists the built-in
+packs, and drift says whether a draft sounds like the writing you measured with
+voice fingerprint. The rules pass runs here on your machine and uploads nothing. The model rewrite stays
 off unless a call asks for it. The flags set the server's defaults, which a call can override
 for itself, and the same profile, presets, and voice as the other commands apply.`,
 		Args: cobra.NoArgs,
@@ -49,7 +50,8 @@ func runMCP(cmd *cobra.Command, _ []string) error {
 	if _, _, err := newSanitizer(); err != nil {
 		return err
 	}
-	srv := mcp.NewServer(mcp.SanitizerFunc(mcpSanitizer), mcpRewriter(), resolveVersion())
+	srv := mcp.NewServer(mcp.SanitizerFunc(mcpSanitizer), mcpRewriter(), mcpFingerprints(),
+		resolveVersion())
 	return srv.Run(cmd.Context())
 }
 
@@ -76,5 +78,27 @@ func mcpRewriter() mcp.Rewriter {
 			return "", err
 		}
 		return rewritePass(ctx, completer, tone, text)
+	})
+}
+
+// mcpFingerprints resolves the writer's fingerprint for the drift tool. It reads the voice
+// file per call rather than at launch, so a fingerprint measured while the server is running
+// is picked up without a restart.
+func mcpFingerprints() mcp.Fingerprints {
+	return mcp.FingerprintFunc(func() (sanitize.Fingerprint, error) {
+		path := resolveVoicePath()
+		if path == "" {
+			return sanitize.Fingerprint{}, fmt.Errorf("no voice file: the user measures one with " +
+				"`slop-chop voice fingerprint <file ...>` on their own writing")
+		}
+		v, err := sanitize.LoadVoiceFile(path)
+		if err != nil {
+			return sanitize.Fingerprint{}, err
+		}
+		if v.Fingerprint == nil || v.Fingerprint.Empty() {
+			return sanitize.Fingerprint{}, fmt.Errorf("no fingerprint in %s: the user measures one "+
+				"with `slop-chop voice fingerprint <file ...>` on their own writing", path)
+		}
+		return *v.Fingerprint, nil
 	})
 }

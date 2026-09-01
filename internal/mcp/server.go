@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -52,7 +53,19 @@ func (f RewriterFunc) Rewrite(ctx context.Context, text string, tone []string) (
 	return f(ctx, text, tone)
 }
 
-// Server serves the chop, check, and presets tools over the Model Context Protocol.
+// Fingerprints supplies the writer's measured fingerprint for one call, so the drift tool
+// reads whatever the voice file holds now rather than a copy taken at launch.
+type Fingerprints interface {
+	Fingerprint() (sanitize.Fingerprint, error)
+}
+
+// FingerprintFunc adapts an ordinary function to Fingerprints.
+type FingerprintFunc func() (sanitize.Fingerprint, error)
+
+// Fingerprint calls f.
+func (f FingerprintFunc) Fingerprint() (sanitize.Fingerprint, error) { return f() }
+
+// Server serves the chop, check, presets, and drift tools over the Model Context Protocol.
 type Server struct {
 	// sdk is the protocol server the tools are registered on.
 	sdk *mcpsdk.Server
@@ -61,12 +74,16 @@ type Server struct {
 	// rewriter runs the model pass. It is nil when no backend is wired, which makes a call
 	// asking for the model pass an error rather than a silent deterministic-only chop.
 	rewriter Rewriter
+	// fingerprints resolves the writer's fingerprint for the drift tool. It is nil when no
+	// voice is wired, which makes a drift call an error rather than a silent pass.
+	fingerprints Fingerprints
 }
 
 // NewServer builds a Server serving the tools from sanitizers, reporting version in the
 // handshake. A nil rewriter refuses any call that asks for the model pass instead of quietly
-// skipping it. It panics on a nil Sanitizers, which is a developer error.
-func NewServer(sanitizers Sanitizers, rewriter Rewriter, version string) *Server {
+// skipping it, and a nil fingerprints does the same for drift. It panics on a nil Sanitizers,
+// which is a developer error.
+func NewServer(sanitizers Sanitizers, rewriter Rewriter, fingerprints Fingerprints, version string) *Server {
 	if sanitizers == nil {
 		panic("mcp.NewServer: Sanitizers required")
 	}
@@ -76,8 +93,9 @@ func NewServer(sanitizers Sanitizers, rewriter Rewriter, version string) *Server
 			Title:   serverName,
 			Version: version,
 		}, nil),
-		sanitizers: sanitizers,
-		rewriter:   rewriter,
+		sanitizers:   sanitizers,
+		rewriter:     rewriter,
+		fingerprints: fingerprints,
 	}
 	srv.register()
 	return srv
@@ -148,6 +166,22 @@ type checkOutput struct {
 	Score int `json:"score"`
 }
 
+// driftInput is the argument object of the drift tool.
+type driftInput struct {
+	// Text is the draft to measure against the writer's fingerprint.
+	Text string `json:"text" jsonschema:"The draft to measure against the user's own writing. Required. Needs a paragraph or more to read anything."`
+}
+
+// driftOutput is what the drift tool returns.
+type driftOutput struct {
+	// Drift is every trait that landed outside the writer's range, the furthest out first.
+	Drift []sanitize.Drift `json:"drift"`
+	// Traits is how many traits were measured, so a caller can read the drift count against it.
+	Traits int `json:"traits"`
+	// ReadsLikeYou reports whether every measured trait landed inside the writer's range.
+	ReadsLikeYou bool `json:"readsLikeYou"`
+}
+
 // presetsInput takes no arguments. The protocol wants an object schema, so it is an empty
 // struct rather than nothing at all.
 type presetsInput struct{}
@@ -192,6 +226,21 @@ func (srv *Server) register() {
 			"overlays extra rules on the standard profile, such as cleaver for the aggressive " +
 			"swaps or plain for turning corporate phrasing into plain English.",
 	}, srv.presets)
+
+	mcpsdk.AddTool(srv.sdk, &mcpsdk.Tool{
+		Name:  "drift",
+		Title: "Say whether a draft sounds like the user",
+		Description: "Measure a draft against the user's own writing and report where it " +
+			"stops sounding like them. Use it before handing over a draft you wrote for " +
+			"them, or to check whether text matches their voice. It compares sentence " +
+			"rhythm, punctuation habits, and register against the fingerprint the user " +
+			"measured from their own writing, and names each trait that landed outside " +
+			"their range, such as longer sentences or a heavier vocabulary. Drift is not " +
+			"slop: a trait outside the range can be good writing that is not theirs, so " +
+			"nothing is rewritten. It needs a fingerprint, which the user makes by running " +
+			"slop-chop voice fingerprint on their own writing. Deterministic, free, and " +
+			"local.",
+	}, srv.drift)
 }
 
 // chop cleans the text and returns it, with the tells found and the score movement. The
@@ -239,17 +288,55 @@ func (srv *Server) presets(_ context.Context, _ *mcpsdk.CallToolRequest, _ prese
 	return nil, presetsOutput{Presets: sanitize.PresetNames()}, nil
 }
 
+// drift measures the text against the writer's fingerprint and names what reads unlike
+// them. The summary is the content block, so a caller can act on the reply directly, and
+// the measurements ride along as structured output.
+func (srv *Server) drift(_ context.Context, _ *mcpsdk.CallToolRequest, in driftInput) (
+	*mcpsdk.CallToolResult, driftOutput, error) {
+	if srv.fingerprints == nil {
+		return nil, driftOutput{}, fmt.Errorf("drift needs a voice: this server was started without one")
+	}
+	if err := checkText(in.Text); err != nil {
+		return nil, driftOutput{}, err
+	}
+	f, err := srv.fingerprints.Fingerprint()
+	if err != nil {
+		return nil, driftOutput{}, err
+	}
+	drifts, err := f.Compare(in.Text)
+	if err != nil {
+		return nil, driftOutput{}, err
+	}
+	out := driftOutput{
+		Drift:        jsonutil.OrEmpty(drifts),
+		Traits:       len(f.Metrics),
+		ReadsLikeYou: len(drifts) == 0,
+	}
+	return &mcpsdk.CallToolResult{
+		Content: []mcpsdk.Content{&mcpsdk.TextContent{Text: driftSummary(drifts, len(f.Metrics))}},
+	}, out, nil
+}
+
+// driftSummary writes the report a caller reads as prose.
+func driftSummary(drifts []sanitize.Drift, traits int) string {
+	if len(drifts) == 0 {
+		return fmt.Sprintf("This reads like the user on all %d measured traits.", traits)
+	}
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "This reads unlike the user on %d of %d traits:", len(drifts), traits)
+	for _, d := range drifts {
+		fmt.Fprintf(&sb, "\n- %s (%.2f against their %.2f, %s)", d.Note, d.Got, d.Want, d.Unit)
+	}
+	return sb.String()
+}
+
 // engine validates the text and builds the rules engine for one call. A bad preset or dialect
 // comes back as a tool error naming what was wrong, so the caller can correct itself rather
 // than seeing the call fail at the protocol level.
 func (srv *Server) engine(text string, presets []string, dialect string) (
 	*sanitize.Sanitizer, sanitize.Profile, error) {
-	if text == "" {
-		return nil, sanitize.Profile{}, fmt.Errorf("text is required")
-	}
-	if len(text) > maxTextBytes {
-		return nil, sanitize.Profile{}, fmt.Errorf("text is %d bytes, over the %d byte limit",
-			len(text), maxTextBytes)
+	if err := checkText(text); err != nil {
+		return nil, sanitize.Profile{}, err
 	}
 	san, profile, err := srv.sanitizers.Sanitizer(presets, dialect)
 	if err != nil {
@@ -276,4 +363,16 @@ func (srv *Server) modelPass(ctx context.Context, san *sanitize.Sanitizer, clean
 	}
 	out, _ := san.Fix(rewritten)
 	return out, nil
+}
+
+// checkText rejects the inputs no tool can do anything with: nothing at all, and more text
+// than one call is meant to carry.
+func checkText(text string) error {
+	if text == "" {
+		return fmt.Errorf("text is required")
+	}
+	if len(text) > maxTextBytes {
+		return fmt.Errorf("text is %d bytes, over the %d byte limit", len(text), maxTextBytes)
+	}
+	return nil
 }

@@ -23,15 +23,19 @@ brew install dcadolph/tap/slop-chop
 
 ## The tools
 
-| Tool      | What it does                                                                  |
-| --------- | ----------------------------------------------------------------------------- |
+| Tool      | What it does                                                                       |
+|-----------|------------------------------------------------------------------------------------|
 | `chop`    | Cleans the text and hands back the human version, with the score before and after. |
-| `check`   | Reports the tells and where they are, changing nothing.                        |
-| `presets` | Lists the built-in packs the other two accept.                                 |
+| `check`   | Reports the tells and where they are, changing nothing.                            |
+| `presets` | Lists the built-in packs `chop` and `check` accept.                                |
+| `drift`   | Says whether a draft sounds like your own writing, and names what does not.&nbsp;  |
 
 `chop` and `check` both take `text`, plus an optional `presets` list and a `dialect` of
 `american`, `british`, or `off`. `chop` also takes `model_rewrite`, off by default, covered
-below.
+below. `drift` takes `text` and compares it against the fingerprint you measured with
+`slop-chop voice fingerprint`, so an agent can check its draft against your own writing
+before handing it over. Without a fingerprint it says so and measures nothing. See
+[VOICE.md](VOICE.md).
 
 Ask for a clean in whatever words you use. "Chop the slop out of this," "make this sound like a
 person wrote it," and "strip the AI tells from my draft" all reach the same tool.
