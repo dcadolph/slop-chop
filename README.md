@@ -136,7 +136,9 @@ the matched text, the suggested replacement, and a line and column.
 - `check` flags what it finds and exits non-zero. Drop it in CI.
 - `fix` writes the cleaned text to stdout and leaves your file alone. Pass `-w` to change
   the file in place instead.
-- `score` rates the text from 0 to 100 on how much it reads like AI wrote it.
+- `score` measures the density of AI-writing tells, 0 to 100. A high score means the text
+carries many patterns common in machine writing, not proof of authorship. Under 25 reads
+clean, 25 to 54 is mixed, and 55 and up is heavy slop, the same bands the web app shows.
 
 Source code gets its own treatment. On a `.go`, `.py`, `.ts`, or any other code file,
 `check` and `score` read only the comments, so a buzzword in a comment is flagged at its
@@ -158,7 +160,7 @@ against it on every run, so a change that weakens detection fails the build inst
 going unnoticed.
 
 ```sh
-slop-chop score notes.md            # prints a number like 42
+slop-chop score notes.md            # notes.md: 42 (mixed: 5 tells in 180 words)
 slop-chop score --json notes.md     # {"value":42,"tells":7,"words":210,...}
 slop-chop score --max 20 notes.md   # exit non-zero when the score is above 20
 ```
@@ -168,7 +170,7 @@ does.
 
 ## Structural tells
 
-Word swaps catch the vocabulary of AI writing. The rules pass also flags 39 structural
+Word swaps catch the vocabulary of AI writing. The rules pass also flags 61 structural
 tells that a word list misses: the `it's not just X, it's Y` cadence and its contracted
 `isn't a perk. It's an expectation` twin, the `let's dive in` opener, `here's the thing`
 throat-clearing, the `The best part?` fragment reveal, `here are five ways` enumeration,
@@ -196,7 +198,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dcadolph/slop-chop@v0.9.1
+      - uses: dcadolph/slop-chop@v0.33.0
         with:
           files: docs/intro.md docs/guide.md
           # profile: myprofile.json   # optional
@@ -218,7 +220,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
-      - uses: dcadolph/slop-chop@v0.9.1
+      - uses: dcadolph/slop-chop@v0.33.0
         with:
           files: docs/intro.md docs/guide.md
           mode: fix
@@ -284,8 +286,11 @@ phrases, words, regular expressions, a blacklist, and a few switches. Point the 
 with `--profile`, or drop a `.slop-chop.json` in the directory you run from and it gets
 picked up on its own. With neither, a built-in default runs.
 
-Presets are curated packs you overlay with `--preset`. The built-in packs are `plain`,
-`corporate`, `academic`, `marketing`, `no-dashes`, and `typography`. `--preset plain`
+Presets are curated packs you overlay with `--preset`. The built-in packs are `cleaver`,
+`plain`, `corporate`, `academic`, `marketing`, `no-dashes`, and `typography`. `cleaver`
+is the strongest cut: the default profile only flags buzzwords like `leverage` and
+`robust`, and `cleaver` rewrites them to plain words, which is what the web app ships
+switched on. `--preset plain`
 turns corporate phrasing into plain English on top of whatever profile you already have,
 and the others target the stock phrasing of their own worlds. The last two set dash
 policy: `no-dashes` converts every dash posing as an em-dash to a comma, and `typography`

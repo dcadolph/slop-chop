@@ -26,6 +26,11 @@ inputs:
     description: check flags slop and fails the run. fix rewrites the files in place.
     required: false
     default: check
+  max:
+    description: Fail the run when any file's slop score is above this 0-100 value.
+      Runs after the mode step. Leave empty for no score gate.
+    required: false
+    default: ""
   commit:
     description: In fix mode, commit and push the rewritten files. The workflow needs
       contents write permission for the push to land.
@@ -58,6 +63,7 @@ runs:
         DIALECT: ${{ inputs.dialect }}
         PRESET: ${{ inputs.preset }}
         MODE: ${{ inputs.mode }}
+        MAX: ${{ inputs.max }}
       run: |
         read -ra files <<< "$FILES"
         args=()
@@ -72,6 +78,11 @@ runs:
               "${RUNNER_TEMP}/slop-chop" check "${args[@]}" "$f" || rc=1
               echo "::endgroup::"
             done
+            if [ -n "$MAX" ]; then
+              for f in "${files[@]}"; do
+                "${RUNNER_TEMP}/slop-chop" score --max "$MAX" "${args[@]}" "$f" || rc=1
+              done
+            fi
             if [ "$rc" -ne 0 ]; then
               echo "slop-chop found slop. See the groups above." >&2
             fi

@@ -15,7 +15,7 @@ import (
 func scoreCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "score [file ...]",
-		Short: "Rate how much the text reads like AI wrote it, from 0 to 100.",
+		Short: "Score the density of AI-writing tells, 0 (none) to 100 (saturated).",
 		Args:  cobra.ArbitraryArgs,
 		RunE:  runScore,
 	}
@@ -69,6 +69,18 @@ func runScore(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// scoreBand names the band a score falls in, the same scale the web app shows, so every
+// surface reads the number the same way.
+func scoreBand(v int) string {
+	switch {
+	case v < 25:
+		return "reads clean"
+	case v < 55:
+		return "mixed"
+	}
+	return "heavy slop"
+}
+
 // scoreOne scores one input and writes the result to stdout. It returns errFindings when
 // the score is above the --max gate, so a run can fail CI on slop.
 func scoreOne(s *sanitize.Sanitizer, text, path string, stdout io.Writer) error {
@@ -78,10 +90,12 @@ func scoreOne(s *sanitize.Sanitizer, text, path string, stdout io.Writer) error 
 			return err
 		}
 	} else if path != "" {
-		if _, err := fmt.Fprintf(stdout, "%s: %d\n", path, score.Value); err != nil {
+		if _, err := fmt.Fprintf(stdout, "%s: %d (%s: %d tells in %d words)\n",
+			path, score.Value, scoreBand(score.Value), score.Tells, score.Words); err != nil {
 			return err
 		}
-	} else if _, err := fmt.Fprintf(stdout, "%d\n", score.Value); err != nil {
+	} else if _, err := fmt.Fprintf(stdout, "%d (%s: %d tells in %d words)\n",
+		score.Value, scoreBand(score.Value), score.Tells, score.Words); err != nil {
 		return err
 	}
 	if max := config.Max(); max >= 0 && score.Value > max {

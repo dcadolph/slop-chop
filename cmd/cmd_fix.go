@@ -157,6 +157,9 @@ func fixOne(ctx context.Context, s *sanitize.Sanitizer, tone []string, text, pat
 	} else if _, err := io.WriteString(stdout, out); err != nil {
 		return err
 	}
+	if !config.JSON() {
+		reportFixSummary(findings, stderr)
+	}
 	// The output written above is already the safe text: a confirmed rewrite, or the rules
 	// output when the check did not pass. --verify-strict adds a non-zero exit on that
 	// failure so a pipeline can gate on it, after the safe output is in hand.
@@ -164,6 +167,23 @@ func fixOne(ctx context.Context, s *sanitize.Sanitizer, tone []string, text, pat
 		return fmt.Errorf("meaning check flagged the rewrite")
 	}
 	return nil
+}
+
+// reportFixSummary says what fix did and what it left, so a run that keeps the famous
+// buzzwords does not read as a fixer that missed them.
+func reportFixSummary(findings []sanitize.Finding, stderr io.Writer) {
+	fixable := countFixable(findings)
+	flagged := len(findings) - fixable
+	switch {
+	case len(findings) == 0:
+		return
+	case flagged > 0:
+		_, _ = fmt.Fprintf(stderr,
+			"slop-chop: rewrote %d finding(s); %d flag-only remain (block words need a judgment call: --preset cleaver rewrites the common ones)\n",
+			fixable, flagged)
+	default:
+		_, _ = fmt.Fprintf(stderr, "slop-chop: rewrote %d finding(s)\n", fixable)
+	}
 }
 
 // rewriteAndVerify runs the model rewrite over rulesOut and re-checks it against the

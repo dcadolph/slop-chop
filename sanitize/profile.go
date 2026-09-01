@@ -104,7 +104,6 @@ func DefaultProfile() Profile {
 			"&mdash;":  ", ",  // an em-dash that arrived as a raw HTML entity
 			"&ndash;":  "-",   // an en-dash that arrived as a raw HTML entity
 			"&hellip;": "...", // an ellipsis that arrived as a raw HTML entity
-			"&nbsp;":   " ",   // a non-breaking space that arrived as a raw HTML entity
 			"&#8212;":  ", ",  // the numeric em-dash entity
 			"&#8211;":  "-",   // the numeric en-dash entity
 			"—":        ", ",  // em-dash
