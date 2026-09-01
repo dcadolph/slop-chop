@@ -77,6 +77,9 @@ func TestFlagPatterns(t *testing.T) {
 		{Name: "question isnt is", In: "The question isn't whether it scales. The question is whether it lasts.", WantRule: "structural:question-isnt-is", WantHit: true},
 		{Name: "not about about", In: "It's not about speed. It's about trust.", WantRule: "structural:not-about-about", WantHit: true},
 		{Name: "not x thats y across stop", In: "That's not a tooling problem. That's a visibility problem.", WantRule: "structural:its-not-x-its-y", WantHit: true},
+		{Name: "not x repeated verbatim", In: "It's not fair. It's not fair.", WantRule: "structural:its-not-x-its-y", WantHit: false},
+		{Name: "not x repeated then extended", In: "It's not fair. It's not fair to anyone.", WantRule: "structural:its-not-x-its-y", WantHit: false},
+		{Name: "not x then negated y", In: "It's not fair, it's not even close.", WantRule: "structural:its-not-x-its-y", WantHit: true},
 		{Name: "triad fragment", In: "The system stayed up. Simple, boring, reliable.", WantRule: "structural:triad-fragment", WantHit: true},
 		{Name: "triad with and", In: "The system stayed up. Simple, boring, and reliable.", WantRule: "structural:triad-fragment", WantHit: false},
 		{Name: "as an ai", In: "As an AI language model, I cannot browse the web.", WantRule: "structural:as-an-ai", WantHit: true},
@@ -94,6 +97,9 @@ func TestFlagPatterns(t *testing.T) {
 		{Name: "worth asking", In: "Worth asking yourself: would you run it twice?", WantRule: "structural:rhetorical-hook", WantHit: true},
 		{Name: "anaphora run", In: "We needed retries. We needed observability. We needed ownership.", WantRule: "structural:anaphora-run", WantHit: true},
 		{Name: "anaphora pair only", In: "We needed retries. We needed observability. Then we shipped.", WantRule: "structural:anaphora-run", WantHit: false},
+		{Name: "anaphora epizeuxis", In: "It's not fair. It's not fair. It's not fair.", WantRule: "structural:anaphora-run", WantHit: false},
+		{Name: "anaphora epizeuxis case and punctuation", In: "We tried. We tried! We tried.", WantRule: "structural:anaphora-run", WantHit: false},
+		{Name: "anaphora epizeuxis then varying tail", In: "We tried harder. We tried again. We tried everything.", WantRule: "structural:anaphora-run", WantHit: true},
 		{Name: "anaphora long sentences", In: "The contractor shall provide all materials required for the work described above. The contractor shall maintain insurance coverage for the full duration of the engagement. The contractor shall submit invoices no later than the fifth business day of each month.", WantRule: "structural:anaphora-run", WantHit: false},
 	}
 
