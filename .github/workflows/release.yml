@@ -27,6 +27,11 @@ jobs:
     env:
       TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
       PLUGIN_TOKEN: ${{ secrets.OBSIDIAN_PLUGIN_TOKEN }}
+      # A fork has no publish credentials and should still cut a normal release, so a
+      # missing token is skipped there. On the repository that owns these channels a
+      # missing token is a publish that silently did not happen, which is how a stale
+      # release goes unnoticed, so the steps below fail instead.
+      CANONICAL: dcadolph/slop-chop
     steps:
       - uses: actions/checkout@v4
         with:
@@ -79,6 +84,11 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${TAP_TOKEN:-}" ]; then
+            if [ "${GITHUB_REPOSITORY}" = "${CANONICAL}" ]; then
+              echo "::error::HOMEBREW_TAP_TOKEN is not set on ${CANONICAL}, so the formula" \
+                "was never bumped and brew still installs the previous release."
+              exit 1
+            fi
             echo "HOMEBREW_TAP_TOKEN not set; skipping formula bump"
             exit 0
           fi
@@ -146,6 +156,11 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${PLUGIN_TOKEN:-}" ]; then
+            if [ "${GITHUB_REPOSITORY}" = "${CANONICAL}" ]; then
+              echo "::error::OBSIDIAN_PLUGIN_TOKEN is not set on ${CANONICAL}, so the plugin" \
+                "was never published and the vault installer still serves the previous release."
+              exit 1
+            fi
             echo "OBSIDIAN_PLUGIN_TOKEN not set; skipping the Obsidian plugin publish"
             exit 0
           fi
