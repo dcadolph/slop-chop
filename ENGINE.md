@@ -93,8 +93,11 @@ A few notes on the matching:
 - Structural patterns only flag. They catch the sentence shapes of model prose, from
   `not just X, but also Y` to the reversal snap of `It worked. Until it didn't.`, and the
   anaphora walk flags three or more short sentences in a row that open with the same two
-  words. The safe rewording is a judgment call, so those spans are left to you or to the
-  rewrite pass.
+  words. A run that repeats one sentence word for word is exempt, since `It's not fair.
+  It's not fair. It's not fair.` is a writer leaning on a line, not a model varying its
+  tails, and the not-X-but-Y pattern steps aside for the same verbatim repetition. The
+  safe rewording is a judgment call, so those spans are left to you or to the rewrite
+  pass.
 - Block words match on word boundaries, so `robust` matches the standalone word and not
   the middle of a longer one. Multi-word terms like `blast radius` work the same way.
 - Spelling swaps are a word-for-word lookup, not a suffix rule, so a word that shares an

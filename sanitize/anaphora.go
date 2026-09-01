@@ -15,6 +15,27 @@ const anaphoraMaxWords = 12
 // The finding only flags, so the position never affects which rewrite is reported.
 const anaphoraOrder = 1 << 30
 
+// identicalRun reports whether every sentence in the run says the same thing word for
+// word, ignoring case and closing punctuation. "It's not fair. It's not fair. It's not
+// fair." is epizeuxis, deliberate emphasis and an old human device, while the anaphora
+// tell is parallel openers with varying tails. Verbatim repetition is the author leaning
+// on a line, so it is exempt.
+func identicalRun(text string, spans []sentSpan) bool {
+	first := sentenceWords(text[spans[0].start:spans[0].end])
+	for _, sp := range spans[1:] {
+		if sentenceWords(text[sp.start:sp.end]) != first {
+			return false
+		}
+	}
+	return true
+}
+
+// sentenceWords normalizes a sentence to its lower-cased words with sentence punctuation
+// stripped, so "No way!" and "no way." compare equal.
+func sentenceWords(s string) string {
+	return strings.ToLower(strings.Join(strings.Fields(strings.TrimRight(strings.TrimSpace(s), ".!?")), " "))
+}
+
 // sentSpan is one sentence located in the text, with the opener key anaphora runs are
 // grouped by.
 type sentSpan struct {
@@ -40,7 +61,7 @@ func anaphoraFindings(text string, protected [][2]int) []Finding {
 		for j < len(spans) && spans[j].adjacent && spans[j].key != "" && spans[j].key == spans[i].key {
 			j++
 		}
-		if spans[i].key != "" && j-i >= 3 {
+		if spans[i].key != "" && j-i >= 3 && !identicalRun(text, spans[i:j]) {
 			start, end := spans[i].start, spans[j-1].end
 			if !overlapsAny(protected, start, end) {
 				out = append(out, Finding{

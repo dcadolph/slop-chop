@@ -534,6 +534,7 @@ func (p Profile) compile() ([]Rule, error) {
 		rules = append(rules, Rule{
 			Name:    "structural:" + name,
 			re:      re,
+			keep:    flagPatternKeeps[name],
 			rewrite: false,
 			unwrap:  true,
 		})
@@ -725,6 +726,40 @@ func regexRule(pattern, repl string) (Rule, error) {
 // line break, LF or CRLF. It lets a phrase or a multi-word term match when a line wrap
 // splits it, without ever reaching across a paragraph break.
 const wsGap = `(?:[ \t]+(?:\r?\n[ \t]*)?|\r?\n[ \t]*)`
+
+// flagPatternKeeps attaches judgment to the built-in flag patterns whose regex alone
+// over-matches. A pattern absent here keeps every match.
+//
+//nolint:gochecknoglobals // Immutable lookup.
+var flagPatternKeeps = map[string]func(text string, start, end int) bool{
+	"its-not-x-its-y": notXRepeated,
+}
+
+// notXNegated pulls the negated phrase out of an its-not-x-its-y match: the text between
+// the negation and the clause separator.
+//
+//nolint:gochecknoglobals // Compiled once, never modified.
+var notXNegated = regexp.MustCompile(`(?i)(?:\bnot|n'?t)\b\s*([^.!?\n]{1,40}?)\s*(?:[,;.]|—|–)`)
+
+// notXRepeated keeps an its-not-x-its-y match only when the second clause says something
+// new. "It's not fair. It's not fair." repeats the line for emphasis, epizeuxis rather
+// than the model's not-X-but-Y contrast, so a Y that opens by negating the same X again
+// is exempt.
+func notXRepeated(text string, start, end int) bool {
+	m := notXNegated.FindStringSubmatch(text[start:end])
+	if m == nil {
+		return true
+	}
+	x := strings.ToLower(strings.TrimSpace(m[1]))
+	tail := strings.TrimSpace(text[end:])
+	lower := strings.ToLower(tail)
+	for _, neg := range []string{"not ", "n't "} {
+		if rest, ok := strings.CutPrefix(lower, neg); ok {
+			return !strings.HasPrefix(rest, x)
+		}
+	}
+	return true
+}
 
 // flexSpaces widens each literal space in a quoted pattern into wsGap, so the words
 // around it still match when a line wrap sits between them.
