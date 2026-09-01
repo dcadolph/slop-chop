@@ -190,14 +190,32 @@ body:has(#sc-app) .md-grid {
   color: var(--md-default-fg-color, currentColor);
 }
 
-/* The icon is drawn with filled bars rather than a stroked path: iOS Safari leaves a
-   stroke of currentColor unpainted inside a button, which showed the settings control as
-   an empty square on the phone while every text button rendered. */
-.sc-iconbtn svg {
-  width: 1.05rem;
-  height: 1.05rem;
+/* The icon is drawn with borders rather than an SVG. Both a stroked path and filled rects
+   rendered as an empty square on iOS Safari while every text button on the same row drew
+   normally, and the served markup and styles were verified correct each time. Borders and
+   a pseudo-element cannot fail the same way, so the control stops depending on inline SVG
+   at all. The word next to it means the button is legible even if the bars ever vanish. */
+.sc-bars {
   display: block;
-  fill: currentColor;
+  width: 0.95rem;
+  height: 0.7rem;
+  position: relative;
+  border-top: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+}
+
+.sc-bars::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  margin-top: -1px;
+  border-top: 2px solid currentColor;
+}
+
+.sc-iconbtn-text {
+  margin-left: 0.35rem;
 }
 
 /* The two panes. */
