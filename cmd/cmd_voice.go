@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -45,8 +46,45 @@ matches; write them by hand or derive them from your own writing with voice lear
 file lives at ~/.slop-chop/voice.json and applies to every run; --voice points at a
 different one, and a project's .slop-chop.json still outranks it.`,
 	}
-	cmd.AddCommand(voiceInitCmd(), voiceShowCmd(), voiceLearnCmd(), voiceDiffCmd())
+	cmd.AddCommand(voiceInitCmd(), voiceShowCmd(), voiceLearnCmd(), voiceDiffCmd(),
+		voiceFingerprintCmd(), voiceDriftCmd())
 	return cmd
+}
+
+// openVoiceForWrite returns the voice to edit and the path it came from, creating neither.
+// A missing file is an empty voice, so the first write scaffolds it.
+func openVoiceForWrite() (sanitize.Voice, string, error) {
+	path := resolveVoicePath()
+	if path == "" {
+		p, err := defaultVoicePath()
+		if err != nil {
+			return sanitize.Voice{}, "", err
+		}
+		path = p
+	}
+	if _, err := os.Stat(path); err != nil {
+		return sanitize.Voice{}, path, nil
+	}
+	v, err := sanitize.LoadVoiceFile(path)
+	if err != nil {
+		return sanitize.Voice{}, "", err
+	}
+	return v, path, nil
+}
+
+// saveVoice writes the voice to path as indented JSON, creating its directory.
+func saveVoice(v sanitize.Voice, path string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return fmt.Errorf("create voice dir: %w", err)
+	}
+	b, err := jsonutil.Marshal(v, true)
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, append(b, '\n'), 0o644); err != nil {
+		return fmt.Errorf("write voice file: %w", err)
+	}
+	return nil
 }
 
 // voiceInitCmd builds the voice init subcommand, which writes a starter voice file.
@@ -198,33 +236,13 @@ func runVoiceLearn(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	path := resolveVoicePath()
-	if path == "" {
-		p, err := defaultVoicePath()
-		if err != nil {
-			return err
-		}
-		path = p
-	}
-	voice := sanitize.Voice{}
-	if _, err := os.Stat(path); err == nil {
-		v, err := sanitize.LoadVoiceFile(path)
-		if err != nil {
-			return err
-		}
-		voice = v
-	}
-	voice.Tone = mergeToneNotes(voice.Tone, notes)
-
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return fmt.Errorf("create voice dir: %w", err)
-	}
-	b, err := jsonutil.Marshal(voice, true)
+	voice, path, err := openVoiceForWrite()
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(path, append(b, '\n'), 0o644); err != nil {
-		return fmt.Errorf("write voice file: %w", err)
+	voice.Tone = mergeToneNotes(voice.Tone, notes)
+	if err := saveVoice(voice, path); err != nil {
+		return err
 	}
 	_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "learned %d tone note(s) into %s\n", len(notes), path)
 	for _, n := range notes {
@@ -428,4 +446,196 @@ func writeDiffReport(w io.Writer, candidates []sanitize.Candidate, draftPath, fi
 	}
 	_, _ = fmt.Fprintf(w, "\nmerge what you agree with into ~/.slop-chop/voice.json\n"+
 		"(create one with 'slop-chop voice init'):\n%s\n", string(b))
+}
+
+// voiceFingerprintCmd builds the voice fingerprint subcommand, which measures how you
+// write and stores the numbers in your voice file.
+func voiceFingerprintCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "fingerprint [file ...]",
+		Short: "Measure how you write and store the numbers in your voice.",
+		Long: `fingerprint reads things you wrote, from files or stdin, and measures how you
+write rather than what you write: sentence rhythm, punctuation habits, and register. The
+numbers land in your voice file, where voice drift reads them.
+
+keep, prefer, and avoid hold your words, and a model that reads them can hand them back
+to you. Nobody quotes a comma rate, so these numbers stay yours. Feed it several pieces
+of your own finished writing and no machine drafts, since a fingerprint taken from a
+model's prose measures the model.`,
+		RunE: runVoiceFingerprint,
+	}
+	f := cmd.Flags()
+	f.AddFlag(&config.FlagVoice)
+	f.AddFlag(&config.FlagJSON)
+	f.AddFlag(&config.FlagPretty)
+	return cmd
+}
+
+// runVoiceFingerprint measures the samples, stores the fingerprint in the voice file, and
+// reports what it measured.
+func runVoiceFingerprint(cmd *cobra.Command, args []string) error {
+	var samples []string
+	if len(args) == 0 {
+		text, err := readInput("", cmd.InOrStdin())
+		if err != nil {
+			return err
+		}
+		samples = append(samples, text)
+	}
+	for _, path := range args {
+		text, ok, err := readProse(path, cmd.InOrStdin(), cmd.ErrOrStderr())
+		if err != nil {
+			return err
+		}
+		if !ok {
+			continue
+		}
+		samples = append(samples, text)
+	}
+	f, err := sanitize.NewFingerprint(samples...)
+	if err != nil {
+		return err
+	}
+	voice, path, err := openVoiceForWrite()
+	if err != nil {
+		return err
+	}
+	voice.Fingerprint = &f
+	if err := saveVoice(voice, path); err != nil {
+		return err
+	}
+	_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "measured %d words in %d sentences across %d sample(s) into %s\n",
+		f.Words, f.Sentences, f.Samples, path)
+	if config.JSON() {
+		return writeJSON(cmd.OutOrStdout(), f, config.Pretty())
+	}
+	writeFingerprint(cmd.OutOrStdout(), f)
+	return nil
+}
+
+// writeFingerprint prints one line per trait: the measured value, the band it may move
+// inside, and what the number counts.
+func writeFingerprint(w io.Writer, f sanitize.Fingerprint) {
+	for _, m := range sanitize.MetricList() {
+		v, ok := f.Metrics[m.Name]
+		if !ok {
+			continue
+		}
+		_, _ = fmt.Fprintf(w, "  %-18s %8.2f  give or take %.2f  %s\n", m.Name, v.Value, v.Band, m.Unit)
+	}
+}
+
+// voiceDriftCmd builds the voice drift subcommand, which reports where a text stops
+// sounding like the writer the fingerprint was taken from.
+func voiceDriftCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "drift [file ...]",
+		Short: "Report where a text stops sounding like you.",
+		Long: `drift measures a text against the fingerprint in your voice file and names
+every trait that landed outside your range: sentences longer than you write, a heavier
+vocabulary, a register that is more formal than yours.
+
+Drift is not slop. A trait outside your range can be good writing that belongs to
+somebody else, which is exactly what a model hands you, so drift names the difference and
+leaves the verdict to you. Take a fingerprint first with voice fingerprint. --bands fails
+the run when a trait lands that many bands out, which gates a house voice in CI.`,
+		Args: cobra.ArbitraryArgs,
+		RunE: runVoiceDrift,
+	}
+	f := cmd.Flags()
+	f.AddFlag(&config.FlagVoice)
+	f.AddFlag(&config.FlagJSON)
+	f.AddFlag(&config.FlagPretty)
+	f.AddFlag(&config.FlagBands)
+	return cmd
+}
+
+// runVoiceDrift compares stdin or every file argument against the stored fingerprint and
+// returns errFindings when a trait drifts past the --bands gate.
+func runVoiceDrift(cmd *cobra.Command, args []string) error {
+	if config.JSON() && len(args) > 1 {
+		return fmt.Errorf("--json takes at most one file")
+	}
+	path := resolveVoicePath()
+	if path == "" {
+		return fmt.Errorf("no voice set: measure your writing with `slop-chop voice fingerprint <file ...>` first")
+	}
+	v, err := sanitize.LoadVoiceFile(path)
+	if err != nil {
+		return err
+	}
+	if v.Fingerprint == nil || v.Fingerprint.Empty() {
+		return fmt.Errorf("no fingerprint in %s: measure your writing with "+
+			"`slop-chop voice fingerprint <file ...>` first", path)
+	}
+	if len(args) == 0 {
+		text, err := readInput("", cmd.InOrStdin())
+		if err != nil {
+			return err
+		}
+		return driftOne(*v.Fingerprint, text, "", cmd.OutOrStdout())
+	}
+	out := false
+	for _, file := range args {
+		text, ok, err := readProse(file, cmd.InOrStdin(), cmd.ErrOrStderr())
+		if err != nil {
+			return err
+		}
+		if !ok {
+			continue
+		}
+		switch err := driftOne(*v.Fingerprint, text, file, cmd.OutOrStdout()); {
+		case errors.Is(err, errFindings):
+			out = true
+		case err != nil:
+			return err
+		}
+	}
+	if out {
+		return errFindings
+	}
+	return nil
+}
+
+// driftOne compares one text against the fingerprint and writes the report. It returns
+// errFindings when a trait lands further out than the --bands gate allows.
+func driftOne(f sanitize.Fingerprint, text, path string, stdout io.Writer) error {
+	drifts, err := f.Compare(text)
+	if err != nil {
+		return err
+	}
+	if config.JSON() {
+		if err := writeJSON(stdout, struct {
+			Drift []sanitize.Drift `json:"drift"`
+		}{jsonutil.OrEmpty(drifts)}, config.Pretty()); err != nil {
+			return err
+		}
+	} else {
+		writeDrift(stdout, drifts, path, len(f.Metrics))
+	}
+	if bands := config.Bands(); bands >= 0 {
+		for _, d := range drifts {
+			if d.Off > float64(bands) {
+				return errFindings
+			}
+		}
+	}
+	return nil
+}
+
+// writeDrift prints the drifted traits, the furthest out first, or says the text reads
+// like the writer when none did.
+func writeDrift(w io.Writer, drifts []sanitize.Drift, path string, traits int) {
+	subject := "this text"
+	if path != "" {
+		subject = path
+	}
+	if len(drifts) == 0 {
+		_, _ = fmt.Fprintf(w, "%s reads like you on all %d traits\n", subject, traits)
+		return
+	}
+	_, _ = fmt.Fprintf(w, "%s reads unlike you on %d of %d traits\n", subject, len(drifts), traits)
+	for _, d := range drifts {
+		_, _ = fmt.Fprintf(w, "  %-44s %.2f against your %.2f (%s)\n", d.Note, d.Got, d.Want, d.Unit)
+	}
 }

@@ -29,6 +29,10 @@ type Voice struct {
 	// like you. The rules pass ignores it. Write the lines by hand or derive them from your
 	// own writing with `voice learn`. It maps to Profile.Tone.
 	Tone []string `json:"tone,omitempty"`
+	// Fingerprint is the measured shape of your prose, written by `voice fingerprint` and
+	// read by `voice drift`. It holds numbers rather than rules, so it never changes what
+	// check or fix does to a file.
+	Fingerprint *Fingerprint `json:"fingerprint,omitempty"`
 }
 
 // LoadVoice reads a Voice from JSON. Any field left unset keeps its zero value, so a partial
@@ -51,8 +55,9 @@ func LoadVoiceFile(path string) (Voice, error) {
 	return LoadVoice(f)
 }
 
-// Empty reports whether the voice sets nothing, so callers can skip applying it and leave a
-// profile untouched.
+// Empty reports whether the voice sets no rules, so callers can skip applying it and leave a
+// profile untouched. A fingerprint does not count: it is measured for `voice drift` to read
+// and changes nothing about how text is checked or fixed.
 func (v Voice) Empty() bool {
 	return len(v.Keep) == 0 && len(v.Prefer) == 0 && len(v.Avoid) == 0 && len(v.Tone) == 0
 }

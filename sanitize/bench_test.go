@@ -135,14 +135,6 @@ func TestBenchmark(t *testing.T) {
 	assertFloor(t, "score margin", meanAI-meanHuman, 70)
 }
 
-// ratio returns n/d as a float, or 0 when d is zero.
-func ratio(n, d int) float64 {
-	if d == 0 {
-		return 0
-	}
-	return float64(n) / float64(d)
-}
-
 // assertFloor fails the test when got is below floor, naming the metric.
 func assertFloor(t *testing.T, name string, got, floor float64) {
 	t.Helper()
