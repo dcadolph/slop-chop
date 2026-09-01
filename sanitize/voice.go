@@ -20,9 +20,10 @@ type Voice struct {
 	// vocabulary. A single-word key maps to Profile.WordReplace, a multi-word key to
 	// Profile.PhraseReplace, and an empty replacement drops the word.
 	Prefer map[string]string `json:"prefer,omitempty"`
-	// Avoid lists your own words to flag wherever they appear. It maps to Profile.BlockWords,
-	// which reports a tell without rewriting it, since a safe replacement depends on context.
-	// Use Prefer with an empty replacement to cut a word outright.
+	// Avoid lists your own words to flag wherever they appear, however they are
+	// capitalized. It maps to Profile.BlockAlways, which reports a tell without rewriting
+	// it, since a safe replacement depends on context. Use Prefer with an empty
+	// replacement to cut a word outright.
 	Avoid []string `json:"avoid,omitempty"`
 	// Tone holds short notes on how you write, fed to the model rewrite so its output sounds
 	// like you. The rules pass ignores it. Write the lines by hand or derive them from your
@@ -56,11 +57,11 @@ func (v Voice) Empty() bool {
 	return len(v.Keep) == 0 && len(v.Prefer) == 0 && len(v.Avoid) == 0 && len(v.Tone) == 0
 }
 
-// asProfile turns the voice into a partial profile: keep into Allow, avoid into BlockWords,
+// asProfile turns the voice into a partial profile: keep into Allow, avoid into BlockAlways,
 // and each prefer entry into WordReplace when its key is one word or PhraseReplace when it is
 // several. An empty key is skipped.
 func (v Voice) asProfile() Profile {
-	p := Profile{Allow: v.Keep, BlockWords: v.Avoid, Tone: v.Tone}
+	p := Profile{Allow: v.Keep, BlockAlways: v.Avoid, Tone: v.Tone}
 	for from, to := range v.Prefer {
 		switch len(strings.Fields(from)) {
 		case 0:
@@ -101,6 +102,7 @@ func (p Profile) Overlay(top Profile) Profile {
 	p.RegexReplace = mergeMapTopWins(p.RegexReplace, top.RegexReplace)
 	p.FlagPatterns = mergeMapTopWins(p.FlagPatterns, top.FlagPatterns)
 	p.BlockWords = mergeSlice(p.BlockWords, top.BlockWords)
+	p.BlockAlways = mergeSlice(p.BlockAlways, top.BlockAlways)
 	p.Allow = mergeSlice(p.Allow, top.Allow)
 	p.Tone = mergeSlice(p.Tone, top.Tone)
 	return p

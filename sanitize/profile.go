@@ -41,6 +41,10 @@ type Profile struct {
 	// Allow lists words a rule must never flag or rewrite, matched case-insensitively
 	// against the exact text a rule matched. It silences false positives.
 	Allow []string `json:"allow"`
+	// BlockAlways are words flagged wherever and however they appear, with no
+	// proper-noun exemption. A personal avoid list lands here: when you ban your own
+	// word, a capitalized use is still the word you banned, not a brand to spare.
+	BlockAlways []string `json:"blockAlways"`
 	// ScoreWeights tunes how much a finding adds to the score's tell density. A key is
 	// an exact rule name, like "char:—" or "word:robust", or a rule class, the part
 	// before the colon, like "word", "phrase", "structural", or "char"; cleanup rules
@@ -383,6 +387,7 @@ func (p Profile) compile() ([]Rule, error) {
 		// something else of its own gets what it asked for.
 		if from == emDash && r.repl == emDashComma {
 			r.replFunc = emDashSwap(r.repl)
+			r.keep = emDashKeep
 		}
 		rules = append(rules, r)
 	}
@@ -404,6 +409,14 @@ func (p Profile) compile() ([]Rule, error) {
 	}
 
 	swaps, drops := splitDrops(p.WordReplace)
+	casing, swaps := splitCasing(swaps)
+	for _, from := range slices.Sorted(maps.Keys(casing)) {
+		r, err := casingRule(from, casing[from])
+		if err != nil {
+			return nil, err
+		}
+		rules = append(rules, r)
+	}
 	replace, ok, err := wordSwapRule("replace", lowerKeys(swaps))
 	if err != nil {
 		return nil, err
@@ -435,6 +448,16 @@ func (p Profile) compile() ([]Rule, error) {
 	if ok {
 		block.keep = notProperNoun
 		rules = append(rules, block)
+	}
+
+	always, ok, err := blockWordRule(p.BlockAlways)
+	if err != nil {
+		return nil, err
+	}
+	if ok {
+		// No proper-noun keep: these are the user's own banned words, and "Synergy"
+		// capitalized is still synergy.
+		rules = append(rules, always)
 	}
 
 	for _, name := range slices.Sorted(maps.Keys(p.FlagPatterns)) {
@@ -521,24 +544,38 @@ func (p Profile) compile() ([]Rule, error) {
 	return rules, nil
 }
 
-// allowPhraseRe compiles the multi-word entries of an allow list into one alternation whose
-// matches are protected from every rule, so a term of art like "robust regression" keeps its
-// word even when the bare word is a tell. Single-word entries are left to the per-rule allow
-// set. It returns nil when there are no multi-word entries.
+// allowPhraseRe compiles the multi-word and punctuated entries of an allow list into one
+// alternation whose matches are protected from every rule, so a term of art like "robust
+// regression" keeps its word even when the bare word is a tell. Bare single words are
+// left to the per-rule allow set. An entry carrying punctuation, like "in summary,"
+// copied exactly as the tool displays the phrase, is protected here too, with each
+// boundary applied only where a word character can hold it, since a \b after a comma can
+// never match and would make the keep a silent no-op.
 func allowPhraseRe(allow []string) (*regexp.Regexp, error) {
 	var parts []string
 	for _, a := range allow {
 		fields := strings.Fields(a)
-		if len(fields) < 2 {
+		if len(fields) == 0 {
 			continue
 		}
-		parts = append(parts, flexSpaces(regexp.QuoteMeta(strings.Join(fields, " "))))
+		if len(fields) < 2 && plainWords(a) {
+			continue
+		}
+		joined := strings.Join(fields, " ")
+		part := flexSpaces(regexp.QuoteMeta(joined))
+		if isWordByte(joined[0]) {
+			part = `\b` + part
+		}
+		if endsWithWordChar(joined) {
+			part += `\b`
+		}
+		parts = append(parts, part)
 	}
 	if len(parts) == 0 {
 		return nil, nil
 	}
 	slices.Sort(parts)
-	re, err := regexp.Compile(`(?i)\b(?:` + strings.Join(parts, "|") + `)\b`)
+	re, err := regexp.Compile(`(?i)(?:` + strings.Join(parts, "|") + `)`)
 	if err != nil {
 		return nil, fmt.Errorf("%w: allow phrases: %w", ErrCompile, err)
 	}
@@ -823,6 +860,12 @@ func abbreviationEnd(text string, i int) bool {
 	if i > 0 && text[i-1] == '.' {
 		return true
 	}
+	// A digit on both sides marks a decimal, a version, or an address, not a sentence
+	// end, so "3.14" never splits a sentence in two.
+	if i > 0 && i+1 < len(text) &&
+		text[i-1] >= '0' && text[i-1] <= '9' && text[i+1] >= '0' && text[i+1] <= '9' {
+		return true
+	}
 	j := i - 1
 	for j >= 0 {
 		c := text[j]
@@ -995,7 +1038,30 @@ func articleNeedsFix(text string, start, end int) bool {
 	if m == nil {
 		return false
 	}
+	// A capital "A" mid-sentence is a label, "Option A is ready", not the article, and
+	// "correcting" it to "An" corrupts the sentence.
+	if m[1] == "A" && !sentenceStart(text, start) {
+		return false
+	}
+	// An article is followed by a noun phrase. A function word after "a" means the "a"
+	// is something else, a label, a variable, a list marker, so leave it alone: the
+	// em-dash pair drop can produce "a and b", and "an and b" is worse.
+	if articleStopWords[strings.ToLower(m[3])] {
+		return false
+	}
 	return startsWithVowelSound(m[3]) != (len(m[1]) == 2)
+}
+
+// articleStopWords are words that never head the noun phrase of an article, so an "a" or
+// "an" directly before one is not an article at all.
+//
+//nolint:gochecknoglobals // Immutable lookup.
+var articleStopWords = map[string]bool{
+	"and": true, "or": true, "but": true, "nor": true, "yet": true, "so": true,
+	"is": true, "are": true, "was": true, "were": true, "be": true, "been": true,
+	"if": true, "as": true, "at": true, "by": true, "in": true, "of": true,
+	"on": true, "to": true, "the": true, "then": true, "that": true, "this": true,
+	"it": true, "its": true, "with": true, "from": true, "for": true,
 }
 
 // startsWithVowelSound reports whether word begins with a vowel sound, which decides between
@@ -1170,18 +1236,50 @@ func emDashSwap(def string) func(text string, loc []int) string {
 // one line, so a dash ending a line is never read as half of a pair.
 func conjunctionDashPair(text string, i int) bool {
 	start, end := lineStart(text, i), lineEnd(text, i)
-	after := i + len(emDash)
+	// The line is scanned with its inline code spans blanked: a dash inside backticks
+	// is code, and pairing a prose dash with it silently eats the comma the prose dash
+	// needs.
+	line := maskInlineSpans(text[start:end])
+	li := i - start
+	after := li + len(emDash)
 	// As the opening dash: a conjunction follows it and another dash closes the phrase.
-	if dashConjunctions[firstWord(text[after:end])] &&
-		strings.Contains(text[after:end], emDash) {
+	if dashConjunctions[firstWord(line[after:])] &&
+		strings.Contains(line[after:], emDash) {
 		return true
 	}
 	// As the closing dash: an earlier dash on this line opens a phrase whose first word
 	// is a conjunction.
-	if open := strings.LastIndex(text[start:i], emDash); open >= 0 {
-		return dashConjunctions[firstWord(text[start+open+len(emDash):i])]
+	if open := strings.LastIndex(line[:li], emDash); open >= 0 {
+		return dashConjunctions[firstWord(line[open+len(emDash):li])]
 	}
 	return false
+}
+
+// maskInlineSpans returns line with every backtick-delimited span blanked to spaces,
+// length preserved, so a scan over the result sees prose only.
+func maskInlineSpans(line string) string {
+	if !strings.Contains(line, "`") {
+		return line
+	}
+	b := []byte(line)
+	i := 0
+	for i < len(b) {
+		if b[i] != '`' {
+			i++
+			continue
+		}
+		n := backtickRun(line, i)
+		endSpan := spanEnd(line, i+n, n)
+		if endSpan < 0 {
+			i += n
+			continue
+		}
+		for j := i; j < endSpan; j++ {
+			b[j] = ' '
+		}
+		i = endSpan
+	}
+	return string(b)
 }
 
 // firstWord returns the first run of letters in s, lower-cased, skipping leading spaces.
@@ -1201,4 +1299,82 @@ func lineEnd(text string, i int) int {
 		return i + n
 	}
 	return len(text)
+}
+
+// emDashKeep reports whether an em-dash should be swapped at all. Three human
+// conventions keep their dash: interrupted speech, where the dash is pressed against a
+// closing quote; a wire-service dateline, the all-caps opener before the first dash of
+// the line; and a transcript speaker line, which renders false starts as spaced dashes.
+func emDashKeep(text string, start, end int) bool {
+	if end < len(text) {
+		switch text[end] {
+		case '"', '\'':
+			return false
+		}
+		if strings.HasPrefix(text[end:], "”") || strings.HasPrefix(text[end:], "’") {
+			return false
+		}
+	}
+	return !capsPrefixLine(text[lineStart(text, start):start])
+}
+
+// capsPrefixLine reports whether prefix, the text from a line start up to a dash, is a
+// dateline or speaker label: an opening run of two or more capitals, joined only by
+// spaces and name punctuation, optionally closed by a colon with anything after it.
+func capsPrefixLine(prefix string) bool {
+	caps := 0
+	for i := 0; i < len(prefix); i++ {
+		switch c := prefix[i]; {
+		case 'A' <= c && c <= 'Z':
+			caps++
+		case c == ' ' || c == '.' || c == ',' || c == '\'' || c == '-':
+		case c == ':':
+			return caps >= 2
+		default:
+			return false
+		}
+	}
+	return caps >= 2
+}
+
+// splitCasing separates word swaps whose replacement differs from the key only by case,
+// like github to GitHub or Internet to internet. Those are casing conventions, not
+// vocabulary, and the ordinary swap machinery cannot serve them: matchCase re-imposes
+// the match's capital on the replacement, and the proper-noun guard skips the exact
+// miscasings the entry exists to fix.
+func splitCasing(m map[string]string) (casing, rest map[string]string) {
+	casing = make(map[string]string)
+	rest = make(map[string]string, len(m))
+	for from, to := range m {
+		if to != "" && from != to && strings.EqualFold(from, to) {
+			casing[from] = to
+			continue
+		}
+		rest[from] = to
+	}
+	return casing, rest
+}
+
+// casingRule builds the rule for one casing convention: every case variant of the word
+// rewrites to the exact target, and occurrences already cased right are left alone.
+func casingRule(from, to string) (Rule, error) {
+	re, err := regexp.Compile(`(?i)\b` + regexp.QuoteMeta(from) + `\b`)
+	if err != nil {
+		return Rule{}, fmt.Errorf("%w: casing %q: %w", ErrCompile, from, err)
+	}
+	return Rule{
+		Name: "case:" + strings.ToLower(from),
+		re:   re,
+		repl: to,
+		keep: func(text string, start, end int) bool {
+			m := text[start:end]
+			if m == to {
+				return false
+			}
+			// An all-caps use is deliberate styling, a heading or emphasis, so the
+			// convention does not reach it.
+			return len(m) <= 1 || m != strings.ToUpper(m)
+		},
+		rewrite: true,
+	}, nil
 }

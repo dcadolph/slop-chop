@@ -67,6 +67,7 @@ func (p Profile) withPreset(pack Profile) Profile {
 	p.RegexReplace = mergeMap(p.RegexReplace, pack.RegexReplace)
 	p.FlagPatterns = mergeMap(p.FlagPatterns, pack.FlagPatterns)
 	p.BlockWords = mergeSlice(p.BlockWords, pack.BlockWords)
+	p.BlockAlways = mergeSlice(p.BlockAlways, pack.BlockAlways)
 	p.Allow = mergeSlice(p.Allow, pack.Allow)
 	return p
 }

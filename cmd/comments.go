@@ -23,6 +23,10 @@ type commentStyle struct {
 	blockOpen, blockClose string
 	// rawBacktick marks backtick-delimited raw strings, the Go form.
 	rawBacktick bool
+	// templateBacktick marks backtick-delimited template literals, the JS form:
+	// multiline like a raw string but with backslash escapes. Without it a template
+	// holding "//" starts a phantom comment that copies code into the prose scan.
+	templateBacktick bool
 	// triple marks Python-style triple-quoted strings.
 	triple bool
 	// shortSingle treats a single quote as a character literal only when it closes
@@ -38,9 +42,9 @@ type commentStyle struct {
 var commentStyles = map[string]commentStyle{
 	".c": slashStyle, ".cc": slashStyle, ".cpp": slashStyle, ".cs": slashStyle,
 	".dart": slashStyle, ".h": slashStyle, ".hpp": slashStyle, ".java": slashStyle,
-	".js": slashStyle, ".jsx": slashStyle, ".kt": slashStyle, ".php": phpStyle,
+	".js": jsStyle, ".jsx": jsStyle, ".kt": slashStyle, ".php": phpStyle,
 	".proto": slashStyle, ".rs": slashStyle, ".scala": slashStyle, ".swift": slashStyle,
-	".ts": slashStyle, ".tsx": slashStyle,
+	".ts": jsStyle, ".tsx": jsStyle,
 	".go":   {line: []string{"//"}, blockOpen: "/*", blockClose: "*/", rawBacktick: true, shortSingle: true},
 	".py":   {line: []string{"#"}, triple: true},
 	".bash": hashStyle, ".fish": hashStyle, ".pl": hashStyle, ".r": hashStyle,
@@ -55,6 +59,7 @@ var commentStyles = map[string]commentStyle{
 //nolint:gochecknoglobals // Immutable values.
 var (
 	slashStyle = commentStyle{line: []string{"//"}, blockOpen: "/*", blockClose: "*/", shortSingle: true}
+	jsStyle    = commentStyle{line: []string{"//"}, blockOpen: "/*", blockClose: "*/", shortSingle: true, templateBacktick: true}
 	hashStyle  = commentStyle{line: []string{"#"}}
 	phpStyle   = commentStyle{line: []string{"//", "#"}, blockOpen: "/*", blockClose: "*/"}
 )
@@ -118,6 +123,8 @@ func nextToken(text string, out []byte, i int, style commentStyle) int {
 		return skipString(text, i+1, "'", true)
 	case c == '`' && style.rawBacktick:
 		return skipString(text, i+1, "`", false)
+	case c == '`' && style.templateBacktick:
+		return skipTemplate(text, i+1)
 	}
 	return i + 1
 }
@@ -154,6 +161,20 @@ func skipString(text string, start int, closer string, escapes bool) int {
 		}
 		if strings.HasPrefix(text[i:], closer) {
 			return i + len(closer)
+		}
+	}
+	return len(text)
+}
+
+// skipTemplate consumes a JS template literal opened before start: multiline, closed by
+// a backtick, with backslash escapes honored.
+func skipTemplate(text string, start int) int {
+	for i := start; i < len(text); i++ {
+		switch text[i] {
+		case '\\':
+			i++
+		case '`':
+			return i + 1
 		}
 	}
 	return len(text)

@@ -3,6 +3,8 @@ package sanitize
 import (
 	"slices"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 )
 
 // Diffing a draft against the version its writer shipped is the one voice signal that
@@ -15,9 +17,9 @@ import (
 // what replaced it, empty when the writer cut the words outright.
 type EditPair struct {
 	// Was is the wording the draft used.
-	Was string
+	Was string `json:"was"`
 	// Now is the wording the writer put in its place, or empty for a cut.
-	Now string
+	Now string `json:"now"`
 }
 
 // maxPairWords bounds how many words either side of a pair may hold. A longer change is
@@ -36,17 +38,59 @@ const maxDiffCells = 1 << 20
 // is a corrected fact, not a preferred phrasing. Pure insertions are dropped too, since
 // added words are the writer's new content rather than a view about the draft's wording.
 func EditPairs(draft, final string) []EditPair {
+	return filterPairs(alignedPairs(draft, final), final)
+}
+
+// alignedPairs aligns the two texts and returns the raw change pairs. When the differing
+// region is too large for one table, both texts are split at paragraph breaks and each
+// paragraph pair is aligned on its own, so a long document with many small edits still
+// yields its pairs instead of silently nothing.
+func alignedPairs(draft, final string) []EditPair {
 	was, now := fields(draft), fields(final)
 	head, tail := commonEnds(was, now)
 	was, now = was[head:len(was)-tail], now[head:len(now)-tail]
-	if len(was)*len(now) > maxDiffCells {
+	if len(was)*len(now) <= maxDiffCells {
+		return pairsFromScript(was, now)
+	}
+	dp, fp := paragraphs(draft), paragraphs(final)
+	if len(dp) != len(fp) || len(dp) < 2 {
 		return nil
 	}
 	var out []EditPair
-	for _, p := range pairsFromScript(was, now) {
-		if keepPair(p) {
+	for i := range dp {
+		out = append(out, alignedPairs(dp[i], fp[i])...)
+	}
+	return out
+}
+
+// paragraphs splits text at blank lines into its paragraphs, dropping empty ones.
+func paragraphs(text string) []string {
+	var out []string
+	for _, p := range strings.Split(text, "\n\n") {
+		if strings.TrimSpace(p) != "" {
 			out = append(out, p)
 		}
+	}
+	return out
+}
+
+// filterPairs keeps the pairs that read as word choice. Matching trailing punctuation is
+// trimmed from both sides first, so "robust." against "solid." proposes the words and a
+// punctuation-only edit vanishes, and a cut whose words still appear in the shipped text
+// is dropped as a move rather than a deletion preference.
+func filterPairs(pairs []EditPair, final string) []EditPair {
+	lowerFinal := " " + strings.ToLower(strings.Join(strings.Fields(final), " ")) + " "
+	var out []EditPair
+	for _, p := range pairs {
+		p.Was = strings.TrimRight(p.Was, ".,;:!?")
+		p.Now = strings.TrimRight(p.Now, ".,;:!?")
+		if !keepPair(p) {
+			continue
+		}
+		if p.Now == "" && strings.Contains(lowerFinal, " "+strings.ToLower(p.Was)+" ") {
+			continue
+		}
+		out = append(out, p)
 	}
 	return out
 }
@@ -72,15 +116,15 @@ const (
 // are meant to be read and accepted one at a time.
 type Candidate struct {
 	// Kind says which of the three readings this is.
-	Kind CandidateKind
+	Kind CandidateKind `json:"kind"`
 	// Pair is the change the writer made, empty for a keep, which is a thing they
 	// deliberately did not change.
-	Pair EditPair
+	Pair EditPair `json:"pair"`
 	// Match is the text at issue: the wording that changed, or the tell that survived.
-	Match string
+	Match string `json:"match"`
 	// Rule names the rule involved for a confirms or a keep, and is empty for a new
 	// candidate, which by definition no rule caught.
-	Rule string
+	Rule string `json:"rule,omitempty"`
 }
 
 // Candidates reads a draft against the text its writer shipped and reports what the pair
@@ -104,10 +148,57 @@ func (s *Sanitizer) Candidates(draft, final string) []Candidate {
 		c := Candidate{Kind: CandidateNew, Pair: p, Match: p.Was}
 		if rule, ok := matchedRule(flagged, p.Was); ok {
 			c.Kind, c.Rule = CandidateConfirms, rule
+		} else if !viableRule(p) {
+			// A new candidate exists to become a rule. A pair built on a stop word, a
+			// markdown fragment, or punctuation would compile into a rule that is dead
+			// or destructive, so it is not proposed at all.
+			continue
 		}
 		out = append(out, c)
 	}
 	return append(out, s.keepCandidates(draft, final)...)
+}
+
+// pairStopWords are words too common to ever become a personal rule. A suggested swap
+// keyed on one of these, the residue of a restructured clause aligning positionally,
+// would rewrite half of every future document.
+//
+//nolint:gochecknoglobals // Immutable lookup.
+var pairStopWords = map[string]bool{
+	"a": true, "an": true, "the": true, "is": true, "are": true, "was": true,
+	"were": true, "be": true, "been": true, "am": true, "and": true, "or": true,
+	"but": true, "to": true, "of": true, "in": true, "on": true, "at": true,
+	"it": true, "its": true, "it's": true, "this": true, "that": true,
+	"these": true, "those": true, "we": true, "you": true, "they": true,
+	"he": true, "she": true, "i": true, "as": true, "for": true, "with": true,
+	"by": true, "from": true, "not": true, "no": true, "so": true, "if": true,
+	"then": true, "than": true, "there": true, "here": true, "will": true,
+	"would": true, "can": true, "could": true, "has": true, "have": true,
+	"had": true, "do": true, "does": true, "did": true,
+}
+
+// viableRule reports whether a pair can compile into a live, safe voice rule: no stop
+// word on the changed side, and both sides made of plain words, since a side carrying
+// markdown markers, code, or sentence punctuation produces a rule that never matches or
+// matches what it should not.
+func viableRule(p EditPair) bool {
+	if pairStopWords[strings.ToLower(strings.TrimSpace(p.Was))] {
+		return false
+	}
+	return plainWords(p.Was) && plainWords(p.Now)
+}
+
+// plainWords reports whether s is empty or words joined by single spaces, built from
+// letters, digits, apostrophes, and hyphens only.
+func plainWords(s string) bool {
+	for _, f := range strings.Fields(s) {
+		for _, r := range f {
+			if !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '\'' && r != '’' && r != '-' {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // keepCandidates reports the tells that were in the draft and are still in the shipped
@@ -134,7 +225,7 @@ func (s *Sanitizer) keepCandidates(draft, final string) []Candidate {
 // minReverseOverlap is the shortest changed text allowed to claim a rule by sitting
 // inside that rule's match. Below it a common short word would attach itself to any
 // finding that happens to contain those letters.
-const minReverseOverlap = 3
+const minReverseOverlap = 4
 
 // matchedRule reports the rule that flagged the text a change touched, so cutting a
 // flagged word is read as agreeing with the rule that flags it. The overlap is checked
@@ -149,7 +240,7 @@ func matchedRule(flagged map[string]string, was string) (string, bool) {
 		if strings.Contains(lower, match) {
 			return rule, true
 		}
-		if len(lower) >= minReverseOverlap && strings.Contains(match, lower) {
+		if len(lower) >= minReverseOverlap && !pairStopWords[lower] && strings.Contains(match, lower) {
 			return rule, true
 		}
 	}
@@ -168,6 +259,15 @@ func keepPair(p EditPair) bool {
 	}
 	if len(strings.Fields(p.Was)) > maxPairWords || len(strings.Fields(p.Now)) > maxPairWords {
 		return false
+	}
+	// The word cap counts space-separated tokens, which an unsegmented script never
+	// has: a wholly rewritten CJK sentence is one "word" on each side. A single token
+	// longer than any real word marks text the word diff cannot serve.
+	const maxTokenRunes = 24
+	for _, side := range []string{p.Was, p.Now} {
+		if !strings.Contains(side, " ") && utf8.RuneCountInString(side) > maxTokenRunes {
+			return false
+		}
 	}
 	return sameAnchors(p.Was, p.Now)
 }
@@ -233,19 +333,32 @@ func pairsFromScript(was, now []string) []EditPair {
 		}
 	}
 	flush := func() {
+		if len(dropped) == 0 && len(added) == 0 {
+			return
+		}
 		// A run of changes that crosses a sentence end holds two unrelated edits, so it
 		// is cut at that boundary first. Without this, ending one sentence and cutting
 		// the opener of the next merge into a single pair that describes neither.
 		wasSegs, nowSegs := splitAtSentenceEnds(dropped), splitAtSentenceEnds(added)
-		for i := 0; i < len(wasSegs) || i < len(nowSegs); i++ {
-			var was, now []string
-			if i < len(wasSegs) {
-				was = wasSegs[i]
+		n := min(len(wasSegs), len(nowSegs))
+		cleanTail := true
+		for i := 0; i < n; i++ {
+			if i == n-1 && len(wasSegs[i]) != len(nowSegs[i]) {
+				cleanTail = false
 			}
-			if i < len(nowSegs) {
-				now = nowSegs[i]
+			emit(wasSegs[i], nowSegs[i])
+		}
+		// Segments past the shorter side read as cuts or insertions only when the last
+		// aligned segment was a clean word-for-word swap. When it was not, the rewrite
+		// absorbed the trailing words, and reporting them as a cut fabricates an edit
+		// of words the writer never singled out.
+		if cleanTail {
+			for i := n; i < len(wasSegs); i++ {
+				emit(wasSegs[i], nil)
 			}
-			emit(was, now)
+			for i := n; i < len(nowSegs); i++ {
+				emit(nil, nowSegs[i])
+			}
 		}
 		dropped, added = nil, nil
 	}
@@ -308,8 +421,10 @@ func splitAtSentenceEnds(tokens []string) [][]string {
 	return out
 }
 
-// endsSentence reports whether a token closes a sentence: it ends in sentence punctuation,
-// allowing a closing quote or bracket after it, and is not a known abbreviation.
+// endsSentence reports whether a token closes a sentence: it ends in sentence
+// punctuation, allowing a closing quote or bracket after it, and is not an abbreviation
+// by the same tests abbreviationEnd applies, so the two sentence detectors cannot
+// disagree about "e.g." or "U.S." and fabricate a split.
 func endsSentence(token string) bool {
 	t := strings.TrimRight(token, `"')]}`)
 	if t == "" {
@@ -319,7 +434,11 @@ func endsSentence(token string) bool {
 	case '!', '?':
 		return true
 	case '.':
-		return !abbreviations[strings.ToLower(strings.TrimRight(t, "."))]
+		body := strings.TrimRight(t, ".")
+		if body == "" || strings.Contains(body, ".") || len(body) == 1 {
+			return false
+		}
+		return !abbreviations[strings.ToLower(body)]
 	}
 	return false
 }

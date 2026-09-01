@@ -33,12 +33,12 @@ func TestEditPairs(t *testing.T) {
 		Name:       "cut opener is a pair with an empty replacement",
 		Draft:      "In summary, the plan works",
 		Final:      "the plan works",
-		WantResult: []EditPair{{Was: "In summary,", Now: ""}},
+		WantResult: []EditPair{{Was: "In summary", Now: ""}},
 	}, {
 		Name:       "restored capital after a cut is not a change",
 		Draft:      "In summary, the plan works",
 		Final:      "The plan works",
-		WantResult: []EditPair{{Was: "In summary,", Now: ""}},
+		WantResult: []EditPair{{Was: "In summary", Now: ""}},
 	}, {
 		Name:       "a changed number is a fact, not a preference",
 		Draft:      "the retry waits 5s before giving up",
@@ -105,7 +105,7 @@ func TestEditPairsAcrossLines(t *testing.T) {
 	t.Parallel()
 	draft := "The build is robust.\n\nIt utilizes a cache to stay fast.\n"
 	final := "The build is solid.\n\nIt uses a cache to stay fast.\n"
-	want := []EditPair{{Was: "robust.", Now: "solid."}, {Was: "utilizes", Now: "uses"}}
+	want := []EditPair{{Was: "robust", Now: "solid"}, {Was: "utilizes", Now: "uses"}}
 	if diff := cmp.Diff(want, EditPairs(draft, final), cmpopts.EquateEmpty()); diff != "" {
 		t.Errorf("EditPairs mismatch (-want +got):\n%s", diff)
 	}
@@ -191,10 +191,129 @@ func TestEditPairsSentenceBoundary(t *testing.T) {
 	draft := "The pipeline is robust. It is important to note that we ship on Friday."
 	final := "The pipeline is solid. We ship on Friday."
 	want := []EditPair{
-		{Was: "robust.", Now: "solid."},
+		{Was: "robust", Now: "solid"},
 		{Was: "It is important to note that", Now: ""},
 	}
 	if diff := cmp.Diff(want, EditPairs(draft, final), cmpopts.EquateEmpty()); diff != "" {
 		t.Errorf("EditPairs mismatch (-want +got):\n%s", diff)
+	}
+}
+
+// TestEditPairsPhantoms pins the pairing pathologies the correctness audit found: a
+// moved word is not a cut, a restructure absorbing a sentence tail fabricates nothing,
+// dotted abbreviations do not split pairs, and an unsegmented script cannot propose the
+// whole document as one rule.
+func TestEditPairsPhantoms(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		Name       string
+		Draft      string
+		Final      string
+		WantResult []EditPair
+	}{{
+		Name:       "moved word is not a cut",
+		Draft:      "He quickly ran home before the storm hit.",
+		Final:      "He ran quickly home before the storm hit.",
+		WantResult: nil,
+	}, {
+		Name:       "reorder inside a longer run is not a cut",
+		Draft:      "alpha bravo charlie alpha",
+		Final:      "alpha charlie bravo alpha",
+		WantResult: nil,
+	}, {
+		Name:       "rewrite absorbing a sentence tail fabricates no cut",
+		Draft:      "Start alpha beta gamma delta. epsilon zeta eta End",
+		Final:      "Start good End",
+		WantResult: []EditPair{{Was: "alpha beta gamma delta", Now: "good"}},
+	}, {
+		Name:       "dotted abbreviation does not split a pair",
+		Draft:      "Start used tools e.g. hammers End",
+		Final:      "Start picked mallets End",
+		WantResult: []EditPair{{Was: "used tools e.g. hammers", Now: "picked mallets"}},
+	}, {
+		Name:       "initials do not split a pair",
+		Draft:      "Start the U.S. office soon End",
+		Final:      "Start the branch quickly End",
+		WantResult: []EditPair{{Was: "U.S. office soon", Now: "branch quickly"}},
+	}, {
+		Name:       "unsegmented script yields nothing",
+		Draft:      "私は犬が好きですと彼は言いましたがそれは長い話でありまして続きます",
+		Final:      "私は猫が好きですと彼は言いましたがそれは長い話でありまして続きます",
+		WantResult: nil,
+	}}
+	for testNum, test := range tests {
+		t.Run(fmt.Sprintf("test %d %s", testNum, test.Name), func(t *testing.T) {
+			t.Parallel()
+			got := EditPairs(test.Draft, test.Final)
+			if diff := cmp.Diff(test.WantResult, got, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("EditPairs mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+// TestEditPairsParagraphFallback checks that a long document whose whole-text table
+// would blow the cell cap still yields its pairs through paragraph alignment.
+func TestEditPairsParagraphFallback(t *testing.T) {
+	t.Parallel()
+	var d, f strings.Builder
+	for i := 0; i < 80; i++ {
+		for j := 0; j < 20; j++ {
+			d.WriteString("the team worked carefully on every part of rollout number " +
+				strings.Repeat("x", 1+i%3) + " and shipped it very reliably today without regressions ")
+			f.WriteString("the team worked with care on every part of rollout number " +
+				strings.Repeat("x", 1+i%3) + " and shipped it without fail without regressions ")
+		}
+		d.WriteString("\n\n")
+		f.WriteString("\n\n")
+	}
+	pairs := EditPairs(d.String(), f.String())
+	if len(pairs) == 0 {
+		t.Fatal("paragraph fallback produced no pairs for a heavily edited long document")
+	}
+	seen := map[string]bool{}
+	for _, p := range pairs {
+		seen[p.Was+"->"+p.Now] = true
+	}
+	if !seen["carefully->with care"] || !seen["very reliably today->without fail"] {
+		t.Errorf("expected the two repeated edits in %v", pairs[:min(4, len(pairs))])
+	}
+}
+
+// TestCandidatesStopWordGuard checks that restructure residue on common words is never
+// proposed as a rule.
+func TestCandidatesStopWordGuard(t *testing.T) {
+	t.Parallel()
+	s, err := New(DefaultProfile())
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	draft := "We utilized a comprehensive rollout plan and the cutover was seamless for users."
+	final := "We rolled it out carefully and the cutover went cleanly for users."
+	for _, c := range s.Candidates(draft, final) {
+		if c.Kind != CandidateNew {
+			continue
+		}
+		w := strings.ToLower(c.Pair.Was)
+		if pairStopWords[w] {
+			t.Errorf("stop word %q proposed as a rule: %+v", w, c)
+		}
+	}
+}
+
+// TestCandidatesMarkdownGuard checks that markdown structure never becomes a voice
+// proposal.
+func TestCandidatesMarkdownGuard(t *testing.T) {
+	t.Parallel()
+	s, err := New(DefaultProfile())
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	draft := "intro line\n\n- **Resilience**: caches absorb spikes.\n- **Scalability**: caches scale horizontally.\n"
+	final := "intro line\n\ncaches absorb spikes and scale horizontally.\n"
+	for _, c := range s.Candidates(draft, final) {
+		if c.Kind == CandidateNew && strings.Contains(c.Pair.Was, "*") {
+			t.Errorf("markdown fragment proposed as a rule: %+v", c)
+		}
 	}
 }
