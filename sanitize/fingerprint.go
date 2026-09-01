@@ -71,7 +71,8 @@ type Drift struct {
 	Metric string `json:"metric"`
 	// Unit describes what the numbers count, for example "words per sentence".
 	Unit string `json:"unit"`
-	// Note says which way the text moved, in the writer's terms.
+	// Note names what the text did, such as "longer sentences". It carries no pronoun, so a
+	// caller can address the writer or speak about them without rewriting it.
 	Note string `json:"note"`
 	// Want is the fingerprint's value for the trait.
 	Want float64 `json:"want"`
@@ -92,7 +93,8 @@ type metricDef struct {
 	unit string
 	// floor is the narrowest band the trait can have.
 	floor float64
-	// high and low say what a value above or below the band means, in plain words.
+	// high and low name what a value above or below the band means, in plain words and
+	// without a pronoun.
 	high, low string
 	// read returns the trait's value for a counted sample.
 	read func(c counts) float64
@@ -105,47 +107,47 @@ type metricDef struct {
 //nolint:gochecknoglobals // Immutable table.
 var metricDefs = []metricDef{{
 	name: "sentence-length", unit: "words per sentence", floor: 4,
-	high: "longer sentences than you write", low: "shorter sentences than you write",
+	high: "longer sentences", low: "shorter sentences",
 	read: func(c counts) float64 { return ratio(c.words, c.sentences) },
 }, {
 	name: "sentence-variation", unit: "spread of sentence length", floor: 0.15,
-	high: "sentences vary more than yours", low: "sentences run flatter than yours",
+	high: "more varied sentence lengths", low: "a flatter sentence rhythm",
 	read: func(c counts) float64 { return variation(c.lengths) },
 }, {
 	name: "paragraph-length", unit: "sentences per paragraph", floor: 1.2,
-	high: "longer paragraphs than you write", low: "shorter paragraphs than you write",
+	high: "longer paragraphs", low: "shorter paragraphs",
 	read: func(c counts) float64 { return ratio(c.sentences, c.paragraphs) },
 }, {
 	name: "commas", unit: "commas per sentence", floor: 0.5,
-	high: "more clauses per sentence than you use", low: "fewer clauses per sentence than you use",
+	high: "more clauses per sentence", low: "fewer clauses per sentence",
 	read: func(c counts) float64 { return ratio(c.commas, c.sentences) },
 }, {
 	name: "semicolons", unit: "semicolons per 100 sentences", floor: 8,
-	high: "more semicolons than you use", low: "fewer semicolons than you use",
+	high: "more semicolons", low: "fewer semicolons",
 	read: func(c counts) float64 { return per100(c.semicolons, c.sentences) },
 }, {
 	name: "dashes", unit: "dashes per 100 sentences", floor: 10,
-	high: "more dashes than you use", low: "fewer dashes than you use",
+	high: "more dashes", low: "fewer dashes",
 	read: func(c counts) float64 { return per100(c.dashes, c.sentences) },
 }, {
 	name: "questions", unit: "percent of sentences", floor: 8,
-	high: "asks more questions than you do", low: "asks fewer questions than you do",
+	high: "more questions asked", low: "fewer questions asked",
 	read: func(c counts) float64 { return per100(c.questions, c.sentences) },
 }, {
 	name: "contractions", unit: "contractions per 100 words", floor: 1.5,
-	high: "more contracted than you write", low: "more formal than you write",
+	high: "a more contracted register", low: "a more formal register",
 	read: func(c counts) float64 { return per100(c.contractions, c.words) },
 }, {
 	name: "first-person", unit: "first-person words per 100 words", floor: 2,
-	high: "speaks about itself more than you do", low: "speaks about itself less than you do",
+	high: "more first-person", low: "less first-person",
 	read: func(c counts) float64 { return per100(c.firstPerson, c.words) },
 }, {
 	name: "long-words", unit: "percent of words over eight letters", floor: 4,
-	high: "a heavier vocabulary than yours", low: "a plainer vocabulary than yours",
+	high: "a heavier vocabulary", low: "a plainer vocabulary",
 	read: func(c counts) float64 { return per100(c.longWords, c.words) },
 }, {
 	name: "lowercase-starts", unit: "percent of sentences", floor: 10,
-	high: "starts sentences lowercase more than you do", low: "starts sentences lowercase less than you do",
+	high: "more lowercase sentence openings", low: "fewer lowercase sentence openings",
 	read: func(c counts) float64 { return per100(c.lowerStarts, c.sentences) },
 }}
 

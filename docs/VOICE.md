@@ -129,10 +129,10 @@ slop-chop voice drift draft.md
 
 ```
 draft.md reads unlike you on 4 of 11 traits
-  a heavier vocabulary than yours              48.57 against your 6.22 (percent of words over eight letters)
-  sentences run flatter than yours             0.41 against your 0.72 (spread of sentence length)
-  starts sentences lowercase less than you do  0.00 against your 24.94 (percent of sentences)
-  longer sentences than you write              20.00 against your 13.71 (words per sentence)
+  a heavier vocabulary                         48.57 against your 6.02 (percent of words over eight letters)
+  a flatter sentence rhythm                    0.41 against your 0.70 (spread of sentence length)
+  fewer lowercase sentence openings            0.00 against your 24.42 (percent of sentences)
+  longer sentences                             20.00 against your 14.02 (words per sentence)
 ```
 
 Drift is not slop. A trait outside your range can be good writing that belongs to somebody
