@@ -31,7 +31,7 @@ func TestFlagPatterns(t *testing.T) {
 		{Name: "whether youre", In: "Whether you're a beginner or an expert, this fits.", WantRule: "structural:whether-youre", WantHit: true},
 		{Name: "think of it as", In: "Think of it as a compiler for prose.", WantRule: "structural:think-of-it-as", WantHit: true},
 		{Name: "not just split", In: "You're not just buying a tool. You're joining a movement.", WantRule: "structural:not-just-sentence-split", WantHit: true},
-		{Name: "spaced hyphen", In: "The build is quick - a relief after the rewrite.", WantRule: "structural:spaced-hyphen", WantHit: true},
+		{Name: "spaced single hyphen is human typing", In: "The build is quick - a relief after the rewrite.", WantRule: "structural:spaced-hyphen", WantHit: false},
 		{Name: "signoff mid line", In: "Check the docs for more detail. I hope this helps!", WantRule: "structural:assistant-signoff", WantHit: true},
 		{Name: "in an era", In: "In an era where attention is scarce, speed sells.", WantRule: "structural:in-an-era", WantHit: true},
 		{Name: "bold bullet run", In: "- **Speed:** fast builds\n- **Cost:** free forever\n- **Care:** none needed", WantRule: "structural:bold-bullet-run", WantHit: true},

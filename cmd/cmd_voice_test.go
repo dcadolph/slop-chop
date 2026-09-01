@@ -234,7 +234,7 @@ func TestVoiceDiffOnlyFacts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err = %v, want nil", err)
 	}
-	if !strings.Contains(stdout, "no candidates") {
+	if !strings.Contains(stdout, "no proposals") {
 		t.Errorf("stdout = %q, want no candidates for a fact-only change", stdout)
 	}
 }
