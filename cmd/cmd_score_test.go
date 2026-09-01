@@ -73,3 +73,40 @@ func TestScoreJSONMultiFile(t *testing.T) {
 		t.Error("score --json with two files returned nil, want an error")
 	}
 }
+
+// TestScoreByParagraph checks that --by-paragraph scores each paragraph on its own with
+// its starting line, and that --max gates on the hottest paragraph rather than the
+// diluted whole.
+func TestScoreByParagraph(t *testing.T) {
+	human := "The mail arrived late and nobody minded much at all today, and the dog barked twice.\n\n"
+	doc := human +
+		"In summary, we leverage comprehensive synergy to seamlessly revolutionize robust workflows.\n\n" +
+		strings.Repeat(human, 12)
+	dir := t.TempDir()
+	path := writeTemp(t, dir, "mixed.md", doc)
+
+	stdout, _, err := runCLI(t, []string{"score", "--by-paragraph", path}, "")
+	if err != nil {
+		t.Fatalf("err = %v, want nil without a gate", err)
+	}
+	lines := strings.Split(strings.TrimSpace(stdout), "\n")
+	if len(lines) != 14 {
+		t.Fatalf("lines = %d, want 14 (%q)", len(lines), stdout)
+	}
+	if !strings.Contains(lines[1], path+":3:") || !strings.Contains(lines[1], "heavy slop") {
+		t.Errorf("slop paragraph = %q, want line 3 flagged heavy", lines[1])
+	}
+	for i, l := range lines {
+		if i != 1 && !strings.Contains(l, "reads clean") {
+			t.Errorf("human paragraph %d = %q, want clean", i, l)
+		}
+	}
+
+	// The whole document dilutes below the gate; the paragraph view does not.
+	if _, _, err := runCLI(t, []string{"score", "--max", "50", path}, ""); err != nil {
+		t.Fatalf("whole-doc gate: err = %v, want nil (diluted)", err)
+	}
+	if _, _, err := runCLI(t, []string{"score", "--by-paragraph", "--max", "50", path}, ""); !errors.Is(err, errFindings) {
+		t.Errorf("by-paragraph gate: err = %v, want errFindings on the hot paragraph", err)
+	}
+}

@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/dcadolph/slop-chop/cmd/config"
+	"github.com/dcadolph/slop-chop/internal/jsonutil"
 	"github.com/dcadolph/slop-chop/sanitize"
 )
 
@@ -27,6 +28,7 @@ func scoreCmd() *cobra.Command {
 	f.AddFlag(&config.FlagJSON)
 	f.AddFlag(&config.FlagPretty)
 	f.AddFlag(&config.FlagMax)
+	f.AddFlag(&config.FlagByParagraph)
 	return cmd
 }
 
@@ -82,8 +84,14 @@ func scoreBand(v int) string {
 }
 
 // scoreOne scores one input and writes the result to stdout. It returns errFindings when
-// the score is above the --max gate, so a run can fail CI on slop.
+// the score is above the --max gate, so a run can fail CI on slop. With --by-paragraph
+// each paragraph is scored on its own, which is how a mixed document shows which part
+// the machine wrote, and the gate applies to the hottest paragraph rather than the
+// diluted whole.
 func scoreOne(s *sanitize.Sanitizer, text, path string, stdout io.Writer) error {
+	if config.ByParagraph() {
+		return scoreParagraphs(s, text, path, stdout)
+	}
 	score := s.Score(text)
 	if config.JSON() {
 		if err := writeJSON(stdout, score, config.Pretty()); err != nil {
@@ -100,6 +108,37 @@ func scoreOne(s *sanitize.Sanitizer, text, path string, stdout io.Writer) error 
 	}
 	if max := config.Max(); max >= 0 && score.Value > max {
 		return errFindings
+	}
+	return nil
+}
+
+// scoreParagraphs writes one line per scored paragraph and gates on the hottest one.
+func scoreParagraphs(s *sanitize.Sanitizer, text, path string, stdout io.Writer) error {
+	paras := s.ScoreByParagraph(text)
+	if config.JSON() {
+		if err := writeJSON(stdout, struct {
+			Paragraphs []sanitize.ParagraphScore `json:"paragraphs"`
+		}{jsonutil.OrEmpty(paras)}, config.Pretty()); err != nil {
+			return err
+		}
+	} else {
+		prefix := ""
+		if path != "" {
+			prefix = path + ":"
+		}
+		for _, p := range paras {
+			if _, err := fmt.Fprintf(stdout, "%s%d: %d (%s: %d tells in %d words)\n",
+				prefix, p.Line, p.Score.Value, scoreBand(p.Score.Value), p.Score.Tells, p.Words); err != nil {
+				return err
+			}
+		}
+	}
+	if max := config.Max(); max >= 0 {
+		for _, p := range paras {
+			if p.Score.Value > max {
+				return errFindings
+			}
+		}
 	}
 	return nil
 }

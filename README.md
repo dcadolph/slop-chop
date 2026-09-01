@@ -139,6 +139,9 @@ the matched text, the suggested replacement, and a line and column.
 - `score` measures the density of AI-writing tells, 0 to 100. A high score means the text
 carries many patterns common in machine writing, not proof of authorship. Under 25 reads
 clean, 25 to 54 is mixed, and 55 and up is heavy slop, the same bands the web app shows.
+`score --by-paragraph` scores each paragraph on its own, which is how a document with two
+generated paragraphs buried in a thousand human words shows where they are, and `--max`
+then gates on the hottest paragraph instead of the diluted whole.
 
 Source code gets its own treatment. On a `.go`, `.py`, `.ts`, or any other code file,
 `check` and `score` read only the comments, so a buzzword in a comment is flagged at its

@@ -190,3 +190,39 @@ func stemEnd(s string, n int) int {
 	}
 	return 0
 }
+
+// ParagraphScore locates one paragraph's score inside a larger document.
+type ParagraphScore struct {
+	// Line is the one-based line the paragraph starts on.
+	Line int `json:"line"`
+	// Words is the paragraph's word count.
+	Words int `json:"words"`
+	// Score is the paragraph scored on its own.
+	Score Score `json:"score"`
+}
+
+// scoreParagraphMinWords is the smallest paragraph scored on its own. Below it there is
+// not enough text for a per-paragraph verdict to mean anything.
+const scoreParagraphMinWords = 10
+
+// ScoreByParagraph scores each paragraph of text separately, so a document with mixed
+// authorship shows where the machine wrote instead of diluting two generated paragraphs
+// across a thousand human words. Paragraphs under ten words are skipped.
+func (s *Sanitizer) ScoreByParagraph(text string) []ParagraphScore {
+	var out []ParagraphScore
+	line := 1
+	prev := 0
+	for _, p := range paragraphSpans(text) {
+		line += strings.Count(text[prev:p.start], "\n")
+		prev = p.start
+		if p.words < scoreParagraphMinWords {
+			continue
+		}
+		out = append(out, ParagraphScore{
+			Line:  line,
+			Words: p.words,
+			Score: s.Score(text[p.start:p.end]),
+		})
+	}
+	return out
+}
