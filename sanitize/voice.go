@@ -96,6 +96,26 @@ func (p Profile) WithVoice(v Voice) Profile {
 // slices take the union. It is the reverse of withPreset, used where a higher-priority layer
 // like a voice or a project profile must win over what is already there.
 func (p Profile) Overlay(top Profile) Profile {
+	if len(top.ScoreWeights) > 0 {
+		merged := make(map[string]float64, len(p.ScoreWeights)+len(top.ScoreWeights))
+		for k, v := range p.ScoreWeights {
+			merged[k] = v
+		}
+		for k, v := range top.ScoreWeights {
+			merged[k] = v
+		}
+		p.ScoreWeights = merged
+	}
+	if top.Dialect != "" {
+		p.Dialect = top.Dialect
+	}
+	// Booleans take the union: an extending profile can switch a feature on but not
+	// silently off, since false is also the unset value. Turning a default off takes a
+	// standalone profile.
+	p.CollapseSpaces = p.CollapseSpaces || top.CollapseSpaces
+	p.SplitSemicolons = p.SplitSemicolons || top.SplitSemicolons
+	p.FixArticles = p.FixArticles || top.FixArticles
+	p.ProtectQuotes = p.ProtectQuotes || top.ProtectQuotes
 	p.CharReplace = mergeMapTopWins(p.CharReplace, top.CharReplace)
 	p.PhraseReplace = mergeMapTopWins(p.PhraseReplace, top.PhraseReplace)
 	p.WordReplace = mergeMapTopWins(p.WordReplace, top.WordReplace)

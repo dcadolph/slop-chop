@@ -70,6 +70,12 @@ func sanitizerFor(presetNames []string, dialect string) (*sanitize.Sanitizer, sa
 		if err != nil {
 			return nil, sanitize.Profile{}, err
 		}
+		// A profile extends the built-in default unless it says standalone. The
+		// two-line team file, allow one word and ban another, means the default
+		// detection plus those two decisions, not a profile of two rules.
+		if !p.Standalone {
+			p = sanitize.DefaultProfile().Overlay(p)
+		}
 		profile = p
 		projectProfile = p
 		haveProject = true

@@ -131,12 +131,17 @@ func TestRunProfileDiscovery(t *testing.T) {
 	flagged := writeTemp(t, dir, "other.json", `{"blockWords": ["blimp"]}`)
 	t.Chdir(dir)
 
-	// The discovered profile flags zorp and nothing else.
+	// The discovered profile extends the default: its own word is flagged and so are
+	// the default tells, since a two-line team file that silently disabled the whole
+	// engine once let obvious slop through a CI gate.
 	if _, _, err := runCLI(t, []string{"check"}, "a zorp plan"); !errors.Is(err, errFindings) {
 		t.Fatalf("discovered profile: err = %v, want errFindings", err)
 	}
-	if _, _, err := runCLI(t, []string{"check"}, "a robust plan"); err != nil {
-		t.Fatalf("discovered profile dropped the defaults: err = %v, want nil", err)
+	if _, _, err := runCLI(t, []string{"check"}, "a robust plan"); !errors.Is(err, errFindings) {
+		t.Fatalf("discovered profile must keep the defaults: err = %v, want errFindings", err)
+	}
+	if _, _, err := runCLI(t, []string{"check"}, "a plain plan"); err != nil {
+		t.Fatalf("clean text under discovered profile: err = %v, want nil", err)
 	}
 
 	// An explicit --profile wins over the discovered file.
@@ -145,5 +150,19 @@ func TestRunProfileDiscovery(t *testing.T) {
 	}
 	if _, _, err := runCLI(t, []string{"check", "--profile", flagged}, "a blimp plan"); !errors.Is(err, errFindings) {
 		t.Fatalf("explicit profile: err = %v, want errFindings", err)
+	}
+}
+
+// TestStandaloneProfile checks the escape hatch: a profile marked standalone replaces
+// the default outright, the old semantics, chosen explicitly.
+func TestStandaloneProfile(t *testing.T) {
+	dir := t.TempDir()
+	writeTemp(t, dir, ".slop-chop.json", `{"standalone": true, "blockWords": ["zorp"]}`)
+	t.Chdir(dir)
+	if _, _, err := runCLI(t, []string{"check"}, "a zorp plan"); !errors.Is(err, errFindings) {
+		t.Fatalf("standalone profile: err = %v, want errFindings", err)
+	}
+	if _, _, err := runCLI(t, []string{"check"}, "a robust plan"); err != nil {
+		t.Fatalf("standalone profile keeps nothing else: err = %v, want nil", err)
 	}
 }
