@@ -154,9 +154,9 @@ In summary, a comprehensive—and robust—plan; it works.
 ```text
 1:1 phrase:in summary,: "In summary, a" -> "A"
 1:15 word:comprehensive: "comprehensive"
-1:28 char:—: "—" -> ", "
+1:28 char:—: "—" -> " "
 1:33 word:robust: "robust"
-1:39 char:—: "—" -> ", "
+1:39 char:—: "—" -> " "
 1:44 semicolon: "; i" -> ". I"
 slop-chop: 6 finding(s)
 ```
@@ -167,11 +167,16 @@ capital back when the deletion leaves it opening the sentence.
 `slop-chop fix` returns the cleaned text:
 
 ```text
-A comprehensive, and robust, plan. It works.
+A comprehensive and robust plan. It works.
 ```
 
 Note that `comprehensive` and `robust` are still there. They are block words, so the
 engine flags them but leaves the swap to you.
+
+The two em-dashes became spaces rather than commas. A lone em-dash stands in for a comma
+and is swapped for one, but a matched pair fencing a phrase that opens on a conjunction is
+doing emphasis, and commas there would leave `a comprehensive, and robust, plan`. The pair
+is dropped instead. Every other em-dash still becomes a comma.
 
 ## Which rules rewrite
 

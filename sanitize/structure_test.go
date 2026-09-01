@@ -235,3 +235,56 @@ func TestCleaverRecallPhrases(t *testing.T) {
 		t.Errorf("Fix = %q, want %q", got, want)
 	}
 }
+
+// TestEmDashPair checks that a lone em-dash still becomes a comma while a matched pair
+// fencing a conjunction-led phrase is dropped, since commas there read worse than the
+// dashes did: "a comprehensive, and robust, plan" is not an improvement on the input.
+func TestEmDashPair(t *testing.T) {
+	t.Parallel()
+	s, err := New(DefaultProfile())
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	tests := []struct {
+		In   string
+		Want string
+	}{{ // Test 0: A conjunction-led pair is dropped.
+		In: "a comprehensive—and robust—plan", Want: "a comprehensive and robust plan",
+	}, { // Test 1: The same pair spaced out collapses cleanly.
+		In: "a fast — and cheap — build", Want: "a fast and cheap build",
+	}, { // Test 2: An ordinary aside still becomes commas.
+		In: "The plan—which shipped—works.", Want: "The plan, which shipped, works.",
+	}, { // Test 3: A lone dash still becomes a comma.
+		In: "It worked—until it did not.", Want: "It worked, until it did not.",
+	}, { // Test 4: A dash ending a line is not half of a pair.
+		In: "a plan—\nand robust—plan", Want: "a plan, \nand robust, plan",
+	}, { // Test 5: A pair whose phrase opens on an ordinary word is an aside.
+		In: "the build—slow as it is—ships", Want: "the build, slow as it is, ships",
+	}}
+	for testNum, test := range tests {
+		t.Run(fmt.Sprintf("test %d", testNum), func(t *testing.T) {
+			t.Parallel()
+			if got, _ := s.Fix(test.In); got != test.Want {
+				t.Errorf("Fix(%q) = %q, want %q", test.In, got, test.Want)
+			}
+		})
+	}
+}
+
+// TestEmDashPairRespectsTypography checks that the typography preset, which keeps typeset
+// characters, still protects a conjunction-led pair from the context-aware swap.
+func TestEmDashPairRespectsTypography(t *testing.T) {
+	t.Parallel()
+	p, err := ApplyPresets(DefaultProfile(), "typography")
+	if err != nil {
+		t.Fatalf("ApplyPresets: %v", err)
+	}
+	s, err := New(p)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	in := "a comprehensive—and robust—plan"
+	if got, _ := s.Fix(in); got != in {
+		t.Errorf("Fix(%q) = %q, want it left alone", in, got)
+	}
+}
