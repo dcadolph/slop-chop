@@ -151,6 +151,26 @@ func TestRunProfileDiscovery(t *testing.T) {
 	if _, _, err := runCLI(t, []string{"check", "--profile", flagged}, "a blimp plan"); !errors.Is(err, errFindings) {
 		t.Fatalf("explicit profile: err = %v, want errFindings", err)
 	}
+
+	// Discovery walks upward, so the repo's profile holds from a subdirectory too: an
+	// editor plugin or a cd'd shell runs under the same rules as a run from the root.
+	sub := filepath.Join(dir, "docs", "guides")
+	if err := os.MkdirAll(sub, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(sub)
+	if _, _, err := runCLI(t, []string{"check"}, "a zorp plan"); !errors.Is(err, errFindings) {
+		t.Fatalf("profile from a subdirectory: err = %v, want errFindings", err)
+	}
+
+	// The nearest file wins, so a subtree can carry its own rules.
+	writeTemp(t, sub, ".slop-chop.json", `{"blockWords": ["blimp"]}`)
+	if _, _, err := runCLI(t, []string{"check"}, "a blimp plan"); !errors.Is(err, errFindings) {
+		t.Fatalf("nearer profile: err = %v, want errFindings", err)
+	}
+	if _, _, err := runCLI(t, []string{"check"}, "a zorp plan"); err != nil {
+		t.Fatalf("nearer profile shadows the outer one: err = %v, want nil", err)
+	}
 }
 
 // TestStandaloneProfile checks the escape hatch: a profile marked standalone replaces

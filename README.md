@@ -286,8 +286,8 @@ Rewrite this to sound human, and use my local Ollama so it costs nothing.
 
 A profile is a JSON file that lists what to cut and what to put in its place: characters,
 phrases, words, regular expressions, a blacklist, and a few switches. Point the tool at one
-with `--profile`, or drop a `.slop-chop.json` in the directory you run from and it gets
-picked up on its own. With neither, a built-in default runs.
+with `--profile`, or drop a `.slop-chop.json` in the repo and it gets picked up on its
+own from any directory under it. With neither, a built-in default runs.
 
 Presets are curated packs you overlay with `--preset`. The built-in packs are `cleaver`,
 `plain`, `corporate`, `academic`, `marketing`, `no-dashes`, and `typography`. `cleaver`
