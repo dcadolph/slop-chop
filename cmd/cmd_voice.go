@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -43,7 +44,7 @@ matches; write them by hand or derive them from your own writing with voice lear
 file lives at ~/.slop-chop/voice.json and applies to every run; --voice points at a
 different one, and a project's .slop-chop.json still outranks it.`,
 	}
-	cmd.AddCommand(voiceInitCmd(), voiceShowCmd(), voiceLearnCmd())
+	cmd.AddCommand(voiceInitCmd(), voiceShowCmd(), voiceLearnCmd(), voiceDiffCmd())
 	return cmd
 }
 
@@ -269,4 +270,136 @@ func mergeToneNotes(existing, notes []string) []string {
 		out = append(out, n)
 	}
 	return out
+}
+
+// diffReport is the JSON shape returned by voice diff.
+type diffReport struct {
+	// Candidates is every proposal drawn from the two files, in report order.
+	Candidates []sanitize.Candidate `json:"candidates"`
+	// Suggested is the voice those proposals would add, ready to merge by hand.
+	Suggested sanitize.Voice `json:"suggested"`
+}
+
+// voiceDiffCmd builds the voice diff subcommand, which reads a draft against the text you
+// shipped and proposes voice entries from what you changed.
+func voiceDiffCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "diff <draft> <final>",
+		Short: "Propose voice entries from what you changed in a draft.",
+		Long: `diff reads a draft and the version you shipped and reports what your edits
+say about how you write.
+
+Your edits are the one voice signal a model cannot contaminate: the draft's words are
+its own, but every change to them is yours. A change whose two sides carry different
+numbers, links, or acronyms is treated as a corrected fact and ignored, so only wording
+is read as style.
+
+It proposes and never writes. Merge the entries you agree with into your voice file.`,
+		Args: cobra.ExactArgs(2),
+		RunE: runVoiceDiff,
+	}
+	f := cmd.Flags()
+	f.AddFlag(&config.FlagProfile)
+	f.AddFlag(&config.FlagDialect)
+	f.AddFlag(&config.FlagPreset)
+	f.AddFlag(&config.FlagVoice)
+	f.AddFlag(&config.FlagJSON)
+	f.AddFlag(&config.FlagPretty)
+	return cmd
+}
+
+// runVoiceDiff reads the two files, classifies the changes between them, and writes the
+// proposals to stdout.
+func runVoiceDiff(cmd *cobra.Command, args []string) error {
+	draft, err := readInput(args[0], cmd.InOrStdin())
+	if err != nil {
+		return err
+	}
+	final, err := readInput(args[1], cmd.InOrStdin())
+	if err != nil {
+		return err
+	}
+	s, _, err := newSanitizer()
+	if err != nil {
+		return err
+	}
+	candidates := s.Candidates(draft, final)
+	if config.JSON() {
+		report := diffReport{
+			Candidates: jsonutil.OrEmpty(candidates),
+			Suggested:  suggestedVoice(candidates),
+		}
+		return writeJSON(cmd.OutOrStdout(), report, config.Pretty())
+	}
+	writeDiffReport(cmd.OutOrStdout(), candidates, args[0], args[1])
+	return nil
+}
+
+// suggestedVoice turns the proposals into the voice they would add. A kept tell becomes a
+// keep entry, and a change nothing flagged becomes a prefer entry, where an empty
+// replacement drops the word. A confirmation adds nothing, since the rule already exists.
+func suggestedVoice(candidates []sanitize.Candidate) sanitize.Voice {
+	var v sanitize.Voice
+	for _, c := range candidates {
+		switch c.Kind {
+		case sanitize.CandidateKeep:
+			v.Keep = append(v.Keep, c.Match)
+		case sanitize.CandidateNew:
+			if v.Prefer == nil {
+				v.Prefer = make(map[string]string)
+			}
+			v.Prefer[c.Pair.Was] = c.Pair.Now
+		case sanitize.CandidateConfirms:
+		}
+	}
+	return v
+}
+
+// writeDiffReport prints the proposals grouped by what they mean, keeps first, since a
+// tell you read and shipped is the rules being wrong rather than a fact about your voice.
+func writeDiffReport(w io.Writer, candidates []sanitize.Candidate, draftPath, finalPath string) {
+	if len(candidates) == 0 {
+		_, _ = fmt.Fprintf(w, "no candidates: %s and %s differ only in facts or not at all\n",
+			draftPath, finalPath)
+		return
+	}
+	groups := []struct {
+		Kind  sanitize.CandidateKind
+		Title string
+	}{
+		{sanitize.CandidateKeep, "keep: the rules flag these and you shipped them anyway"},
+		{sanitize.CandidateNew, "prefer: you changed these and no rule caught them"},
+		{sanitize.CandidateConfirms, "confirms: you cut what the rules already flag"},
+	}
+	for _, g := range groups {
+		var rows []sanitize.Candidate
+		for _, c := range candidates {
+			if c.Kind == g.Kind {
+				rows = append(rows, c)
+			}
+		}
+		if len(rows) == 0 {
+			continue
+		}
+		_, _ = fmt.Fprintf(w, "\n%s\n", g.Title)
+		for _, c := range rows {
+			switch {
+			case c.Kind == sanitize.CandidateKeep:
+				_, _ = fmt.Fprintf(w, "  %-24s %q\n", c.Rule, c.Match)
+			case c.Pair.Now == "":
+				_, _ = fmt.Fprintf(w, "  %-24s %q -> (cut)\n", c.Rule, c.Pair.Was)
+			default:
+				_, _ = fmt.Fprintf(w, "  %-24s %q -> %q\n", c.Rule, c.Pair.Was, c.Pair.Now)
+			}
+		}
+	}
+	v := suggestedVoice(candidates)
+	if v.Empty() {
+		return
+	}
+	b, err := jsonutil.Marshal(v, true)
+	if err != nil {
+		return
+	}
+	_, _ = fmt.Fprintf(w, "\nmerge what you agree with into your voice file:\n%s\n", string(b))
 }

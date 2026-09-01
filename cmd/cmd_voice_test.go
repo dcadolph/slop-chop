@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -165,5 +166,75 @@ func TestVoiceToneReachesRewrite(t *testing.T) {
 		if !slices.Contains(gotTone, want) {
 			t.Errorf("tone = %v, want it to contain %q", gotTone, want)
 		}
+	}
+}
+
+// TestVoiceDiff checks that voice diff groups a draft's changes into the three readings
+// and prints a voice fragment holding only the ones that would add a rule.
+func TestVoiceDiff(t *testing.T) {
+	dir := t.TempDir()
+	draft := writeTemp(t, dir, "draft.md",
+		"The robust plan is comprehensive and we commence the rollout.\n")
+	final := writeTemp(t, dir, "final.md",
+		"The solid plan is comprehensive and we start the rollout.\n")
+
+	stdout, _, err := runCLI(t, []string{"voice", "diff", draft, final}, "")
+	if err != nil {
+		t.Fatalf("err = %v, want nil", err)
+	}
+	for _, want := range []string{
+		"keep:", "comprehensive",
+		"prefer:", `"commence" -> "start"`,
+		"confirms:", "word:robust",
+	} {
+		if !strings.Contains(stdout, want) {
+			t.Errorf("stdout missing %q\n%s", want, stdout)
+		}
+	}
+	// The confirmed cut already has a rule, so it must not be proposed again.
+	if strings.Contains(stdout, `"robust":`) {
+		t.Errorf("suggested voice proposed a rule that already exists\n%s", stdout)
+	}
+}
+
+// TestVoiceDiffJSON checks the machine shape carries both the candidates and the voice
+// they would add.
+func TestVoiceDiffJSON(t *testing.T) {
+	dir := t.TempDir()
+	draft := writeTemp(t, dir, "draft.md", "we commence the rollout now\n")
+	final := writeTemp(t, dir, "final.md", "we start the rollout now\n")
+
+	stdout, _, err := runCLI(t, []string{"voice", "diff", "--json", draft, final}, "")
+	if err != nil {
+		t.Fatalf("err = %v, want nil", err)
+	}
+	var report struct {
+		Candidates []sanitize.Candidate `json:"candidates"`
+		Suggested  sanitize.Voice       `json:"suggested"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &report); err != nil {
+		t.Fatalf("decode: %v (%s)", err, stdout)
+	}
+	if len(report.Candidates) == 0 {
+		t.Fatalf("no candidates in %s", stdout)
+	}
+	if got := report.Suggested.Prefer["commence"]; got != "start" {
+		t.Errorf("suggested prefer[commence] = %q, want start", got)
+	}
+}
+
+// TestVoiceDiffOnlyFacts checks that two versions differing only in a number propose
+// nothing, since a corrected fact says nothing about voice.
+func TestVoiceDiffOnlyFacts(t *testing.T) {
+	dir := t.TempDir()
+	draft := writeTemp(t, dir, "draft.md", "the retry waits 5s before giving up\n")
+	final := writeTemp(t, dir, "final.md", "the retry waits 30s before giving up\n")
+
+	stdout, _, err := runCLI(t, []string{"voice", "diff", draft, final}, "")
+	if err != nil {
+		t.Fatalf("err = %v, want nil", err)
+	}
+	if !strings.Contains(stdout, "no candidates") {
+		t.Errorf("stdout = %q, want no candidates for a fact-only change", stdout)
 	}
 }
