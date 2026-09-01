@@ -64,9 +64,14 @@ jobs:
           set -euo pipefail
           VER="${TAG#v}"
           mkdir -p build dist
-          gox -osarch="darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64 windows/arm64" \
+          gox -osarch="darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64" \
             -ldflags="-s -w -X github.com/dcadolph/slop-chop/cmd.version=${VER}" \
             -output="build/slop-chop_{{.OS}}_{{.Arch}}" .
+          # gox predates windows/arm64 and silently skips it, so that one is built
+          # directly.
+          GOOS=windows GOARCH=arm64 go build \
+            -ldflags="-s -w -X github.com/dcadolph/slop-chop/cmd.version=${VER}" \
+            -o build/slop-chop_windows_arm64.exe .
           for f in build/slop-chop_*; do
             base="${f#build/slop-chop_}"
             base="${base%.exe}"
