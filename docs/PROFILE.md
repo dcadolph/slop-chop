@@ -33,8 +33,9 @@ profile, see [Your voice](VOICE.md).
 Three ways, in order of who wins:
 
 - `--profile path.json` points at a file directly.
-- A `.slop-chop.json` in the directory you run from is picked up on its own when
-  `--profile` is not set.
+- The nearest `.slop-chop.json` from the working directory upward is picked up on its
+  own when `--profile` is not set, the way `.gitignore` works, so a repo's profile holds
+  from any of its subdirectories and the nearest file wins.
 - With neither, the built-in default profile is used. It targets the common tells:
   em-dashes, smart quotes, stock openers, and a starter list of buzzwords.
 

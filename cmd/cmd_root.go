@@ -21,9 +21,32 @@ const (
 	voiceFile = "voice.json"
 )
 
-// defaultProfileFile is picked up from the working directory when --profile is not set,
-// so a repo can pin its own style without every caller passing the flag.
+// defaultProfileFile is discovered from the working directory upward when --profile is
+// not set, so a repo can pin its own style without every caller passing the flag.
 const defaultProfileFile = ".slop-chop.json"
+
+// discoverProfile walks from the working directory toward the filesystem root and returns
+// the first .slop-chop.json it finds, or empty when there is none. Walking up is what
+// makes a repo's profile hold from any of its subdirectories, the way .gitignore and
+// .editorconfig do, so an editor plugin or a cd'd shell gets the same rules as a run from
+// the root.
+func discoverProfile() string {
+	dir, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+	for {
+		p := filepath.Join(dir, defaultProfileFile)
+		if info, err := os.Stat(p); err == nil && !info.IsDir() {
+			return p
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return ""
+		}
+		dir = parent
+	}
+}
 
 // rootCmd builds the slop-chop root command with the check and fix subcommands.
 func rootCmd() *cobra.Command {
@@ -34,8 +57,9 @@ func rootCmd() *cobra.Command {
 
 check reports the tells and exits non-zero when it finds any. fix rewrites the text.
 With no file, both read stdin. The --rewrite pass needs the ANTHROPIC_API_KEY
-environment variable. When --profile is not set and a .slop-chop.json file sits in the
-working directory, that profile is used instead of the built-in one.`,
+environment variable. When --profile is not set, the nearest .slop-chop.json from the
+working directory upward extends the built-in profile, so a repo's rules hold from any
+of its subdirectories.`,
 		Version:       resolveVersion(),
 		SilenceUsage:  true,
 		SilenceErrors: true,
@@ -58,9 +82,7 @@ func newSanitizer() (*sanitize.Sanitizer, sanitize.Profile, error) {
 func sanitizerFor(presetNames []string, dialect string) (*sanitize.Sanitizer, sanitize.Profile, error) {
 	profilePath := config.Profile()
 	if profilePath == "" {
-		if _, err := os.Stat(defaultProfileFile); err == nil {
-			profilePath = defaultProfileFile
-		}
+		profilePath = discoverProfile()
 	}
 	profile := sanitize.DefaultProfile()
 	var projectProfile sanitize.Profile
