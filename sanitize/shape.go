@@ -125,17 +125,23 @@ func templateStems(text string, paras []paraSpan, protected [][2]int) []Finding 
 	type site struct{ start, end, para int }
 	stems := map[string][]site{}
 	for pi, p := range paras {
-		for _, sp := range sentenceSpans(text[p.start:p.end]) {
-			words := strings.Fields(text[p.start+sp.start : p.start+sp.end])
-			if len(words) < stemWords+1 {
-				continue
-			}
-			key := strings.ToLower(strings.Join(words[:stemWords], " "))
-			if !plainWords(strings.Join(words[:stemWords], " ")) {
-				continue
-			}
-			stems[key] = append(stems[key], site{p.start + sp.start, p.start + sp.end, pi})
+		// Only a paragraph's opening sentence counts. The outline tell is paragraphs
+		// stamped from one template; reference prose that repeats its subject
+		// mid-paragraph, "the fix flag does", is a document doing its job.
+		spans := sentenceSpans(text[p.start:p.end])
+		if len(spans) == 0 {
+			continue
 		}
+		sp := spans[0]
+		words := strings.Fields(text[p.start+sp.start : p.start+sp.end])
+		if len(words) < stemWords+1 {
+			continue
+		}
+		key := strings.ToLower(strings.Join(words[:stemWords], " "))
+		if !plainWords(strings.Join(words[:stemWords], " ")) {
+			continue
+		}
+		stems[key] = append(stems[key], site{p.start + sp.start, p.start + sp.end, pi})
 	}
 	var out []Finding
 	for _, sites := range stems {
