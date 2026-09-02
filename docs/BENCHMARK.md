@@ -90,10 +90,13 @@ with the ruleset. The ruleset chases the current registers, and the registers mo
 authors, and there are no confidence intervals on 115 passages. It is a regression
 guard with teeth, not a study.
 
-**What would settle it.** Blind human raters over matched sets: raw model output, a
-prompt-only rewrite, the deterministic chop, and the chop plus model rewrite. That
-experiment has not been run. Until it has, the honest claim stays: same input, same
-output, and the patterns the rules know get caught every time.
+**What would settle it.** Blind human raters over a corpus the rules never saw: does
+the score order texts the way people do? The scaffolding for that experiment lives at
+`evaldata/` in the repository, with the collection protocol, the rating protocol, a CI
+lock that keeps eval samples out of rule development, and a harness that computes the
+correlation once ratings exist. The experiment has not been run. Until it has, the
+honest claim stays: same input, same output, and the patterns the rules know get caught
+every time.
 
 ## Growing it
 
