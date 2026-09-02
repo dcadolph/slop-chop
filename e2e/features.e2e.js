@@ -219,6 +219,26 @@ async function main() {
   await phone.close();
   log("phone layout: drawer and score sheet fit 390x844: ok");
 
+  // Step 11: a finding explains itself on a tap, and Keep makes it never fire again.
+  await page.fill("#sc-in", "The plan is robust.");
+  await page.waitForTimeout(400);
+  await page.click("#sc-findings summary");
+  await page.click("#sc-findings-list li:first-child");
+  const why = await page.textContent("#sc-findings-list li.open .sc-find-why");
+  if (!/word swap/.test(why)) throw new Error("why line missing or wrong: " + why);
+  await page.click("#sc-findings-list li.open .sc-keep");
+  await page.waitForTimeout(400);
+  const kept = await page.evaluate(() => ({
+    box: document.getElementById("sc-findings").hidden,
+    keep: document.getElementById("sc-voice-keep").value,
+  }));
+  if (!kept.box) throw new Error("finding still shown after Keep");
+  if (!/robust/.test(kept.keep)) throw new Error("keep list did not gain the word: " + kept.keep);
+  await page.evaluate(() => {
+    document.getElementById("sc-voice-keep").value = "";
+  });
+  log("finding explains itself and Keep silences it: ok");
+
   if (errors.length) throw new Error("page errors: " + errors.join(" | "));
   await browser.close();
   console.log("FEATURES SUITE PASS");
