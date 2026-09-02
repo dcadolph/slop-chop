@@ -439,6 +439,55 @@ body:has(#sc-app) .md-grid {
   min-width: 0;
 }
 
+/* The why line and Keep button stay collapsed until the row is tapped, so the list keeps
+   its density and the explanation is one tap away. */
+.sc-findings li {
+  cursor: pointer;
+}
+
+.sc-find-detail {
+  display: none;
+  flex-basis: 100%;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.15rem 0 0.25rem 3.7rem;
+}
+
+.sc-findings li.open .sc-find-detail {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.sc-find-why {
+  font-size: 0.7rem;
+  opacity: 0.75;
+  max-width: 34rem;
+}
+
+.md-typeset .sc-findings button.sc-keep {
+  font: inherit;
+  font-size: 0.66rem;
+  font-weight: 700;
+  padding: 0.1rem 0.55rem;
+  border: 1px solid var(--md-accent-fg-color);
+  border-radius: 0.9rem;
+  background: transparent;
+  color: var(--md-accent-fg-color);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.md-typeset .sc-findings button.sc-keep:hover {
+  background: var(--md-accent-fg-color);
+  color: var(--md-accent-bg-color, #fff);
+}
+
+@media (max-width: 640px) {
+  .sc-find-detail {
+    padding-left: 0;
+  }
+}
+
 .sc-findings code {
   background: var(--md-code-bg-color);
   border-radius: 0.25rem;

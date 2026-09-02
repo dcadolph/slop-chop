@@ -719,6 +719,44 @@
       return s.length > n ? s.slice(0, n - 1) + "…" : s;
     }
 
+    /* whyFor says in plain words why a finding fired, so a change is never a mystery.
+       The class carries the reason and the replacement carries the action. */
+    function whyFor(f) {
+      const cls = f.rule.includes(":") ? f.rule.split(":", 1)[0] : f.rule;
+      const reason =
+        {
+          word: "This word sits on the block list of terms models lean on.",
+          phrase: "A stock phrase of the machine register.",
+          char: "A character the profile normalizes. Only the em-dash and invisible characters count toward the score.",
+          structural: "A sentence shape of model prose. Shapes count double toward the score.",
+          replace: "A word swap from the profile or a preset.",
+          drop: "A word the profile or a preset cuts outright.",
+          case: "Your voice fixes how this word is capitalized.",
+          regex: "One of your own regex rules.",
+          spelling: "The dialect setting enforces this spelling.",
+        }[cls] || "House-style cleanup. It carries no score weight.";
+      const action =
+        f.replacement === undefined || f.replacement === null
+          ? "It only flags; the rewording is your call."
+          : f.replacement === ""
+            ? "The profile cuts it."
+            : "The profile swaps it.";
+      return reason + " " + action;
+    }
+
+    /* keepMatch adds a finding's text to the Your voice keep list, so it is never flagged
+       or swapped again, then re-chops so the row visibly disappears. */
+    function keepMatch(text) {
+      const entry = text.trim();
+      if (!entry) return;
+      const have = parseLines(controls.voiceKeep.value);
+      if (!have.some((k) => k.toLowerCase() === entry.toLowerCase())) {
+        controls.voiceKeep.value = (controls.voiceKeep.value.trim() + "\n" + entry).trim();
+      }
+      saveSettings();
+      chop();
+    }
+
     function renderFindings(findings) {
       findingsList.textContent = "";
       if (!findings.length) {
@@ -764,6 +802,32 @@
           change.append(flag);
         }
         li.append(head, change);
+        /* Tapping a finding opens why it fired and a Keep button, so every change is
+           explainable and every false positive is one tap from never firing again. */
+        const why = document.createElement("span");
+        why.className = "sc-find-why";
+        why.textContent = whyFor(f);
+        const keep = document.createElement("button");
+        keep.type = "button";
+        keep.className = "sc-keep";
+        keep.textContent = "Keep this";
+        keep.title = "Add " + JSON.stringify(f.match) + " to your voice's keep list.";
+        keep.addEventListener("click", (e) => {
+          e.stopPropagation();
+          keepMatch(f.match);
+        });
+        const detail = document.createElement("span");
+        detail.className = "sc-find-detail";
+        detail.append(why, keep);
+        li.append(detail);
+        li.tabIndex = 0;
+        li.addEventListener("click", () => li.classList.toggle("open"));
+        li.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            li.classList.toggle("open");
+          }
+        });
         findingsList.appendChild(li);
       }
       if (findings.length > MAX_ROWS) {

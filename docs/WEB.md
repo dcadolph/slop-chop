@@ -25,6 +25,14 @@ package split off so the WASM build shares the CLI's exact prompts without pulli
 HTTP client into the binary. Adding a shim export means adding it to the worker's
 allowlist too.
 
+## Every change explains itself
+
+Each row in the tells list opens on a tap: a plain sentence says why the rule fired and
+what it did, and a Keep button adds the matched text to your voice's keep list, so a
+false positive is one tap from never firing again. The kept entry lands in the Your
+voice panel, persists with the rest of your settings, and rides along in a share link
+like any other voice entry.
+
 ## Profile semantics
 
 The page mirrors the CLI. The settings panel builds one profile object: the built-in
