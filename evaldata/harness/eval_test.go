@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -240,5 +242,123 @@ func TestReadLines(t *testing.T) {
 	}
 	if _, err := readLines[Sample](bad); err == nil || !strings.Contains(err.Error(), "line 2") {
 		t.Errorf("bad line err = %v, want it to name line 2", err)
+	}
+}
+
+// writeJSONL writes one JSON object per line into a temp file and returns its path.
+func writeJSONL(t *testing.T, dir, name string, rows ...any) string {
+	t.Helper()
+	var b strings.Builder
+	for _, r := range rows {
+		enc, err := json.Marshal(r)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b.Write(enc)
+		b.WriteString("\n")
+	}
+	path := filepath.Join(dir, name)
+	if err := os.WriteFile(path, []byte(b.String()), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+// TestRun drives the command end to end over its four outcomes: an empty corpus, a
+// corpus that breaks the lock, samples with no ratings yet, and a full analysis.
+func TestRun(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	shared := words(100)
+	dev := writeJSONL(t, dir, "dev.jsonl", devPassage{Text: shared})
+	empty := writeJSONL(t, dir, "empty.jsonl")
+
+	// Distinct from the shared text, so this sample clears the lock.
+	sample := Sample{ID: "a001", Source: "ai", Rules: "v0.36.0", Text: words(120)}
+	good := writeJSONL(t, dir, "good.jsonl", sample)
+	locked := writeJSONL(t, dir, "locked.jsonl",
+		Sample{ID: "a002", Source: "ai", Rules: "v0.36.0", Text: shared})
+	rated := writeJSONL(t, dir, "rated.jsonl",
+		Rating{Sample: "a001", Rater: "r1", Machine: 5},
+		Rating{Sample: "a001", Rater: "r2", Machine: 6},
+	)
+
+	tests := []struct {
+		Name    string
+		Check   bool
+		Paths   paths
+		Want    error
+		WantOut string
+	}{{ // Test 0: An empty corpus passes the lock and says so.
+		Name: "empty check", Check: true,
+		Paths:   paths{samples: empty, ratings: empty, dev: dev},
+		WantOut: "0 sample(s) and 0 rating(s), lock holds",
+	}, { // Test 1: A sample whose text is in the development corpus breaks the lock.
+		Name:  "lock broken",
+		Paths: paths{samples: locked, ratings: empty, dev: dev},
+		Want:  errCorpus,
+	}, { // Test 2: A run with no samples names the protocol rather than reporting nothing.
+		Name:    "no samples",
+		Paths:   paths{samples: empty, ratings: empty, dev: dev},
+		WantOut: "no samples yet",
+	}, { // Test 3: Samples with no ratings cannot be analyzed yet.
+		Name:    "unrated",
+		Paths:   paths{samples: good, ratings: empty, dev: dev},
+		WantOut: "none are rated yet",
+	}, { // Test 4: A rated corpus produces the analysis.
+		Name:    "analysis",
+		Paths:   paths{samples: good, ratings: rated, dev: dev},
+		WantOut: "rated samples: 1",
+	}, { // Test 5: An unreadable samples file is an error, not an empty corpus.
+		Name:  "bad json",
+		Paths: paths{samples: writeBad(t, dir), ratings: empty, dev: dev},
+		Want:  nil, // any error; checked below
+	}}
+	for testNum, test := range tests {
+		t.Run(fmt.Sprintf("test %d %s", testNum, test.Name), func(t *testing.T) {
+			t.Parallel()
+			var out strings.Builder
+			err := run(test.Check, test.Paths, &out)
+			switch {
+			case test.Name == "bad json":
+				if err == nil {
+					t.Fatal("bad json returned no error")
+				}
+			case test.Want != nil:
+				if !errors.Is(err, test.Want) {
+					t.Fatalf("err = %v, want %v", err, test.Want)
+				}
+			case err != nil:
+				t.Fatalf("run: %v", err)
+			}
+			if test.WantOut != "" && !strings.Contains(out.String(), test.WantOut) {
+				t.Errorf("output = %q, want it to hold %q", out.String(), test.WantOut)
+			}
+		})
+	}
+}
+
+// writeBad writes a file whose second line is not JSON.
+func writeBad(t *testing.T, dir string) string {
+	t.Helper()
+	path := filepath.Join(dir, "bad-run.jsonl")
+	if err := os.WriteFile(path, []byte("{}\nnope\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+// TestClip checks the one-line shortener used by the disagreement rows.
+func TestClip(t *testing.T) {
+	t.Parallel()
+	if got := clip("short text", 40); got != "short text" {
+		t.Errorf("clip = %q, want it untouched", got)
+	}
+	if got := clip("  spaced\n\ttext  ", 40); got != "spaced text" {
+		t.Errorf("clip = %q, want whitespace collapsed", got)
+	}
+	got := clip(strings.Repeat("word ", 40), 10)
+	if len([]rune(got)) != 10 || !strings.HasSuffix(got, "…") {
+		t.Errorf("clip = %q, want 10 runes ending in an ellipsis", got)
 	}
 }
