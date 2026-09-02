@@ -102,7 +102,7 @@ jobs:
           name: slop-chop-binary
       - run: chmod +x slop-chop
       - name: The docs must pass slop-chop
-        run: ./slop-chop check README.md ENGINE.md docs/PROFILE.md docs/VOICE.md docs/PLUGIN.md docs/SLACK.md docs/MCP.md docs/TELLS.md
+        run: ./slop-chop check README.md ENGINE.md docs/PROFILE.md docs/VOICE.md docs/BENCHMARK.md docs/PLUGIN.md docs/SLACK.md docs/MCP.md docs/TELLS.md
 
   check-fails-on-slop:
     needs: build

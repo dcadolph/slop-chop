@@ -46,6 +46,7 @@ nav:
   - Your voice: VOICE.md
   - Engine: ENGINE.md
   - The tells: TELLS.md
+  - Benchmark: BENCHMARK.md
   - Web app: WEB.md
   - Extension: EXTENSION.md
   - Editor (LSP): LSP.md

@@ -160,7 +160,9 @@ a stock sentence shape is stronger evidence of machine writing than any one word
 The engine ships with a labeled corpus of AI, human, and technical passages under
 `sanitize/testdata/`, and `TestBenchmark` measures recall, precision, and the score margin
 against it on every run, so a change that weakens detection fails the build instead of
-going unnoticed.
+going unnoticed. [docs/BENCHMARK.md](docs/BENCHMARK.md) shows the numbers, the corpus
+composition, what fires on what, and the limits of what the score claims. The score is a
+lint result, not an authorship verdict.
 
 ```sh
 slop-chop score notes.md            # notes.md: 42 (mixed: 5 tells in 180 words)
