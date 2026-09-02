@@ -27,6 +27,19 @@ jobs:
     env:
       TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
       PLUGIN_TOKEN: ${{ secrets.OBSIDIAN_PLUGIN_TOKEN }}
+      # The editor and browser stores below are opt-in: each step runs the moment its
+      # secret exists and skips with a warning until then, since none of these channels
+      # has shipped from CI yet. Once one is established, promote its skip to the same
+      # loud failure the Homebrew and Obsidian steps use.
+      VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
+      JETBRAINS_MARKETPLACE_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_TOKEN }}
+      AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+      AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+      CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+      CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+      CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+      CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
       # A fork has no publish credentials and should still cut a normal release, so a
       # missing token is skipped there. On the repository that owns these channels a
       # missing token is a publish that silently did not happen, which is how a stale
@@ -247,3 +260,116 @@ jobs:
           jq --arg v "$VER" '.version = $v' npm/package.json > pkg.tmp
           mv pkg.tmp npm/package.json
           npm publish npm/ --access public --provenance
+
+      - name: Publish the VS Code extension
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VSCE_PAT:-}" ]; then
+            echo "::warning::VSCE_PAT is not set, so the VS Code Marketplace still serves" \
+              "its previous release. Add the secret and re-run to publish from CI."
+            exit 0
+          fi
+          VER="${TAG#v}"
+          # Republishing a version the marketplace already holds is an error, so a re-run
+          # of a shipped tag stops here.
+          if npx -y @vscode/vsce show dcadolph.slop-chop --json 2>/dev/null \
+            | jq -e --arg v "$VER" '.versions[]? | select(.version == $v)' >/dev/null; then
+            echo "dcadolph.slop-chop@${VER} is already published; nothing to do"
+            exit 0
+          fi
+          ( cd vscode && npx -y @vscode/vsce publish --no-dependencies -p "$VSCE_PAT" )
+
+      - name: Publish to OpenVSX
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [ -z "${OVSX_TOKEN:-}" ]; then
+            echo "::warning::OVSX_TOKEN is not set, so OpenVSX still serves its previous" \
+              "release. Add the secret and re-run to publish from CI."
+            exit 0
+          fi
+          VER="${TAG#v}"
+          if curl -sf "https://open-vsx.org/api/dcadolph/slop-chop/${VER}" >/dev/null; then
+            echo "OpenVSX already holds ${VER}; nothing to do"
+            exit 0
+          fi
+          ( cd vscode && npx -y @vscode/vsce package --no-dependencies )
+          npx -y ovsx publish "vscode/slop-chop-${VER}.vsix" -p "$OVSX_TOKEN"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Publish the JetBrains plugin
+        run: |
+          set -euo pipefail
+          if [ -z "${JETBRAINS_MARKETPLACE_TOKEN:-}" ]; then
+            echo "::warning::JETBRAINS_MARKETPLACE_TOKEN is not set, so the JetBrains" \
+              "Marketplace still serves its previous release. Add the secret and re-run" \
+              "to publish from CI."
+            exit 0
+          fi
+          # The marketplace rejects a version it already holds, which is what a re-run of
+          # a shipped tag looks like, so that one rejection is a no-op rather than a
+          # failure.
+          out="$(cd jetbrains && ./gradlew publishPlugin --no-daemon 2>&1)" && rc=0 || rc=$?
+          echo "$out"
+          if [ "$rc" -ne 0 ] && echo "$out" | grep -qi "already uploaded\|version.*exists"; then
+            echo "the marketplace already holds this version; nothing to publish"
+            exit 0
+          fi
+          exit "$rc"
+
+      - name: Publish the Firefox extension
+        run: |
+          set -euo pipefail
+          if [ -z "${AMO_JWT_ISSUER:-}" ] || [ -z "${AMO_JWT_SECRET:-}" ]; then
+            echo "::warning::AMO_JWT_ISSUER and AMO_JWT_SECRET are not set, so" \
+              "addons.mozilla.org still serves its previous release. Add both secrets" \
+              "and re-run to publish from CI."
+            exit 0
+          fi
+          make extension-firefox
+          # The upload goes into Mozilla's review queue rather than straight to users, so
+          # this submits and returns instead of waiting for a human reviewer.
+          out="$(npx -y web-ext sign --source-dir extension-firefox \
+            --channel listed --approval-timeout 0 \
+            --api-key "$AMO_JWT_ISSUER" --api-secret "$AMO_JWT_SECRET" 2>&1)" && rc=0 || rc=$?
+          echo "$out"
+          if [ "$rc" -ne 0 ] && echo "$out" | grep -qi "version already exists"; then
+            echo "AMO already holds this version; nothing to submit"
+            exit 0
+          fi
+          exit "$rc"
+
+      - name: Publish the Chrome extension
+        run: |
+          set -euo pipefail
+          if [ -z "${CHROME_CLIENT_ID:-}" ] || [ -z "${CHROME_CLIENT_SECRET:-}" ] \
+            || [ -z "${CHROME_REFRESH_TOKEN:-}" ] || [ -z "${CHROME_EXTENSION_ID:-}" ]; then
+            echo "::warning::The CHROME_CLIENT_ID, CHROME_CLIENT_SECRET," \
+              "CHROME_REFRESH_TOKEN, and CHROME_EXTENSION_ID secrets are not all set, so" \
+              "the Chrome Web Store still serves its previous release. Add them and" \
+              "re-run to publish from CI."
+            exit 0
+          fi
+          make extension-package
+          # The store rejects an upload whose version it already holds, which is what a
+          # re-run of a shipped tag looks like, so that one rejection is a no-op.
+          out="$(npx -y chrome-webstore-upload-cli upload \
+            --source slop-chop-extension.zip \
+            --extension-id "$CHROME_EXTENSION_ID" \
+            --client-id "$CHROME_CLIENT_ID" \
+            --client-secret "$CHROME_CLIENT_SECRET" \
+            --refresh-token "$CHROME_REFRESH_TOKEN" \
+            --auto-publish 2>&1)" && rc=0 || rc=$?
+          echo "$out"
+          if [ "$rc" -ne 0 ] && echo "$out" | grep -qi "larger version\|already uploaded"; then
+            echo "the store already holds this version; nothing to upload"
+            exit 0
+          fi
+          exit "$rc"
