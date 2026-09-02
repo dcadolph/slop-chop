@@ -36,6 +36,12 @@ intellijPlatform {
             </ul>
         """.trimIndent()
     }
+    publishing {
+        // Read by the publishPlugin task, which the release workflow runs when the
+        // JETBRAINS_MARKETPLACE_TOKEN secret is set. Unset locally, publishPlugin fails
+        // with a clear missing-token error instead of uploading anything.
+        token = providers.environmentVariable("JETBRAINS_MARKETPLACE_TOKEN")
+    }
 }
 
 kotlin {
