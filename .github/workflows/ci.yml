@@ -39,6 +39,8 @@ jobs:
             coverage.html
       - name: The tells page must match the profile it documents
         run: go run . tells --markdown | diff - docs/TELLS.md
+      - name: The evaluation corpus must stay locked away from the development corpus
+        run: go run ./evaldata/harness -check
       # Share the compiled binary so the check jobs need no Go toolchain, which keeps them off
       # setup-go, the heavier action whose download was the source of the flaky setup failures.
       - uses: actions/upload-artifact@v4
