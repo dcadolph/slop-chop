@@ -262,6 +262,8 @@ jobs:
           npm publish npm/ --access public --provenance
 
       - name: Publish the VS Code extension
+        id: vscode
+        continue-on-error: true
         env:
           TAG: ${{ github.ref_name }}
         run: |
@@ -282,6 +284,8 @@ jobs:
           ( cd vscode && npx -y @vscode/vsce publish --no-dependencies -p "$VSCE_PAT" )
 
       - name: Publish to OpenVSX
+        id: openvsx
+        continue-on-error: true
         env:
           TAG: ${{ github.ref_name }}
         run: |
@@ -305,6 +309,8 @@ jobs:
           java-version: "21"
 
       - name: Publish the JetBrains plugin
+        id: jetbrains
+        continue-on-error: true
         run: |
           set -euo pipefail
           if [ -z "${JETBRAINS_MARKETPLACE_TOKEN:-}" ]; then
@@ -325,6 +331,8 @@ jobs:
           exit "$rc"
 
       - name: Publish the Firefox extension
+        id: firefox
+        continue-on-error: true
         run: |
           set -euo pipefail
           if [ -z "${AMO_JWT_ISSUER:-}" ] || [ -z "${AMO_JWT_SECRET:-}" ]; then
@@ -347,6 +355,8 @@ jobs:
           exit "$rc"
 
       - name: Publish the Chrome extension
+        id: chrome
+        continue-on-error: true
         run: |
           set -euo pipefail
           if [ -z "${CHROME_CLIENT_ID:-}" ] || [ -z "${CHROME_CLIENT_SECRET:-}" ] \
@@ -373,3 +383,30 @@ jobs:
             exit 0
           fi
           exit "$rc"
+
+      # Each store publish above records its outcome instead of failing the job on the
+      # spot, so one bad credential cannot cost the other four channels their release.
+      # This step turns those outcomes into a single verdict, naming every store that
+      # failed rather than stopping at the first.
+      - name: Every store that was configured must have published
+        env:
+          VSCODE: ${{ steps.vscode.outcome }}
+          OPENVSX: ${{ steps.openvsx.outcome }}
+          JETBRAINS: ${{ steps.jetbrains.outcome }}
+          FIREFOX: ${{ steps.firefox.outcome }}
+          CHROME: ${{ steps.chrome.outcome }}
+        run: |
+          set -uo pipefail
+          failed=""
+          for store in VSCODE OPENVSX JETBRAINS FIREFOX CHROME; do
+            if [ "${!store}" = "failure" ]; then
+              failed="${failed} ${store}"
+            fi
+          done
+          if [ -n "${failed}" ]; then
+            echo "::error::These store publishes failed:${failed}. The binary release and" \
+              "every other channel still shipped. Check the failing step's log for the" \
+              "reason, which for a freshly added store is usually the credential."
+            exit 1
+          fi
+          echo "every configured store published"
