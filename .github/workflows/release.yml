@@ -27,11 +27,9 @@ jobs:
     env:
       TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
       PLUGIN_TOKEN: ${{ secrets.OBSIDIAN_PLUGIN_TOKEN }}
-      # The editor and browser stores below are opt-in: each step runs the moment its
-      # secret exists and skips with a warning until then, since none of these channels
-      # has shipped from CI yet. Once one is established, promote its skip to the same
-      # loud failure the Homebrew and Obsidian steps use.
-      VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      # The stores below publish the moment their secret exists and skip with a warning
+      # until then. Once a store has shipped from CI a few times, promote its skip to the
+      # same loud failure the Homebrew and Obsidian steps use.
       OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
       JETBRAINS_MARKETPLACE_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_TOKEN }}
       AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
@@ -257,28 +255,6 @@ jobs:
           mv pkg.tmp npm/package.json
           npm publish npm/ --access public --provenance
 
-      - name: Publish the VS Code extension
-        id: vscode
-        continue-on-error: true
-        env:
-          TAG: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-          if [ -z "${VSCE_PAT:-}" ]; then
-            echo "::warning::VSCE_PAT is not set, so the VS Code Marketplace still serves" \
-              "its previous release. Add the secret and re-run to publish from CI."
-            exit 0
-          fi
-          VER="${TAG#v}"
-          # Republishing a version the marketplace already holds is an error, so a re-run
-          # of a shipped tag stops here.
-          if npx -y @vscode/vsce show dcadolph.slop-chop --json 2>/dev/null \
-            | jq -e --arg v "$VER" '.versions[]? | select(.version == $v)' >/dev/null; then
-            echo "dcadolph.slop-chop@${VER} is already published; nothing to do"
-            exit 0
-          fi
-          ( cd vscode && npx -y @vscode/vsce publish --no-dependencies -p "$VSCE_PAT" )
-
       - name: Publish to OpenVSX
         id: openvsx
         continue-on-error: true
@@ -356,14 +332,13 @@ jobs:
       # failed rather than stopping at the first.
       - name: Every store that was configured must have published
         env:
-          VSCODE: ${{ steps.vscode.outcome }}
           OPENVSX: ${{ steps.openvsx.outcome }}
           JETBRAINS: ${{ steps.jetbrains.outcome }}
           FIREFOX: ${{ steps.firefox.outcome }}
         run: |
           set -uo pipefail
           failed=""
-          for store in VSCODE OPENVSX JETBRAINS FIREFOX; do
+          for store in OPENVSX JETBRAINS FIREFOX; do
             if [ "${!store}" = "failure" ]; then
               failed="${failed} ${store}"
             fi
