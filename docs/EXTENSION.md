@@ -26,18 +26,14 @@ extension. Your text never leaves the browser.
 
 ## Install
 
-- Chrome and Edge: the
-  [Chrome Web Store](https://chromewebstore.google.com/detail/slop-chop/ganjkdjlfdmjdjbkekfjajmfhenlnpik).
-- Firefox: [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/slop-chop/).
+[Firefox Add-ons](https://addons.mozilla.org/firefox/addon/slop-chop/) has the published
+build.
 
 Or run it from source, which is also how you hack on it:
 
-1. Build it from the repo root with `make extension` for Chrome or Edge, or `make
-   firefox-package` for Firefox.
-2. Chrome or Edge: open `chrome://extensions` (or `edge://extensions`), turn on Developer mode,
-   choose **Load unpacked**, and pick the `extension/` folder.
-3. Firefox: open `about:debugging`, choose This Firefox, then **Load Temporary Add-on**, and
-   pick `extension/manifest.json`.
+1. Build it from the repo root with `make firefox-package`.
+2. Open `about:debugging`, choose This Firefox, then **Load Temporary Add-on**, and pick
+   `extension/manifest.json`.
 
 ## Use it
 
