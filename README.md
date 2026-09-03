@@ -305,6 +305,22 @@ Overlay more than one with a comma: `--preset corporate,plain`.
 [docs/PROFILE.md](docs/PROFILE.md) is the full reference: every field, the presets, the
 spelling dialects, the allow list, and the inline ignore directives.
 
+## Attack it
+
+```sh
+slop-chop attack draft.md
+```
+
+`attack` points the engine at itself. It rewrites text to dodge as many rules as it can
+without improving a word of it, then reports what survived. Buzzwords fall to a
+thesaurus. Sentence shapes do not, because escaping one means rebuilding the sentence.
+That gap is the argument for counting a structural tell double, and the number is
+measured rather than asserted: across the labeled corpus the attack evades 33 word tells
+and 1 structural tell out of 78, and 54 of 58 passages still flag afterward.
+
+Use it to find where your own rules are thin, and `-w` to build a corpus of evasive
+samples. [docs/BENCHMARK.md](docs/BENCHMARK.md) has the full table.
+
 ## Your voice
 
 `voice` is the personal layer: `keep` protects your words from every rule and preset,

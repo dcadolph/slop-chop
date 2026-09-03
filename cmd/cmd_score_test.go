@@ -1,9 +1,13 @@
 package cmd
 
 import (
+	"encoding/json"
 	"errors"
+	"os"
 	"strings"
 	"testing"
+
+	"github.com/dcadolph/slop-chop/sanitize"
 )
 
 // TestScoreStdout checks that score prints a bare integer for stdin input.
@@ -108,5 +112,60 @@ func TestScoreByParagraph(t *testing.T) {
 	}
 	if _, _, err := runCLI(t, []string{"score", "--by-paragraph", "--max", "50", path}, ""); !errors.Is(err, errFindings) {
 		t.Errorf("by-paragraph gate: err = %v, want errFindings on the hot paragraph", err)
+	}
+}
+
+// TestAttackCLI drives the attack command: the report, the JSON shape, the flag
+// conflicts, and that -w rewrites the file with the attacked text.
+func TestAttackCLI(t *testing.T) {
+	dir := t.TempDir()
+	slop := "In summary, we leverage robust synergy. It's not just fast, it's smart."
+	path := writeTemp(t, dir, "slop.md", slop)
+
+	stdout, _, err := runCLI(t, []string{"attack", path}, "")
+	if err != nil {
+		t.Fatalf("attack: %v", err)
+	}
+	for _, want := range []string{"evaded", "held", "by class:", "structural"} {
+		if !strings.Contains(stdout, want) {
+			t.Errorf("stdout = %q, want it to hold %q", stdout, want)
+		}
+	}
+
+	// -w replaces the file with the evasive text, which is how an adversarial corpus
+	// gets built.
+	if _, _, err := runCLI(t, []string{"attack", "-w", path}, ""); err != nil {
+		t.Fatalf("attack -w: %v", err)
+	}
+	after, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(after) == slop {
+		t.Error("attack -w left the file unchanged")
+	}
+	if strings.Contains(string(after), "leverage") {
+		t.Errorf("attacked file still holds the buzzword: %q", after)
+	}
+
+	// The JSON carries the same report for a pipeline.
+	stdout, _, err = runCLI(t, []string{"attack", "--json", path}, "")
+	if err != nil {
+		t.Fatalf("attack --json: %v", err)
+	}
+	var res sanitize.AttackResult
+	if err := json.Unmarshal([]byte(stdout), &res); err != nil {
+		t.Fatalf("decode %q: %v", stdout, err)
+	}
+	if res.Text == "" {
+		t.Error("json report carried no text")
+	}
+
+	// The flag conflicts match fix's, so one mental model covers both.
+	if _, _, err := runCLI(t, []string{"attack", "-w"}, "text"); err == nil {
+		t.Error("attack -w with no file returned no error")
+	}
+	if _, _, err := runCLI(t, []string{"attack", "-w", "--json", path}, ""); err == nil {
+		t.Error("attack -w --json returned no error")
 	}
 }

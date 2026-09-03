@@ -74,6 +74,29 @@ typeset human page averages 1.9 rather than getting flagged for its punctuation.
 `that said,` and one semicolon round out the human findings. The 22 technical passages
 produce zero findings.
 
+## Attacking it on purpose
+
+`slop-chop attack` rewrites text to dodge the rules without improving the writing: a
+listed buzzword becomes an unlisted one, a stock opener becomes an unstocked one, an
+em-dash becomes punctuation no rule reads. Then it reports what survived. Every
+replacement it reaches for is itself checked against the default profile by a test, so an
+evasion that stops evading fails the build.
+
+Run against all 58 AI passages, the attack tells the story the score weighting rests on:
+
+| Class      | Evaded | Held | What that means                                                    |
+|------------|--------|------|---------------------------------------------------------------------|
+| Word       | 33     | 38   | A word list is a lookup, and a lookup loses to a thesaurus.&nbsp;    |
+| Structural | 1      | 77   | A sentence shape has to be rebuilt to escape, which no swap does.   |
+
+54 of the 58 passages still carry a tell after the attack, and the mean score falls only
+from 77 to 72. That gap is why a structural tell counts two and a word counts one, and
+the test that measures it fails the build if the classes ever invert.
+
+Read the word row as a floor rather than a measurement of rule strength. The evasion
+table covers a few dozen entries against a block list of 161, so a fuller thesaurus would
+evade more. The structural row is the real finding: substitution barely touches it.
+
 ## Limitations, plainly
 
 **The corpus grades the engine on its own homework.** The passages were written during
