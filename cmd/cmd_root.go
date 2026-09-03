@@ -64,7 +64,8 @@ of its subdirectories.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	cmd.AddCommand(checkCmd(), fixCmd(), scoreCmd(), tellsCmd(), voiceCmd(), lspCmd(), mcpCmd())
+	cmd.AddCommand(checkCmd(), fixCmd(), scoreCmd(), attackCmd(), tellsCmd(), voiceCmd(),
+		lspCmd(), mcpCmd())
 	return cmd
 }
 
