@@ -256,7 +256,7 @@ The same engine, wherever you write. Everything is local and free unless noted.
 
     ---
 
-    Chrome, Edge, and Firefox, on the Chrome Web Store and Firefox Add-ons. See [Extension](EXTENSION.md).
+    Firefox, on Firefox Add-ons. See [Extension](EXTENSION.md).
 
 -   :material-notebook-outline:{ .lg .middle } __Obsidian__
 

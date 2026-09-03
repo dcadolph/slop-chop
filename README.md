@@ -80,7 +80,7 @@ The same engine runs on many surfaces. All local and free unless noted.
 | VS Code, Cursor, VSCodium | search **slop-chop** on [Open VSX](https://open-vsx.org/extension/dcadolph/slop-chop) |
 | JetBrains IDEs | the Marketplace plugin, or LSP4IJ with `slop-chop lsp`, see [docs/LSP.md](docs/LSP.md) |
 | Neovim, Helix, any LSP editor | `slop-chop lsp`, see [docs/LSP.md](docs/LSP.md) |
-| Chrome, Edge, Firefox | the browser extension, see [docs/EXTENSION.md](docs/EXTENSION.md) |
+| Firefox | the browser extension, see [docs/EXTENSION.md](docs/EXTENSION.md) |
 | Obsidian | the desktop plugin, see [obsidian/](obsidian/) |
 | Node | `npm install slop-chop-wasm` |
 | Go programs | `import github.com/dcadolph/slop-chop/sanitize`, see [below](#use-it-as-a-go-library) |
