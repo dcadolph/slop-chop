@@ -12,7 +12,7 @@ GOBIN := $(shell $(GO) env GOPATH)/bin
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: build install uninstall test cover vet lint fmt tidy clean wasm extension extension-package extension-firefox firefox-package obsidian npm-package worker site site-deploy help
+.PHONY: build install uninstall test cover vet lint fmt tidy clean wasm obsidian npm-package worker site site-deploy help
 
 ## build: compile the binary into the repo root with the version stamped
 build:
@@ -56,35 +56,6 @@ wasm:
 	GOOS=js GOARCH=wasm $(GO) build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o docs/assets/slop-chop.wasm ./wasm
 	cp "$(shell $(GO) env GOROOT)/lib/wasm/wasm_exec.js" docs/assets/wasm_exec.js
 
-## extension: build the wasm engine and stage it into the browser extension
-extension: wasm
-	mkdir -p extension/engine
-	cp docs/assets/slop-chop.wasm extension/engine/slop-chop.wasm
-	cp docs/assets/wasm_exec.js extension/engine/wasm_exec.js
-
-## extension-package: zip the built extension for a store upload (Chrome, Edge)
-extension-package: extension
-	rm -f slop-chop-extension.zip
-	cd extension && zip -qr ../slop-chop-extension.zip . -x '.*'
-
-## extension-firefox: stage the Firefox build, where the engine runs in the background page
-## since Firefox has no offscreen API. The manifest swaps the service worker for background
-## scripts, drops the offscreen permission, and adds the gecko id AMO needs.
-extension-firefox: extension
-	rm -rf extension-firefox
-	mkdir -p extension-firefox
-	cp -r extension/src extension/icons extension/engine extension-firefox/
-	rm -f extension-firefox/src/offscreen.html extension-firefox/src/offscreen.js extension-firefox/src/offscreen-relay.js
-	node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync("extension/manifest.json"));delete m.minimum_chrome_version;m.background={scripts:["engine/wasm_exec.js","src/engine.js","src/background.js"]};m.permissions=(m.permissions||[]).filter(p=>p!=="offscreen");m.browser_specific_settings={gecko:{id:"slop-chop@slop-chop.com",strict_min_version:"140.0",data_collection_permissions:{required:["none"]}}};fs.writeFileSync("extension-firefox/manifest.json",JSON.stringify(m,null,2)+"\n");'
-
-## firefox-package: zip the Firefox extension for AMO
-firefox-package: extension-firefox
-	rm -f slop-chop-firefox.zip
-	cd extension-firefox && zip -qr ../slop-chop-firefox.zip . -x '.*'
-
-# ESBUILD pins the minifier so plugin builds reproduce across machines and CI.
-ESBUILD := esbuild@0.25.5
-
 ## obsidian: build the self-contained Obsidian plugin into obsidian/dist. The engine is
 ## gzipped and inlined as base64, since the community installer only downloads main.js
 ## and Obsidian Sync caps a plugin file at 5 MB, and the JS glue is minified. The plugin
@@ -119,8 +90,7 @@ site-deploy: site
 
 ## clean: remove the built binary, wasm artifacts, and coverage profile
 clean:
-	rm -f $(BINARY) coverage.out docs/assets/slop-chop.wasm docs/assets/wasm_exec.js \
-		extension/engine/slop-chop.wasm extension/engine/wasm_exec.js
+	rm -f $(BINARY) coverage.out docs/assets/slop-chop.wasm docs/assets/wasm_exec.js
 	rm -rf obsidian/dist obsidian/engine
 
 ## help: list available targets
