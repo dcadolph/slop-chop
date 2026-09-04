@@ -48,7 +48,6 @@ nav:
   - The tells: TELLS.md
   - Benchmark: BENCHMARK.md
   - Web app: WEB.md
-  - Extension: EXTENSION.md
   - Editor (LSP): LSP.md
   - API: API.md
   - Slack: SLACK.md

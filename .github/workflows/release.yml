@@ -32,8 +32,6 @@ jobs:
       # same loud failure the Homebrew and Obsidian steps use.
       OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
       JETBRAINS_MARKETPLACE_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_TOKEN }}
-      AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
-      AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
       # A fork has no publish credentials and should still cut a normal release, so a
       # missing token is skipped there. On the repository that owns these channels a
       # missing token is a publish that silently did not happen, which is how a stale
@@ -302,30 +300,6 @@ jobs:
           fi
           exit "$rc"
 
-      - name: Publish the Firefox extension
-        id: firefox
-        continue-on-error: true
-        run: |
-          set -euo pipefail
-          if [ -z "${AMO_JWT_ISSUER:-}" ] || [ -z "${AMO_JWT_SECRET:-}" ]; then
-            echo "::warning::AMO_JWT_ISSUER and AMO_JWT_SECRET are not set, so" \
-              "addons.mozilla.org still serves its previous release. Add both secrets" \
-              "and re-run to publish from CI."
-            exit 0
-          fi
-          make extension-firefox
-          # The upload goes into Mozilla's review queue rather than straight to users, so
-          # this submits and returns instead of waiting for a human reviewer.
-          out="$(npx -y web-ext sign --source-dir extension-firefox \
-            --channel listed --approval-timeout 0 \
-            --api-key "$AMO_JWT_ISSUER" --api-secret "$AMO_JWT_SECRET" 2>&1)" && rc=0 || rc=$?
-          echo "$out"
-          if [ "$rc" -ne 0 ] && echo "$out" | grep -qi "version already exists"; then
-            echo "AMO already holds this version; nothing to submit"
-            exit 0
-          fi
-          exit "$rc"
-
       # Each store publish above records its outcome instead of failing the job on the
       # spot, so one bad credential cannot cost the other four channels their release.
       # This step turns those outcomes into a single verdict, naming every store that
@@ -334,11 +308,10 @@ jobs:
         env:
           OPENVSX: ${{ steps.openvsx.outcome }}
           JETBRAINS: ${{ steps.jetbrains.outcome }}
-          FIREFOX: ${{ steps.firefox.outcome }}
         run: |
           set -uo pipefail
           failed=""
-          for store in OPENVSX JETBRAINS FIREFOX; do
+          for store in OPENVSX JETBRAINS; do
             if [ "${!store}" = "failure" ]; then
               failed="${failed} ${store}"
             fi

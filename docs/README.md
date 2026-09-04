@@ -252,12 +252,6 @@ The same engine, wherever you write. Everything is local and free unless noted.
 
     The JetBrains Marketplace plugin, or `slop-chop lsp` for Neovim, Helix, and the rest. See [Editor (LSP)](LSP.md).
 
--   :material-puzzle:{ .lg .middle } __Browser extension__
-
-    ---
-
-    Firefox, on Firefox Add-ons. See [Extension](EXTENSION.md).
-
 -   :material-notebook-outline:{ .lg .middle } __Obsidian__
 
     ---
