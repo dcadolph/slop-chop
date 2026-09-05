@@ -33,6 +33,7 @@ func checkCmd() *cobra.Command {
 	f.AddFlag(&config.FlagVoice)
 	f.AddFlag(&config.FlagJSON)
 	f.AddFlag(&config.FlagPretty)
+	f.AddFlag(&config.FlagWhy)
 	return cmd
 }
 
@@ -95,6 +96,9 @@ func checkOne(s *sanitize.Sanitizer, text, path string, stdout, stderr io.Writer
 		}
 		for _, f := range findings {
 			_, _ = fmt.Fprintf(stderr, "%s%s\n", prefix, f)
+			if config.Why() {
+				_, _ = fmt.Fprintf(stderr, "    %s\n", sanitize.Why(f))
+			}
 		}
 		switch fixable := countFixable(findings); {
 		case len(findings) == 0:

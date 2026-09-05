@@ -132,7 +132,9 @@ the matched text, the suggested replacement, and a line and column.
 
 ## Modes
 
-- `check` flags what it finds and exits non-zero. Drop it in CI.
+- `check` flags what it finds and exits non-zero. Drop it in CI. Add `--why` and every
+  finding carries a plain-words line saying what fired and what happens to it, the same
+  explanations the web app shows on a tap.
 - `fix` writes the cleaned text to stdout and leaves your file alone. Pass `-w` to change
   the file in place instead.
 - `score` measures the density of AI-writing tells, 0 to 100. A high score means the text

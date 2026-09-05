@@ -27,6 +27,7 @@ var flags = map[string]*pflag.Flag{
 	KeyMax:           &FlagMax,
 	KeyByParagraph:   &FlagByParagraph,
 	KeyBands:         &FlagBands,
+	KeyWhy:           &FlagWhy,
 }
 
 // Changed reports whether the flag for key was set on the command line.

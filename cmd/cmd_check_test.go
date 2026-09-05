@@ -95,3 +95,26 @@ func TestCheckJSONFindings(t *testing.T) {
 		t.Errorf("stdout = %q, want findings JSON", out)
 	}
 }
+
+// TestCheckWhy checks that --why explains each finding in plain words, and that the
+// explanation matches what the finding is: a flag, a swap, or a cut.
+func TestCheckWhy(t *testing.T) {
+	_, stderr, err := runCLI(t, []string{"check", "--why"},
+		"In summary, we leverage robust synergy.")
+	if !errors.Is(err, errFindings) {
+		t.Fatalf("err = %v, want errFindings", err)
+	}
+	for _, want := range []string{
+		"A stock phrase of the machine register. The profile swaps it.",
+		"block list of terms models lean on. It only flags",
+	} {
+		if !strings.Contains(stderr, want) {
+			t.Errorf("stderr missing %q:\n%s", want, stderr)
+		}
+	}
+	// Without the flag, no explanation lines appear.
+	_, plain, _ := runCLI(t, []string{"check"}, "In summary, we leverage robust synergy.")
+	if strings.Contains(plain, "machine register") {
+		t.Errorf("explanations printed without --why:\n%s", plain)
+	}
+}
