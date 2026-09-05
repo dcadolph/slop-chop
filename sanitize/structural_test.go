@@ -100,6 +100,7 @@ func TestFlagPatterns(t *testing.T) {
 		{Name: "worth asking", In: "Worth asking yourself: would you run it twice?", WantRule: "structural:rhetorical-hook", WantHit: true},
 		{Name: "anaphora run", In: "We needed retries. We needed observability. We needed ownership.", WantRule: "structural:anaphora-run", WantHit: true},
 		{Name: "anaphora pair only", In: "We needed retries. We needed observability. Then we shipped.", WantRule: "structural:anaphora-run", WantHit: false},
+		{Name: "anaphora table rows", In: "| README.md | 0 | 2173 |\n| ENGINE.md | 0 | 2601 |\n| VOICE.md | 0 | 1045 |\n| MCP.md | 0 | 631 |", WantRule: "structural:anaphora-run", WantHit: false},
 		{Name: "anaphora epizeuxis", In: "It's not fair. It's not fair. It's not fair.", WantRule: "structural:anaphora-run", WantHit: false},
 		{Name: "anaphora epizeuxis case and punctuation", In: "We tried. We tried! We tried.", WantRule: "structural:anaphora-run", WantHit: false},
 		{Name: "anaphora epizeuxis then varying tail", In: "We tried harder. We tried again. We tried everything.", WantRule: "structural:anaphora-run", WantHit: true},
