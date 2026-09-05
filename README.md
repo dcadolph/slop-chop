@@ -240,7 +240,11 @@ auto-fix your own branches, run the same fix-and-commit job on a `push` trigger 
 
 ## Use it as a Claude Code plugin
 
-slop-chop ships a Claude Code plugin, so the assistant can run the tool for you. The repo is
+![An agent drafts sloppy text, slop-chop scores it 80 with 18 findings, the agent rewrites, and the revision scores 0](docs/assets/agent-loop.gif)
+
+The loop above is the point: the agent drafts, the engine judges deterministically, the
+findings go back, and the rewrite is verified rather than trusted. slop-chop ships a
+Claude Code plugin, so the assistant can run the tool for you. The repo is
 its own marketplace. Add the marketplace, then install the plugin from it:
 
 ```

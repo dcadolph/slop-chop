@@ -8,6 +8,8 @@ The plugin does not bundle its own copy of slop-chop. It calls the `slop-chop` b
 `PATH`, so the same rules, profiles, and presets you use on the command line apply inside
 Claude.
 
+![An agent drafts sloppy text, slop-chop scores it 80 with 18 findings, the agent rewrites, and the revision scores 0](assets/agent-loop.gif)
+
 ## What the plugin gives you
 
 | Piece              | Kind            | When it runs                                          |
