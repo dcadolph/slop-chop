@@ -174,3 +174,32 @@ func BenchmarkScoreLarge(b *testing.B) {
 		s.Score(text)
 	}
 }
+
+// TestFixReachesAFixpoint checks the property the engine's determinism claim rests on:
+// chopping settles. Running fix on its own output must change nothing, so a pipeline that
+// chops twice, or a pre-commit hook that runs after an editor plugin already did, gets the
+// same bytes rather than a text that keeps drifting under repeated passes.
+func TestFixReachesAFixpoint(t *testing.T) {
+	t.Parallel()
+	s, err := New(DefaultProfile())
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	settled := map[int]int{}
+	for i, p := range loadCorpus(t) {
+		once, _ := s.Fix(p.Text)
+		twice, _ := s.Fix(once)
+		if once != twice {
+			t.Errorf("passage %d (%s) does not settle:\n once:  %q\n twice: %q",
+				i, p.Note, once, twice)
+			continue
+		}
+		if once == p.Text {
+			settled[0]++
+		} else {
+			settled[1]++
+		}
+	}
+	t.Logf("corpus settles: %d passages unchanged, %d changed once and then held",
+		settled[0], settled[1])
+}

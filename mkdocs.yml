@@ -47,6 +47,7 @@ nav:
   - Engine: ENGINE.md
   - The tells: TELLS.md
   - Benchmark: BENCHMARK.md
+  - On itself: ITSELF.md
   - Web app: WEB.md
   - Editor (LSP): LSP.md
   - API: API.md

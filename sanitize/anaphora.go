@@ -54,6 +54,13 @@ type sentSpan struct {
 // never rewritten: collapsing a drumbeat is a judgment call the author makes.
 func anaphoraFindings(text string, protected [][2]int) []Finding {
 	spans := sentenceSpans(text)
+	// A markdown table is not prose. Its rows open alike by construction, which is
+	// alignment rather than a drumbeat, so they neither seed a run nor extend one.
+	for i := range spans {
+		if inTableRow(text, spans[i].start) {
+			spans[i].key = ""
+		}
+	}
 	var out []Finding
 	i := 0
 	for i < len(spans) {

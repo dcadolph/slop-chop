@@ -97,6 +97,9 @@ Read the word row as a floor rather than a measurement of rule strength. The eva
 table covers a few dozen entries against a block list of 161, so a fuller thesaurus would
 evade more. The structural row is the real finding: substitution barely touches it.
 
+[slop-chop on slop-chop](ITSELF.md) turns the engine on its own documentation and output:
+whether the docs pass, whether chopping settles, and what one pass actually leaves behind.
+
 ## Limitations, plainly
 
 **The corpus grades the engine on its own homework.** The passages were written during
