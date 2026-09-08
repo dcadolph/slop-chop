@@ -41,6 +41,21 @@ jobs:
         run: go run . tells --markdown | diff - docs/TELLS.md
       - name: The evaluation corpus must stay locked away from the development corpus
         run: go run ./evaldata/harness -check
+      # The release builds these two targets and nothing else did, so a Makefile break
+      # reached a tag before anyone noticed and cost four stores their publish. Building
+      # them here puts that failure in a pull request instead of in a release.
+      - name: The plugin and package bundles the release ships must build
+        run: |
+          set -euo pipefail
+          make obsidian
+          make npm-package
+          # An empty variable in a recipe still runs, so the bundle can build from the
+          # wrong bytes. Check the payload landed rather than trusting the exit code.
+          test -s obsidian/dist/main.js
+          grep -q "SLOP_WASM_B64_GZ" obsidian/dist/main.js
+          test -s npm/engine/slop-chop.wasm
+      - name: Every shipped surface must carry the same version
+        run: make check-versions
       # Share the compiled binary so the check jobs need no Go toolchain, which keeps them off
       # setup-go, the heavier action whose download was the source of the flaky setup failures.
       - uses: actions/upload-artifact@v4
