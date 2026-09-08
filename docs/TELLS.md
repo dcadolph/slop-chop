@@ -239,7 +239,7 @@ only: the fix depends on the whole sentence, so it is left to you or the rewrite
 | `whether-youre` | `(?i)\bwhether you'?re an? [^.!?\n]{1,40}\bor an? \p{L}` |
 | `would-you-like` | `(?i)\bwould you like me to\b` |
 
-## Structural walkers (5)
+## Structural walkers (6)
 
 Shapes no pattern can hold, read by walking the sentences: the same opener again,
 paragraphs stamped from one template, a sentence landing on an abstraction. Flag only,
@@ -251,6 +251,7 @@ like the patterns above, and each one counts double toward the score.
 | `uniform-paragraphs` | Most body paragraphs holding the same number of sentences, the shape of prose stamped from a template. |
 | `template-stem` | One opening stem repeated across paragraphs, an outline talking rather than a writer. |
 | `copula-landing` | A concrete or demonstrative subject equated to an abstraction by a bare copula, closing the sentence as a payoff: `That number is the rest of the day.` Both halves have to hold, so `That column is the primary key` and `The problem is the cost` are left alone. |
+| `landing-drumbeat` | Short sentences snapping shut on a bare pronoun and a copula, over and over: `That's the point. It's cheap. That's the appeal.` The rate is the tell, never the instance, so it takes several in close order and one landing is always yours. |
 | `polyptoton` | A stem turned against itself in one sentence, with a pivot and a negation between the two forms: `verification that does not verify`. Bare repetition is ordinary prose, so `the parser parses` is left alone. |
 
 ## Cleanup passes
