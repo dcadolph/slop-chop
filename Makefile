@@ -56,6 +56,9 @@ wasm:
 	GOOS=js GOARCH=wasm $(GO) build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o docs/assets/slop-chop.wasm ./wasm
 	cp "$(shell $(GO) env GOROOT)/lib/wasm/wasm_exec.js" docs/assets/wasm_exec.js
 
+# ESBUILD pins the minifier so plugin builds reproduce across machines and CI.
+ESBUILD := esbuild@0.25.5
+
 ## obsidian: build the self-contained Obsidian plugin into obsidian/dist. The engine is
 ## gzipped and inlined as base64, since the community installer only downloads main.js
 ## and Obsidian Sync caps a plugin file at 5 MB, and the JS glue is minified. The plugin
