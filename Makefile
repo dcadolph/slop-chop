@@ -12,7 +12,7 @@ GOBIN := $(shell $(GO) env GOPATH)/bin
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: build install uninstall test cover vet lint fmt tidy clean wasm obsidian npm-package worker site site-deploy help
+.PHONY: build install uninstall test cover vet lint fmt tidy clean wasm obsidian npm-package worker site site-deploy check-versions help
 
 ## build: compile the binary into the repo root with the version stamped
 build:
@@ -90,6 +90,30 @@ site: wasm
 ## site-deploy: build the site and publish it to the Worker that serves slop-chop.com
 site-deploy: site
 	npx -y wrangler@4 deploy --config wrangler.site.jsonc
+
+## check-versions: every shipped surface must name one version. The release fails its
+## README pin check when these drift, and OpenVSX looks for a vsix named from the tag, so
+## a surface left behind silently misses its publish. The Obsidian manifest and the npm
+## package are rewritten from the tag during the release and are checked here anyway, so
+## the committed tree never disagrees with itself.
+check-versions:
+	@set -eu; \
+	pin=$$(grep -oE 'dcadolph/slop-chop@v[0-9]+\.[0-9]+\.[0-9]+' README.md | head -1 | sed 's/.*@v//'); \
+	if [ -z "$$pin" ]; then echo "README.md names no action version"; exit 1; fi; \
+	fail=0; \
+	pins=$$(grep -oE 'dcadolph/slop-chop@v[0-9]+\.[0-9]+\.[0-9]+' README.md | sort -u | wc -l | tr -d ' '); \
+	if [ "$$pins" != "1" ]; then echo "README.md pins more than one version"; fail=1; fi; \
+	for f in npm/package.json vscode/package.json obsidian/manifest.json; do \
+		v=$$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' $$f | head -1); \
+		if [ "$$v" != "$$pin" ]; then echo "$$f is $$v, README pins $$pin"; fail=1; fi; \
+	done; \
+	v=$$(sed -n 's/^version[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' jetbrains/build.gradle.kts | head -1); \
+	if [ "$$v" != "$$pin" ]; then echo "jetbrains/build.gradle.kts is $$v, README pins $$pin"; fail=1; fi; \
+	if ! grep -q "\"$$pin\"[[:space:]]*:" obsidian/versions.json; then \
+		echo "obsidian/versions.json has no entry for $$pin"; fail=1; fi; \
+	if [ "$$fail" != "0" ]; then \
+		echo "every shipped surface must name $$pin before the tag is cut"; exit 1; fi; \
+	echo "every shipped surface names $$pin"
 
 ## clean: remove the built binary, wasm artifacts, and coverage profile
 clean:
