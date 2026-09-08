@@ -137,6 +137,7 @@ read here is exactly what gets chopped. Rebuild it any time with
 	writeMarkdownSwaps(&b, "##", "Regex swaps", "Custom patterns rewritten as written.", p.RegexReplace)
 	writeMarkdownBlockWords(&b, p.BlockWords)
 	writeMarkdownPatterns(&b, p.FlagPatterns)
+	writeMarkdownWalkers(&b)
 	writeMarkdownCleanup(&b, p)
 	writeMarkdownPresets(&b)
 	_, err := io.WriteString(w, b.String())
@@ -221,6 +222,27 @@ only: the fix depends on the whole sentence, so it is left to you or the rewrite
 `)
 	for _, pair := range sortedPairs(m) {
 		fmt.Fprintf(b, "| `%s` | `%s` |\n", pair[0], strings.ReplaceAll(pair[1], "|", "\\|"))
+	}
+	b.WriteString("\n")
+}
+
+// writeMarkdownWalkers prints the structural walkers, the detectors that read sentences
+// directly because their shape has no regular expression.
+func writeMarkdownWalkers(b *strings.Builder) {
+	walkers := sanitize.Walkers()
+	if len(walkers) == 0 {
+		return
+	}
+	fmt.Fprintf(b, "## Structural walkers (%d)\n\n", len(walkers))
+	b.WriteString(`Shapes no pattern can hold, read by walking the sentences: the same opener again,
+paragraphs stamped from one template, a sentence landing on an abstraction. Flag only,
+like the patterns above, and each one counts double toward the score.
+
+| Name | Reads |
+| ---- | ----- |
+`)
+	for _, w := range walkers {
+		fmt.Fprintf(b, "| `%s` | %s |\n", w.Name, w.Reads)
 	}
 	b.WriteString("\n")
 }
