@@ -143,3 +143,7 @@
 {"label":"human","note":"cadence trap: colon before a one-word verdict","text":"The verdict came back the way we expected: guilty."}
 {"label":"human","note":"cadence trap: colon before a two-item answer","text":"Two things went wrong: the cache and the clock."}
 {"label":"technical","note":"cadence trap: colon before the number that matters","text":"There is one number that matters here: the median."}
+{"label":"ai","note":"cadence: landing drumbeat, contracted form","text":"The proposal is sound. That's the point. It's also cheap. That's the appeal. The team already knows the tooling. That's the real advantage here."}
+{"label":"ai","note":"cadence: landing drumbeat, spelled-out copula","text":"The migration finished early. That is the headline. Nobody worked the weekend. That is the real win. It is rare. That is why it matters."}
+{"label":"human","note":"cadence trap: terse human voice, three landings under the floor","text":"That's the thing about him. He never says sorry. That's fine. I stopped needing it years ago. It's easier that way."}
+{"label":"human","note":"cadence trap: household griping with landings below the run","text":"The dishwasher died again. That's the second time. It's out of warranty. That's my luck. We wash by hand until Thursday."}
