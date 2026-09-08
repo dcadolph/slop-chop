@@ -107,6 +107,8 @@ jobs:
           fail_on_unmatched_files: true
 
       - name: Bump Homebrew formula
+        id: homebrew
+        continue-on-error: true
         env:
           TAG: ${{ github.ref_name }}
         run: |
@@ -179,6 +181,8 @@ jobs:
           git push
 
       - name: Publish the Obsidian plugin
+        id: obsidian
+        continue-on-error: true
         env:
           TAG: ${{ github.ref_name }}
         run: |
@@ -236,6 +240,8 @@ jobs:
           registry-url: "https://registry.npmjs.org"
 
       - name: Publish the npm package
+        id: npm
+        continue-on-error: true
         env:
           TAG: ${{ github.ref_name }}
         run: |
@@ -306,12 +312,15 @@ jobs:
       # failed rather than stopping at the first.
       - name: Every store that was configured must have published
         env:
+          HOMEBREW: ${{ steps.homebrew.outcome }}
+          OBSIDIAN: ${{ steps.obsidian.outcome }}
+          NPM: ${{ steps.npm.outcome }}
           OPENVSX: ${{ steps.openvsx.outcome }}
           JETBRAINS: ${{ steps.jetbrains.outcome }}
         run: |
           set -uo pipefail
           failed=""
-          for store in OPENVSX JETBRAINS; do
+          for store in HOMEBREW OBSIDIAN NPM OPENVSX JETBRAINS; do
             if [ "${!store}" = "failure" ]; then
               failed="${failed} ${store}"
             fi
