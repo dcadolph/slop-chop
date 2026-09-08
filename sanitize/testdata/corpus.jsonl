@@ -113,3 +113,33 @@
 {"label": "ai", "text": "# Why we moved off cron\n\nHere's the thing about scheduled jobs: they fail quietly.\n\nFor years, our nightly batch ran on a single cron entry. It worked. Until it didn't.\n\nThe failure wasn't dramatic. No alerts fired. No pages went out. The job simply stopped running one Tuesday, and nobody noticed for eleven days.\n\nThat's not a tooling problem. That's a visibility problem.\n\nSo we rebuilt. Not because cron is bad, but because our needs had outgrown it. We needed retries. We needed observability. We needed ownership.\n\nThe new system isn't fancy. It's a small queue, a worker pool, and a dashboard. Each job declares what it needs, when it runs, and who gets paged when it fails. Simple, boring, reliable.\n\nThe result? Zero silent failures in six months.\n\nThere's a lesson here, and it's not about cron. Tools don't fail teams. Blind spots do. The question isn't whether your jobs are running. The question is whether you'd know if they weren't.\n\nWorth asking yourself: what's your eleven-day failure?\n", "note": "audit: 2025-era essay; anaphora, until-it-didnt, reversal aphorisms, triad fragments"}
 {"label": "ai", "text": "In summary, this is a comprehensive solution -- one that seamlessly integrates with your workflow -- for modern teams.\n\nIt's worth noting that the platform - fast, secure, and reliable - leverages cutting-edge technology to deliver a robust experience. It's not just a tool, it's a paradigm shift.\n\nMoreover, the architecture is elegant; it scales effortlessly; and it delivers unprecedented performance.\n", "note": "audit: em-dash evasion with spaced double hyphens"}
 {"label": "ai", "text": "In summ\u0430ry, this is a c\u043emprehensive s\u043elution \u2013 one that seamlessly int\u0435grates \u2012 with your workflow.\n\nLet's d\u0435lve into the fascinating details. It l\u0435verages robust, cutting-\u0435dge technology; it truly d\u0435livers.\n", "note": "audit: Cyrillic homoglyphs smuggling block words past the list"}
+{"label":"ai","note":"cadence: copula landing, the flagged services-page sentence","text":"It is usually about a third, and that number is the rest of the day."}
+{"label":"ai","note":"cadence: copula landing, demonstrative subject equated to an abstraction","text":"We ran the numbers again on Tuesday. That gap is the whole point."}
+{"label":"ai","note":"cadence: copula landing, definite subject and abstraction complement","text":"Two vendors quoted the same scope. The spread is the point."}
+{"label":"ai","note":"cadence: copula landing, bare noun subject","text":"Every team wants more users than it has. Reach is the constraint."}
+{"label":"ai","note":"cadence: copula landing beside a reversal aphorism, for the overlap check","text":"Tools don't fail teams. Blind spots do. That number is the whole story."}
+{"label":"ai","note":"cadence: copula landing on an abstract currency","text":"Nobody audits the audit trail. Trust is the currency."}
+{"label":"ai","note":"cadence: polyptoton, a stem turned against itself","text":"We shipped a verification step that does not verify anything."}
+{"label":"ai","note":"cadence: polyptoton in a copular turn","text":"What the vendor sold us was governance that does not govern."}
+{"label":"human","note":"cadence trap: demonstrative subject, concrete complement","text":"That number is the median, not the mean. I checked it twice."}
+{"label":"human","note":"cadence trap: honest colon stating a rule","text":"The rule was simple: never trust the client."}
+{"label":"human","note":"cadence trap: ordinary comparative with rather than","text":"I took the train rather than the bus and got there first."}
+{"label":"human","note":"cadence trap: three-item list ending a sentence","text":"We brought bread, cheese, and a bottle of something red."}
+{"label":"human","note":"cadence trap: copula landing a concrete noun","text":"The loud one at the back is the foreman. He signs the sheet."}
+{"label":"human","note":"cadence trap: question after a colon","text":"The question is: who reviews the reviewer?"}
+{"label":"technical","note":"cadence trap: demonstrative subject with a concrete key complement","text":"That column is the primary key for the table."}
+{"label":"technical","note":"cadence trap: proper-noun comparative with rather than","text":"We chose Postgres rather than MySQL for the write path."}
+{"label":"technical","note":"cadence trap: parallel third-person verbs in honest prose","text":"The scheduler retries rather than fails, so the queue drains on its own."}
+{"label":"technical","note":"cadence trap: hyphenated item in an ordinary three-item list","text":"The binary is statically linked, stripped, and read-only."}
+{"label":"technical","note":"cadence trap: stem repeated without a rhetorical turn","text":"The scheduler does not schedule jobs during a backup window."}
+{"label":"technical","note":"cadence trap: parser parses, ordinary stem repetition","text":"The parser parses the header first, then the body."}
+{"label":"technical","note":"cadence trap: colon introducing a two-item list","text":"Run it in two steps: build, then push."}
+{"label":"technical","note":"cadence trap: copula with an abstraction on both sides","text":"The problem is the cost of the extra index."}
+{"label":"technical","note":"cadence trap: honest three-item predicate without coined compounds","text":"The build is fast, cheap, and correct."}
+{"label":"technical","note":"cadence trap: honest predicative rather-than in a spec sentence","text":"A missing field is a warning rather than an error."}
+{"label":"technical","note":"cadence trap: instead-of comparative in ordinary engineering prose","text":"We shipped a fix instead of a workaround, and the queue drained."}
+{"label":"technical","note":"cadence trap: three compound properties in a key-management note","text":"The keys are rotated, read-only, and write-once."}
+{"label":"technical","note":"cadence trap: one hyphenated property in an ordinary triad","text":"The endpoint is cached, rate-limited, and idempotent."}
+{"label":"human","note":"cadence trap: colon before a one-word verdict","text":"The verdict came back the way we expected: guilty."}
+{"label":"human","note":"cadence trap: colon before a two-item answer","text":"Two things went wrong: the cache and the clock."}
+{"label":"technical","note":"cadence trap: colon before the number that matters","text":"There is one number that matters here: the median."}
