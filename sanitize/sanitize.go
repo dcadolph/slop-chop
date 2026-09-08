@@ -115,6 +115,8 @@ func (s *Sanitizer) Check(text string) []Finding {
 	}
 	findings = append(findings, anaphoraFindings(text, protected)...)
 	findings = append(findings, shapeFindings(text, protected)...)
+	findings = append(findings, landingFindings(text, protected)...)
+	findings = append(findings, polyptotonFindings(text, protected)...)
 	slices.SortFunc(findings, func(a, b Finding) int {
 		return cmp.Or(cmp.Compare(a.Offset, b.Offset), cmp.Compare(a.Rule, b.Rule))
 	})
