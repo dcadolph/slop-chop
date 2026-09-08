@@ -40,6 +40,11 @@ type Score struct {
 	Density int `json:"density"`
 	// Hedging is the points a hedge-heavy register added to Value.
 	Hedging int `json:"hedging"`
+	// Drumbeat is the points the landing habit added to Value: short sentences snapping
+	// shut on a bare pronoun and a copula, over and over. Like hedging it is a register
+	// rather than a tell, so it is scored by rate and not by the single instance, which
+	// every writer is entitled to.
+	Drumbeat int `json:"drumbeat"`
 }
 
 // sentenceSplit breaks text on sentence-ending punctuation to measure cadence.
@@ -141,6 +146,15 @@ func (s *Sanitizer) Score(text string) Score {
 		weighing = math.Min(8, per100(w, words)*4)
 	}
 
+	// The landing drumbeat, every point snapped shut on "that's X", is the assistant
+	// agreeing with itself in rhythm. It carries no lexical tell at all, so density
+	// cannot see it, and one landing is a writer doing their job. Its rate adds up to
+	// twelve points once the habit clears both of its floors.
+	drumbeat := 0.0
+	if spans, rate := drumbeatRate(text); drumbeatSustained(spans, rate) {
+		drumbeat = math.Min(12, rate*2.5)
+	}
+
 	// A very short text with one weak tell cannot carry a verdict: a lone em-dash in a
 	// seven-word message is not an eighty. Density scales down below twenty-five words
 	// when the evidence is a single ordinary tell. Stronger evidence, a structural
@@ -149,7 +163,7 @@ func (s *Sanitizer) Score(text string) Score {
 		density *= float64(words) / 25
 	}
 
-	value := int(math.Round(math.Min(100, density+hedging+weighing)))
+	value := int(math.Round(math.Min(100, density+hedging+weighing+drumbeat)))
 	return Score{
 		Value:       value,
 		Tells:       tells,
@@ -159,6 +173,7 @@ func (s *Sanitizer) Score(text string) Score {
 		Punchiness:  cadenceReport(punchiness(prose)),
 		Density:     int(math.Round(density)),
 		Hedging:     int(math.Round(hedging)),
+		Drumbeat:    int(math.Round(drumbeat)),
 	}
 }
 
