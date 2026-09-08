@@ -28,6 +28,12 @@ type Score struct {
 	// purpose, so a flat cadence marks old machine output while penalizing plain,
 	// competent human writing. It is -1 when there are too few sentences to judge.
 	CadenceCV float64 `json:"cadenceCv"`
+	// Punchiness is the share of sentences sitting in a run of three or more short ones
+	// in a row, the drumbeat of prose where every sentence lands. It reads a different
+	// thing from CadenceCV, which measures spread rather than runs, and it carries no
+	// score weight for the same reason: a writer is allowed to land a paragraph. It is
+	// -1 when there are too few sentences to judge.
+	Punchiness float64 `json:"punchiness"`
 	// Density is the points weighted tell density added to Value. A structural tell
 	// counts double, since a stock sentence shape is stronger evidence than one word,
 	// and typography swaps count nothing.
@@ -150,6 +156,7 @@ func (s *Sanitizer) Score(text string) Score {
 		Words:       words,
 		TellsPer100: math.Round(per100(tells, words)*100) / 100,
 		CadenceCV:   cadenceReport(cadenceCV(prose)),
+		Punchiness:  cadenceReport(punchiness(prose)),
 		Density:     int(math.Round(density)),
 		Hedging:     int(math.Round(hedging)),
 	}
@@ -274,16 +281,57 @@ func cadenceReport(cv float64) float64 {
 	return math.Round(cv*1000) / 1000
 }
 
-// cadenceCV returns the coefficient of variation of sentence length in words, or -1 when
-// there are too few sentences to judge a rhythm. A returned 0 is a real reading: every
-// sentence is the same length, the flattest cadence there is, distinct from the -1 sentinel.
-func cadenceCV(text string) float64 {
+// punchMaxWords is the longest sentence that still reads as a landing, and punchMinRun is
+// how many have to fall in a row before the landings read as a drumbeat.
+const (
+	punchMaxWords = 8
+	punchMinRun   = 3
+)
+
+// punchiness returns the share of sentences that sit in a run of punchMinRun or more short
+// sentences in a row, or -1 when there are too few sentences to judge. Where cadenceCV
+// measures how far sentence lengths spread, this measures whether the short ones cluster:
+// a page of alternating long and short sentences and a page that lands five in a row can
+// share a coefficient of variation and read nothing alike.
+func punchiness(text string) float64 {
+	lengths := sentenceLengths(text)
+	if len(lengths) < punchMinRun {
+		return -1
+	}
+	inRuns, run := 0, 0
+	for _, n := range lengths {
+		if n <= punchMaxWords {
+			run++
+			continue
+		}
+		if run >= punchMinRun {
+			inRuns += run
+		}
+		run = 0
+	}
+	if run >= punchMinRun {
+		inRuns += run
+	}
+	return float64(inRuns) / float64(len(lengths))
+}
+
+// sentenceLengths returns the word count of each sentence in text, skipping the empty
+// spans punctuation leaves behind.
+func sentenceLengths(text string) []float64 {
 	var lengths []float64
 	for _, sentence := range sentenceSplit.Split(text, -1) {
 		if n := len(strings.Fields(sentence)); n > 0 {
 			lengths = append(lengths, float64(n))
 		}
 	}
+	return lengths
+}
+
+// cadenceCV returns the coefficient of variation of sentence length in words, or -1 when
+// there are too few sentences to judge a rhythm. A returned 0 is a real reading: every
+// sentence is the same length, the flattest cadence there is, distinct from the -1 sentinel.
+func cadenceCV(text string) float64 {
+	lengths := sentenceLengths(text)
 	if len(lengths) < 3 {
 		return -1
 	}
