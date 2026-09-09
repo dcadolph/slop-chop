@@ -316,15 +316,17 @@ spelling dialects, the allow list, and the inline ignore directives.
 slop-chop attack draft.md
 ```
 
-`attack` points the engine at itself. It rewrites text to dodge as many rules as it can
-without improving a word of it, then reports what survived. Buzzwords fall to a
-thesaurus. Sentence shapes do not, because escaping one means rebuilding the sentence.
-That gap is the argument for counting a structural tell double, and the number is
-measured rather than asserted: across the labeled corpus the attack evades 33 word tells
-and 1 structural tell out of 78, and 54 of 58 passages still flag afterward.
+`attack` tries to beat your own rules. It rewrites text to dodge as many as it can while
+leaving it no better written, then reports which tells held.
 
-Use it to find where your own rules are thin, and `-w` to build a corpus of evasive
-samples. [docs/BENCHMARK.md](docs/BENCHMARK.md) has the full table.
+Buzzwords fall to a thesaurus: 33 of 71 word tells slip past. Sentence shapes do not,
+because escaping one means rebuilding the sentence, so 1 of 78 gets through. After the
+attack 54 of the 58 passages still carry a tell, and the mean score falls only from 77
+to 72. A structural tell counts double in the score for that reason.
+
+Run it on your own profile to find which rules a thesaurus can defeat. `-w` saves the
+evasive rewrites as a corpus. [docs/BENCHMARK.md](docs/BENCHMARK.md) has the full table
+and the limits of what it proves.
 
 ## Your voice
 
