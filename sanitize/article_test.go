@@ -85,3 +85,31 @@ func TestArticleNeedsFixAllCaps(t *testing.T) {
 		})
 	}
 }
+
+// TestContestedAcronymsStaySilent checks the words careful writers pronounce two ways.
+// SQL is "sequel" in one house and "ess-cue-ell" in the next, which is why Oracle writes
+// "a SQL statement" and PostgreSQL writes "an SQL statement". Both are right, so the rule
+// must not report either. Picking one would correct a writer's house style, which is a
+// worse failure than staying quiet. FAQ is not on the list: this project already picked
+// "an FAQ" and pins it, so that choice stands.
+func TestContestedAcronymsStaySilent(t *testing.T) {
+	t.Parallel()
+
+	for _, in := range []string{
+		"a SQL query", "an SQL query",
+		"a SQL's plan", "an SQL's plan",
+	} {
+		t.Run(in, func(t *testing.T) {
+			t.Parallel()
+			if articleNeedsFix(in, 0, len(in)) {
+				t.Errorf("articleNeedsFix(%q) fired; both readings are defensible", in)
+			}
+		})
+	}
+
+	// The silence is scoped to the contested list, so an ordinary initialism is
+	// still corrected.
+	if !articleNeedsFix("a RFC describes it", 0, len("a RFC describes it")) {
+		t.Error("a RFC should still be corrected to an RFC")
+	}
+}

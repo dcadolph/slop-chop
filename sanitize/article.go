@@ -65,7 +65,24 @@ func articleNeedsFix(text string, start, end int) bool {
 	if articleStopWords[strings.ToLower(m[3])] {
 		return false
 	}
+	// Some acronyms are read both ways by careful writers, so neither article is
+	// an error and the rule has no business picking one.
+	if contestedAcronyms[letterRun(m[3])] {
+		return false
+	}
 	return startsWithVowelSound(m[3]) != (len(m[1]) == 2)
+}
+
+// contestedAcronyms are all-caps words that careful writers pronounce two ways, so both
+// articles are defensible and the rule stays quiet on either. SQL is "sequel" to one
+// house and "ess-cue-ell" to the next, which is why Oracle writes "a SQL statement" and
+// PostgreSQL writes "an SQL statement". A rule cannot know which a writer hears, and
+// correcting someone's house style is worse than saying nothing. FAQ is deliberately
+// absent: this project has already picked "an FAQ" and pins it in a test.
+//
+//nolint:gochecknoglobals // Immutable lookup.
+var contestedAcronyms = map[string]bool{
+	"SQL": true,
 }
 
 // articleStopWords are words that never head the noun phrase of an article, so an "a" or
