@@ -80,16 +80,45 @@ var articleStopWords = map[string]bool{
 	"it": true, "its": true, "with": true, "from": true, "for": true,
 }
 
+// spokenAcronyms are all-caps words a reader says rather than spells. The letter-name rule
+// below is right only for an initialism read one letter at a time, where the R of RFC is
+// said "ar" and takes "an". These are read as words, so the sound that matters is the
+// word's own: README is "read-me" and takes "a", however its letters are named. Only the
+// ones whose first letter name starts with a vowel are listed, since those are the only
+// ones the letter-name rule gets wrong.
+//
+//nolint:gochecknoglobals // Immutable lookup.
+var spokenAcronyms = map[string]bool{
+	"README": true, "REST": true, "REPL": true, "RAID": true, "RAM": true, "ROM": true,
+	"RADAR": true, "LASER": true, "LAN": true, "LIFO": true, "MAC": true, "MIME": true,
+	"MODEM": true, "NASA": true, "NAT": true, "NUMA": true, "SAML": true, "SCUBA": true,
+	"SIM": true, "SONAR": true, "SUDO": true, "FIFO": true, "FUSE": true, "HUD": true,
+	"NAN": true, "MIDI": true, "SAAS": true, "SASS": true, "LILO": true,
+}
+
+// letterRun returns the leading run of letters in word, so a lookup is not defeated by the
+// punctuation the word pattern admits: README, README's, and README. all answer to README.
+func letterRun(word string) string {
+	for i := 0; i < len(word); i++ {
+		if word[i] < 'A' || word[i] > 'Z' {
+			return word[:i]
+		}
+	}
+	return word
+}
+
 // startsWithVowelSound reports whether word begins with a vowel sound, which decides between
 // "a" and "an". It handles the common exceptions: silent-h words take "an", "you"-sound and
-// "one"-sound words take "a" despite a leading vowel, and an all-caps acronym opening on a
+// "one"-sound words take "a" despite a leading vowel, and an all-caps initialism opening on a
 // letter whose name starts with a vowel (A, E, F, H, I, L, M, N, O, R, S, X) takes "an".
+// An all-caps word a reader pronounces rather than spells is judged by its sound instead.
 func startsWithVowelSound(word string) bool {
 	lw := strings.ToLower(strings.Trim(word, "'"))
 	if lw == "" {
 		return false
 	}
-	if word == strings.ToUpper(word) && word != lw && len(word) > 1 {
+	if word == strings.ToUpper(word) && word != lw && len(word) > 1 &&
+		!spokenAcronyms[letterRun(word)] {
 		return strings.ContainsRune("AEFHILMNORSX", rune(word[0]))
 	}
 	for _, p := range silentH {
