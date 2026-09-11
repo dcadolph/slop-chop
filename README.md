@@ -437,12 +437,6 @@ accident. Run it against the real API with an API key:
 ANTHROPIC_API_KEY=sk-... go test -tags=integration ./rewrite/ -run Live -v
 ```
 
-## More tools
-
-- [kibble](https://github.com/dcadolph/kibble): Test your README's install steps in a clean container.
-- [preen](https://github.com/dcadolph/preen): Split a messy working tree into clean, atomic git commits.
-- [vamoose](https://github.com/dcadolph/vamoose): Route time off through approval, then tell the team.
-
 ## License
 
 MIT. See [LICENSE](LICENSE).
