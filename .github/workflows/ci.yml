@@ -10,6 +10,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The authorship guard below reads commit messages, which needs real history
+          # rather than the single squashed commit a shallow clone gives.
+          fetch-depth: 0
+      # Nothing in this repository is co-authored. A trailer naming a tool puts that tool
+      # in the contributors list on GitHub, which is a claim about who wrote the software,
+      # so the build refuses one rather than leaving it to be noticed later.
+      - name: No commit may claim a co-author
+        run: |
+          set -euo pipefail
+          if git log --format='%H %B' | grep -inE '^[[:space:]]*co-authored-by:'; then
+            echo "::error::A commit carries a Co-Authored-By trailer. Strip it before pushing."
+            exit 1
+          fi
+          echo "no co-author trailers in history"
       - uses: actions/setup-go@v5
         with:
           go-version: stable
