@@ -1,0 +1,418 @@
+{"repo":"jpillora/ipfilter","sha":"33b3b689f09e8bd748f1ea6bc940b7d621a6b9b8","language":"Go","words":187,"score":0}
+{"repo":"jakecoffman/cp","sha":"07a2f19b1a3b4a2b6635b07020ad4fd89d1092ca","language":"Go","words":276,"score":9,"rules":["char:–","char:’","structural:spaced-hyphen","word:utilizing"]}
+{"repo":"k8snetworkplumbingwg/whereabouts","sha":"abd29e856f368869b792668d5baa63b9d935032d","language":"Go","words":1176,"score":5,"rules":["phrase:additionally,","structural:spaced-hyphen","word:utilized"]}
+{"repo":"openrport/openrport","sha":"bb9ae87073cd46b9e1ce15c7667981da62895455","language":"Go","words":605,"score":3,"rules":["structural:assistant-signoff"]}
+{"repo":"AdRoll/goamz","sha":"2731d20f46f42449a49b3464271c5fba8da60ed6","language":"Go","words":187,"score":10,"rules":["phrase:that said,","word:comprehensive"]}
+{"repo":"monogon/monogon","sha":"9a66b18b911e4551c708b4b4fffbe9e89f19d232","language":"Go","words":225,"score":0}
+{"repo":"ethereum-optimism/op-geth","sha":"062d910b26d11cf1ca877803e81ad4dece8c570e","language":"Go","words":2226,"score":1,"rules":["word:streamlined"]}
+{"repo":"SpectralOps/netz","sha":"3754e56c68f413724f8645f68b82f503c1a07233","language":"Go","words":1231,"score":1,"rules":["word:blazing fast"]}
+{"repo":"CUCyber/ja3transport","sha":"8a22ac8ab5d785304e097e0d765383988088c0eb","language":"Go","words":113,"score":7,"rules":["phrase:at its core,"]}
+{"repo":"carvel-dev/vendir","sha":"3200f3fb11c2ee657a79516b0f1046b83d4bc44f","language":"Go","words":254,"score":1}
+{"repo":"google/gitprotocolio","sha":"b5a56823ae5213a598e042c567d5f0015213150b","language":"Go","words":220,"score":0}
+{"repo":"Shpota/skmz","sha":"253b59bab967e0572fc1f7d27674adad07699455","language":"Go","words":284,"score":0}
+{"repo":"stefanoj3/dirstalk","sha":"9ebb819139485ede31debe34c9a76048e7362078","language":"Go","words":390,"score":0}
+{"repo":"linxGnu/grocksdb","sha":"675cdafa5ed9584a0e5cf9958b94e6d8464a6ce3","language":"Go","words":152,"score":0}
+{"repo":"hetznercloud/hcloud-python","sha":"fad870790a19621fd130fd28d564a8d6ba7a566c","language":"Python","words":175,"score":0}
+{"repo":"ML4ITS/mtad-gat-pytorch","sha":"9e671ea99dedd82ac55f53e53af1d1b56c13ebff","language":"Python","words":808,"score":4,"rules":["structural:emoji-decoration"]}
+{"repo":"KenKundert/nestedtext","sha":"4d2ac169784021fb99239aa2f317120590651bca","language":"Python","words":225,"score":1,"rules":["char: "]}
+{"repo":"LearnTechWithUs/Stereo-Vision","sha":"c2a3f24756e7fb8b4358927abbfdd8ced626d6d8","language":"Python","words":231,"score":0,"rules":["char:”"]}
+{"repo":"tkipf/c-swm","sha":"e944b24bcaa42d9ee847f30163437a50f0237aa0","language":"Python","words":264,"score":3,"rules":["word:utilize"]}
+{"repo":"xiadingZ/video-caption.pytorch","sha":"0597647c9f1f756202ba7ff9898ad0a26847480f","language":"Python","words":158,"score":0}
+{"repo":"bitcoinops/taproot-workshop","sha":"ec565981b83b24744b94498641a9eac22f59e0f0","language":"Python","words":890,"score":0,"rules":["char:’"]}
+{"repo":"cohere-ai/cohere-python","sha":"7a101600c3cb6b0719ccb86aa7d7e4c27fc6daf9","language":"Python","words":281,"score":0}
+{"repo":"mricon/rev-proxy-grapher","sha":"5631be41538127b3d419309ff86c17eec022d7c9","language":"Python","words":115,"score":0}
+{"repo":"PrismPipeline/Prism","sha":"82f42f8a6487ee2746265db7433eb9aa806d6699","language":"Python","words":150,"score":0}
+{"repo":"ywk991112/pytorch-chatbot","sha":"e6058e029b12dd43c82c2119284f03851cdba951","language":"Python","words":192,"score":0}
+{"repo":"awslabs/dynein","sha":"7319173931232a7276cf656bb8191d01364d74f8","language":"Rust","words":1956,"score":1,"rules":["word:utilize","word:utilizing"]}
+{"repo":"casper-network/casper-node","sha":"e431321d4821c66bbe04315f45700fb0e19b7c46","language":"Rust","words":932,"score":2,"rules":["char:’","word:empower","word:future-proof"]}
+{"repo":"amv-dev/yata","sha":"4ceee35f88258663545860449731fa31c281dc2c","language":"Rust","words":457,"score":1,"rules":["char:’"]}
+{"repo":"GitoxideLabs/prodash","sha":"f426c20dca5440f6d39c979a8a851ee444a2c388","language":"Rust","words":995,"score":2,"rules":["char:…","structural:bold-bullet-run"]}
+{"repo":"ormsgpack/ormsgpack","sha":"b534c31db4aa3af6496c75ddb53ca3135fb0e827","language":"Rust","words":1694,"score":2}
+{"repo":"utkarshkukreti/markup.rs","sha":"694f02141feea67b415cc44b91f27c102037ba8f","language":"Rust","words":131,"score":20,"rules":["structural:emoji-decoration","word:blazing fast"]}
+{"repo":"1Password/electron-hardener","sha":"3feba814e1238b92ffcdb83f5fd93b52770beed8","language":"Rust","words":359,"score":1}
+{"repo":"radareorg/radeco","sha":"7ada2d24fdba45f695e423ff5241264caea178c7","language":"Rust","words":195,"score":5,"rules":["phrase:that said,"]}
+{"repo":"StartBootstrap/startbootstrap-one-page-wonder","sha":"ca686cd083f6db4a596884f6a13803bc518f5269","language":"JavaScript","words":418,"score":0}
+{"repo":"joshcai/leetcode-sync","sha":"c4855c7062a84c94b9b1e4567e3bcd5c2d3a63ec","language":"JavaScript","words":310,"score":7,"rules":["structural:polyptoton"]}
+{"repo":"RisingStack/protect","sha":"60b0c91e86686d34e5202419ce9ae7e8dc08edcd","language":"JavaScript","words":509,"score":4,"rules":["word:robust","word:when it comes to"]}
+{"repo":"cklmercer/vue-stash","sha":"b728aaecf7425c7efb713ba2d4d6351c9a0af25a","language":"JavaScript","words":201,"score":8,"rules":["structural:think-of-it-as"]}
+{"repo":"stephenlacy/gulp-git","sha":"a3ff4c7102db5e473e9ef771e049df972c8803c2","language":"JavaScript","words":872,"score":0}
+{"repo":"allcount/allcountjs","sha":"695f873c0ac0fe39be5e0a89952750d7453133f6","language":"JavaScript","words":318,"score":4}
+{"repo":"curtisf/logger","sha":"c167fa3ac62f51386902e3efdc66cb8c292c5b3b","language":"JavaScript","words":195,"score":4,"rules":["word:powerful"]}
+{"repo":"emorikawa/boilerstrap","sha":"134a4f5c3eae175b6d0657d2014a22caae89f518","language":"JavaScript","words":553,"score":7,"rules":["phrase:furthermore,","structural:bold-bullet-run","word:peace of mind","word:robust"]}
+{"repo":"aces/brainbrowser","sha":"fe0ce114c6cd8e317a6bdd9b7ef97cbf1c38309d","language":"JavaScript","words":298,"score":0}
+{"repo":"walkermatt/ol-layerswitcher","sha":"bfdcc84e4fa8d1e748c6faee633d18a5e46bf532","language":"JavaScript","words":1593,"score":0}
+{"repo":"cloudspace/angular_devise","sha":"8936a4c31ad1157cf5aa9b114504698b80703421","language":"JavaScript","words":978,"score":4,"rules":["char: ","phrase:additionally,","structural:template-stem","word:seamlessly"]}
+{"repo":"opentracing-contrib/java-spring-cloud","sha":"8a865d560bf42b4bce839ba9a0977aecff3a4073","language":"Java","words":493,"score":3,"rules":["phrase:it's worth noting that"]}
+{"repo":"woheller69/audio-analyzer-for-android","sha":"7ddd207acfd8e7325ec5fb7fc245b6c24009d53c","language":"Java","words":574,"score":1}
+{"repo":"f111fei/react-native-unity-view","sha":"62250f6fb7dc125c681b25404e401a8b15e00e14","language":"Java","words":470,"score":0}
+{"repo":"MrKinau/FishingBot","sha":"b809cb179c4e03ae20baa973cb121f0b44fb4276","language":"Java","words":324,"score":0}
+{"repo":"orphan-oss/launch4j-maven-plugin","sha":"c1dd453fca62e94df6c4776e62567dd7abc9a655","language":"Java","words":750,"score":0}
+{"repo":"astei/krypton","sha":"b251fa07376ab4fb8333171c85ebcfa9e50779f1","language":"Java","words":187,"score":1,"rules":["char:\u0026ndash;"]}
+{"repo":"woo-j/OkapiBarcode","sha":"111b2b3f3f1aa0d48f3d56ca8fa9f08fff9f20ce","language":"Java","words":467,"score":1}
+{"repo":"eventuate-examples/eventuate-examples-java-customers-and-orders","sha":"e05993af85102d4c8a9b631a22944715d4683826","language":"Java","words":302,"score":3,"rules":["word:powerful"]}
+{"repo":"jhw-dev/CircleLoadingView","sha":"ba92085e7e46770c45ebe0efd0d940f21407fcaa","language":"Java","words":102,"score":0}
+{"repo":"corincerami/mars-photo-api","sha":"1591cdeebea89333419d848839d33e8893586a3e","language":"Ruby","words":722,"score":0}
+{"repo":"calonso/ruby-push-notifications","sha":"ae3152c3babf07f2b834d7692c635533ca3381a1","language":"Ruby","words":281,"score":0}
+{"repo":"discourse/mini_sql","sha":"bd46c55f1b9600f58e015c7720d19a6a8ffcbea3","language":"Ruby","words":703,"score":2,"rules":["char:’"]}
+{"repo":"tpitale/legato","sha":"7576de49b1f2c69544cb9d6743cc9e9abce90daf","language":"Ruby","words":711,"score":0}
+{"repo":"babylonhealth/ios-playbook","sha":"9a113aba939931ae4db9687716331b5c23910237","language":"Ruby","words":219,"score":0}
+{"repo":"taskrabbit/rails_engines_example","sha":"17b5ee5286c2186951312cbe440b8d21738596eb","language":"Ruby","words":5555,"score":3,"rules":["phrase:overall,","structural:hedge-stack","structural:its-not-x-its-y","word:leveraged"]}
+{"repo":"cldwalker/ripl","sha":"4b4259a752d099c091cfb8e194bdea61c7a6d0ea","language":"Ruby","words":1016,"score":0}
+{"repo":"kristianmandrup/cantango","sha":"1920ea616ab27f702203949c4d199f1534bba89b","language":"Ruby","words":1186,"score":2,"rules":["word:elegant"]}
+{"repo":"zetachang/opal-native","sha":"f176d1c51bf54d16c7aaa48817592877757a314c","language":"Ruby","words":223,"score":0}
+{"repo":"thoughtworks/pacto","sha":"a1bd9668deca099b4755e754d9e67a2de60e1387","language":"Ruby","words":1346,"score":1}
+{"repo":"spikex/strongbox","sha":"1a098ad379aec0b291b350ecb3991a90d6d7522c","language":"Ruby","words":944,"score":1}
+{"repo":"chef/knife-ec2","sha":"e63d0f6a9bcc3630eb68f8080f6332aca2569dd2","language":"Ruby","words":1436,"score":1}
+{"repo":"dcrec1/inploy","sha":"e5220f0ae45eb01fa59ee7fba3e367ca8e60895f","language":"Ruby","words":1175,"score":1,"rules":["structural:template-stem"]}
+{"repo":"thoughtbot/fake_stripe","sha":"b0f6dfb3299f2c170c0e28238088dc7346b3489b","language":"Ruby","words":123,"score":0}
+{"repo":"sitepress/sitepress","sha":"af2d0fb5d254e2d144360d91dc3296fcace3e1bb","language":"Ruby","words":348,"score":3,"rules":["word:powerful"]}
+{"repo":"artyom-beilis/pytorch_dlprim","sha":"a18302b8f4b25dbefdca5099c294133032ba4d0e","language":"C++","words":543,"score":0}
+{"repo":"checkcheckzz/coding-questions","sha":"fc94d2bf86ecfb5288939e6381575a611a34c1f4","language":"C++","words":1887,"score":1,"rules":["char:…"]}
+{"repo":"fedden/RenderMan","sha":"e81510d8b564a100899f4fed8c3049c8812cba8d","language":"C++","words":1222,"score":3,"rules":["replace","structural:chat-signoff","word:facilitates"]}
+{"repo":"ainfosec/ci_helloworld","sha":"7e026cae19cb8bdb4362e6cd7468c724d7c3a569","language":"C++","words":1816,"score":1,"rules":["word:comprehensive","word:powerful"]}
+{"repo":"taganaka/SpeedTest","sha":"0f63cfbf7ce8d64ea803bf143b957eae76323405","language":"C++","words":136,"score":0}
+{"repo":"buzzinglight/IanniX","sha":"287b51d9b90b3e16ae206c0c4292599619f7b159","language":"C++","words":120,"score":0}
+{"repo":"J-D-K/JKSM","sha":"298aac65492a12ffc19860639bde3871fc87ebbd","language":"C++","words":239,"score":2}
+{"repo":"draperlaboratory/fracture","sha":"96614beac5360359d24fcc752b8cda2e8424e4a9","language":"C++","words":245,"score":5,"rules":["char:’","word:leverages"]}
+{"repo":"godaddy/procfilter","sha":"67be28af8cd795085e54a3c34d74c14884ab2341","language":"C++","words":2256,"score":4,"rules":["char:—","char:’","char:“","char:”","phrase:additionally,","phrase:furthermore,","structural:spaced-hyphen"]}
+{"repo":"malaterre/GDCM","sha":"fd5027b462524f7e9d8953ab952cbea48e89d016","language":"C++","words":260,"score":3,"rules":["word:robust"]}
+{"repo":"samsface/godot-steam-api","sha":"705c6ee10e1d43c9d27e9221b38e4253f94a8248","language":"C++","words":159,"score":0}
+{"repo":"grafana/k6-operator","sha":"d268e0e371d95f51f3ee0ca73da61daa3d206544","language":"Go","words":921,"score":1}
+{"repo":"lesovsky/noisia","sha":"b4838599510e5ef6cfc16db99b822470165706d9","language":"Go","words":374,"score":10,"rules":["structural:hedge-stack"]}
+{"repo":"hetznercloud/csi-driver","sha":"f4d4d5c59d8609b25b7168bcf91f22ec0c957c9e","language":"Go","words":355,"score":2,"rules":["phrase:additionally,"]}
+{"repo":"vsouza/go-gin-boilerplate","sha":"92bc25de95a8e3dd0ea2ee3b89732816687f1a5a","language":"Go","words":114,"score":0,"rules":["char:–"]}
+{"repo":"codahale/sneaker","sha":"76cfcf0b7e3fa50d925d79b5448b6b7ef20bc39d","language":"Go","words":1374,"score":2,"rules":["structural:spaced-hyphen"]}
+{"repo":"gazette/core","sha":"ba6e457ed76de36df9a530311f2210bdaae39c07","language":"Go","words":201,"score":4,"rules":["word:powerful"]}
+{"repo":"iineva/ipa-server","sha":"5a07a87df9a8c840905fb288851f8be7a7e28e2c","language":"Go","words":181,"score":0}
+{"repo":"mattn/goveralls","sha":"a36c7ef8f23b2952fa6e39663f52107dfc8ad69d","language":"Go","words":539,"score":4,"rules":["structural:template-stem"]}
+{"repo":"fclairamb/ftpserver","sha":"fedf8c4a2fe11b9031def5b487ba2a364883fb68","language":"Go","words":353,"score":0}
+{"repo":"Luzifer/ots","sha":"3fd55eea22950cecc0d519ce7ef21af6efaaff12","language":"Go","words":527,"score":0}
+{"repo":"robusta-dev/kubewatch","sha":"1a083612941f6a5eac8f4f2d636561c8fad4d836","language":"Go","words":509,"score":1}
+{"repo":"mafredri/cdp","sha":"39a25b41c95120e666d4ab64bd17ef78a4bfaef9","language":"Go","words":463,"score":2,"rules":["phrase:that being said,"]}
+{"repo":"ry/v8worker2","sha":"735c3ad65d76930c1913c930f986a2006243e936","language":"Go","words":218,"score":0}
+{"repo":"arl/gitmux","sha":"98d887455373f240fa2448b4f14322c224a201b1","language":"Go","words":636,"score":3,"rules":["structural:bold-bullet-run"]}
+{"repo":"bulik/ldsc","sha":"aa33296abac9569a6422ee6ba7eb4b902422cc74","language":"Python","words":548,"score":0,"rules":["char:–"]}
+{"repo":"vmware-archive/vsphere-automation-sdk-python","sha":"ba7d4e0742f58a641dfed9538ecbbb1db4f3891e","language":"Python","words":891,"score":3,"rules":["phrase:additionally,","structural:in-this-section"]}
+{"repo":"gefyrahq/gefyra","sha":"bd422d6353a13226a3484824ae1428efff868c8d","language":"Python","words":1800,"score":1,"rules":["word:leverage","word:robust"]}
+{"repo":"andabi/music-source-separation","sha":"ba9aa531ccca08437f1efe5dec1871faebf5c840","language":"Python","words":1079,"score":0,"rules":["char:–"]}
+{"repo":"robotlearning123/awesome-isaac-gym","sha":"cb6b7c9a29a5665de1c460093e7a5bad78ea5032","language":"Python","words":843,"score":1,"rules":["char:—"]}
+{"repo":"mytechnotalent/Python-For-Kids","sha":"9d8b534886091b798e636497dc06b9716b985aa2","language":"Python","words":623,"score":5,"rules":["structural:marketing-reveal","word:comprehensive","word:utilizing"]}
+{"repo":"postgrespro/pg_probackup","sha":"a454bd7d63e1329b2c46db6a71aa263ac7621cc6","language":"Python","words":1055,"score":0}
+{"repo":"ChenRocks/UNITER","sha":"1dbfa62bb8ddb1f2b11d20775ce324c5e45a3ab4","language":"Python","words":583,"score":0}
+{"repo":"LukeMathWalker/wiremock-rs","sha":"1eaa00c8fa4707fa77235994aa22b4f722721137","language":"Rust","words":860,"score":1,"rules":["word:empowers"]}
+{"repo":"mdeloof/statig","sha":"615e343859df63cb5249e140468e79df821df822","language":"Rust","words":324,"score":1}
+{"repo":"linebender/runebender","sha":"f1ae9cf9cf4e91dcc87eaca3cd497413a9051835","language":"Rust","words":180,"score":1}
+{"repo":"fu5ha/ultraviolet","sha":"d221e7ec43c622c8000496d70b6e3dbfc6a919f2","language":"Rust","words":2110,"score":4,"rules":["structural:below-is-requested","structural:hedge-stack","word:facilitate","word:leverage"]}
+{"repo":"systemd/zram-generator","sha":"ac9477250221a671494f4cfc415819b965e30085","language":"Rust","words":490,"score":1,"rules":["char:…"]}
+{"repo":"containers/netavark","sha":"a67e28299f029875bbcfe3bb7885510ec94c26f8","language":"Rust","words":136,"score":0}
+{"repo":"diegohaz/styled-tools","sha":"79e157a2b521f2624d48c84a1dcb4cdd4a54f46f","language":"JavaScript","words":328,"score":5,"rules":["structural:emoji-heading-suffix"]}
+{"repo":"SaraVieira/awesome-talks","sha":"f1a2ee086938702b64b3d5a9393e5825a7cc0344","language":"JavaScript","words":411,"score":0}
+{"repo":"dwyl/javascript-todo-list-tutorial","sha":"888389a2dbeaf5b4922dd7ac3e441df663e6ca5c","language":"JavaScript","words":7751,"score":1,"rules":["phrase:that said,","phrase:with that said,","structural:template-stem","word:showcases"]}
+{"repo":"cedricpinson/osgjs","sha":"d3c9a4bebeebfb891eb2d708cd0828c126aeec18","language":"JavaScript","words":259,"score":0,"rules":["char:“","char:”"]}
+{"repo":"lanistor/react-keeper","sha":"e2d9a62e06d79744b48f11875be862921aec0819","language":"JavaScript","words":371,"score":0}
+{"repo":"jish/pre-commit","sha":"8e8b855a6fd77c482b1dc999eee7645a7c7f363e","language":"JavaScript","words":471,"score":0}
+{"repo":"darwin/cmx.js","sha":"7373eeee52ae2ab76b59f953fa10bb78842341ff","language":"JavaScript","words":145,"score":0}
+{"repo":"GoogleForCreators/web-stories-wp","sha":"55924ca22955bfb83564256558e2f5a490f53787","language":"JavaScript","words":171,"score":0}
+{"repo":"longlostnick/bootstrap-growl","sha":"2813755c4bc60c33b881905940d27c964dbcd6cb","language":"JavaScript","words":159,"score":0}
+{"repo":"1-liners/1-liners","sha":"d8f6443eb55adfe138a54e54052fd32ab0e5e59e","language":"JavaScript","words":462,"score":0,"rules":["char:–","char:’"]}
+{"repo":"richardshepherd/Parallax-Scrolling","sha":"ed508c0195736b147554e0ffb514270635b2ce62","language":"JavaScript","words":281,"score":1}
+{"repo":"naugtur/xhr","sha":"d2356b4e03167752a57794973b566456d0a7310a","language":"JavaScript","words":936,"score":1}
+{"repo":"rsms/js-lru","sha":"5373f60c42259bca06a99d2bb10d872ebe4ae72b","language":"JavaScript","words":395,"score":5,"rules":["structural:spaced-hyphen"]}
+{"repo":"gturedi/StatefulLayout","sha":"e7ce7c41036a805419120647d40d4cdb7a8a8577","language":"Java","words":235,"score":0}
+{"repo":"Netflix/suro","sha":"e73d1a2e5b0492e41feb5a57d9e2a2e741a38453","language":"Java","words":218,"score":1}
+{"repo":"apache/wicket","sha":"d365e04af2076f41a04fb3ca624517f2c83d75c8","language":"Java","words":992,"score":2,"rules":["word:powerful"]}
+{"repo":"adobe/aem-core-wcm-components","sha":"26d97b84c0dabe90a19693304b13fd10123ae134","language":"Java","words":846,"score":3,"rules":["char: ","word:leverage","word:robust","word:streamlined"]}
+{"repo":"michaelliao/itranswarp","sha":"2f3a6a94580a329f71b5528dad6ad6b5883f2bec","language":"Java","words":170,"score":0}
+{"repo":"ThanosFisherman/WifiUtils","sha":"381be61e57cff3cd8f7cf81d615237e929799333","language":"Java","words":679,"score":2,"rules":["replace"]}
+{"repo":"drtshock/Potato","sha":"4ab24fd790fe55b4438501cf3bf17807abadf046","language":"Java","words":342,"score":1}
+{"repo":"nordicsemi/Android-Scanner-Compat-Library","sha":"9e4094195ae2ea44617eca851ad208dda8143ec6","language":"Java","words":1532,"score":3,"rules":["phrase:keep in mind that"]}
+{"repo":"eBay/parallec","sha":"1b4f1628f34fedfb06b24c33a5372d64d3df0952","language":"Java","words":2593,"score":2,"rules":["structural:bold-number-run","word:comprehensive","word:effortlessly"]}
+{"repo":"meleyal/backbone-on-rails","sha":"8952da16397913f6a73a66a2e7accebde22f6eac","language":"Ruby","words":101,"score":0}
+{"repo":"moll/vim-node","sha":"ede047791792b9530ba1ae73ed86e9671cdd96b8","language":"Ruby","words":572,"score":4,"rules":["structural:assistant-signoff"]}
+{"repo":"copiousfreetime/launchy","sha":"0bb68352499028d93a4c39eee2596d28c1451c31","language":"Ruby","words":608,"score":1}
+{"repo":"rails/rails-perftest","sha":"c87689d8eee64e0efd466b44754d83810fb34623","language":"Ruby","words":1831,"score":3,"rules":["char:—","structural:anaphora-run","word:facilitating","word:leverages"]}
+{"repo":"dejan/auto_html","sha":"5863b4993a1a18f5e9aa55b4ecc74cf71579fcee","language":"Ruby","words":255,"score":0}
+{"repo":"goshacmd/nsa_panel","sha":"3532b9b5053cf283d5e76d1f5e9420570363acc8","language":"Ruby","words":456,"score":2,"rules":["char:—"]}
+{"repo":"codeforamerica/adopt-a-hydrant","sha":"803c8ea993d4bd6fc1a9dd76447de41f106ac5b6","language":"Ruby","words":600,"score":6,"rules":["phrase:keep in mind that","structural:here-are-n"]}
+{"repo":"projectblacklight/blacklight","sha":"949a0ce696ced867a5f2b8c2fec1ec651040da94","language":"Ruby","words":305,"score":0}
+{"repo":"renatolond/mastodon-twitter-poster","sha":"0dc92159893e370666f44278c30ae63b60728d67","language":"Ruby","words":1895,"score":1,"rules":["char:\u0026ndash;","phrase:that being said,"]}
+{"repo":"rubygems/gemstash","sha":"2ee6cabf20ecdf2ad77cfc7150d2069448428b81","language":"Ruby","words":807,"score":3,"rules":["char:’","char:…","word:deep dive"]}
+{"repo":"rapid7/recog","sha":"bed94c1892f809e0c9177b801384a2eb29382384","language":"Ruby","words":621,"score":4,"rules":["phrase:additionally,","word:leveraging"]}
+{"repo":"jenseng/hair_trigger","sha":"46ff48594f6dd1f27347bbf6b4be192de4ceeb9e","language":"Ruby","words":1544,"score":2,"rules":["structural:assistant-signoff"]}
+{"repo":"davydovanton/sidekiq-statistic","sha":"8fdbc8f67960d7fcee5aeeb6d473ccce94a7ee4a","language":"Ruby","words":352,"score":5,"rules":["structural:anaphora-run"]}
+{"repo":"RichardLitt/awesome-conferences","sha":"8362dc322858d715e5789e6583af548a7300f119","language":"Ruby","words":2201,"score":1,"rules":["structural:bold-bullet-run","word:utilized"]}
+{"repo":"msgpack/msgpack-ruby","sha":"cf0246e6c4f7500f205a5299a2ad670409206480","language":"Ruby","words":594,"score":0}
+{"repo":"IFTTT/polo","sha":"9aec84b236e143601ad23ba385750f7cd2f2efb9","language":"Ruby","words":487,"score":1}
+{"repo":"Envek/after_commit_everywhere","sha":"2d04585f74db9e834c3bfe4c9426d08367944378","language":"Ruby","words":531,"score":6,"rules":["structural:template-stem"]}
+{"repo":"discourse/onebox","sha":"b1c62d97ad3380289e455041da3b206fed1832bb","language":"Ruby","words":504,"score":1}
+{"repo":"JulyIghor/QtBitcoinTrader","sha":"16c3e27d322168e4676a7bb072f2558975ca515a","language":"C++","words":1535,"score":0}
+{"repo":"RcppCore/Rcpp","sha":"229da206da2691fab7f99100f46fe9d9d8b65b99","language":"C++","words":993,"score":2,"rules":["word:facilitate","word:showcases"]}
+{"repo":"nfrechette/rtm","sha":"1c8fae05dbb8785fe55a380dc6fdded066bc8169","language":"C++","words":544,"score":4,"rules":["structural:emoji-heading-suffix","word:powerful"]}
+{"repo":"avast/retdec-idaplugin","sha":"b6fd42fb95832723e7b2d8ca8998e630c931dd6a","language":"C++","words":480,"score":1}
+{"repo":"plerup/espsoftwareserial","sha":"eb4b29074b75eacac3585bf84b5495b8f80a92cf","language":"C++","words":1204,"score":3,"rules":["phrase:furthermore,","structural:hedge-stack"]}
+{"repo":"XorTroll/uLaunch","sha":"21dcf8ec223b8ffa45feb7887d88ff80881d24eb","language":"C++","words":651,"score":2,"rules":["word:powerful"]}
+{"repo":"ange-yaghi/manta-ray","sha":"30913aafe6befe92ef57b39aaa7ce492f77cb240","language":"C++","words":167,"score":0}
+{"repo":"niXman/yas","sha":"74f631061da84ddbfd8a9b1df6603642c1412bfd","language":"C++","words":511,"score":5,"rules":["word:elegant","word:innovative"]}
+{"repo":"luceneplusplus/LucenePlusPlus","sha":"bc436842227aea561b68c6ae89fbd1fdefcac7b3","language":"C++","words":251,"score":0}
+{"repo":"ikskuh/kristall","sha":"6b39f24484bb0796f3f383401f95904f85b74d7b","language":"C++","words":261,"score":0}
+{"repo":"MagnusThome/RejsaCAN-ESP32","sha":"fcadaa531940f3371cea6e68c49fe6dff7831cf6","language":"C++","words":1060,"score":1,"rules":["word:bespoke"]}
+{"repo":"leoetlino/project-restoration","sha":"e978976da673a772ed21cb40c2f48dd6f4ce3dee","language":"C++","words":665,"score":2}
+{"repo":"throttled/throttled","sha":"c1d2c0097301d056c7e74df9cf525809d4103157","language":"Go","words":348,"score":0}
+{"repo":"mmcloughlin/globe","sha":"653bb586373c53c45d1a6c3ffa6eaeaf1ed5d730","language":"Go","words":106,"score":0}
+{"repo":"PentestPad/subzy","sha":"a3d6fb4b6fbf158711bb874bd90bffad6a3fbe9f","language":"Go","words":178,"score":0}
+{"repo":"shenwei356/seqkit","sha":"34ad4cc61ca15ef07258648562e30c5fec8aced8","language":"Go","words":913,"score":0,"rules":["char:…"]}
+{"repo":"andeya/faygo","sha":"45476659df1bd713779a06e9b576742ebce29cfe","language":"Go","words":976,"score":1,"rules":["word:powerful"]}
+{"repo":"containerd/stargz-snapshotter","sha":"8a6b12b044bf54fe208d270b6278aedfe6d33382","language":"Go","words":1186,"score":2,"rules":["structural:in-this-section"]}
+{"repo":"go-bootstrap/go-bootstrap","sha":"c980814f3a588a256cd64146edda0be8238d8442","language":"Go","words":284,"score":0}
+{"repo":"xwb1989/sqlparser","sha":"120387863bf27d04bc07db8015110a6e96d0146c","language":"Go","words":123,"score":0}
+{"repo":"litl/rauth","sha":"a6d887d7737cf21ec896a8104f25c2754c694011","language":"Python","words":258,"score":1}
+{"repo":"netbox-community/devicetype-library","sha":"e96a742eebf6d8c571f025fe8b6b683ce2fee0af","language":"Python","words":719,"score":0}
+{"repo":"nschloe/tuna","sha":"c080340f5f1454e82bdaf57e0cba339dd7ff4e17","language":"Python","words":381,"score":0}
+{"repo":"dfm/emcee","sha":"262db3d0e731799cd04e20e96edb113ea140ce62","language":"Python","words":132,"score":0}
+{"repo":"stark0de/nginxpwner","sha":"d51e46de8530d4042e24101809df18f4bcaab784","language":"Python","words":322,"score":1}
+{"repo":"savio-code/fern-wifi-cracker","sha":"0da03aba988c66dfa131a45824568abb84b7704a","language":"Python","words":399,"score":0}
+{"repo":"cgarciae/pypeln","sha":"5231806f2cac9d2019dacbbcf913484fd268b8c1","language":"Python","words":484,"score":5,"rules":["structural:bold-bullet-run","word:powerful"]}
+{"repo":"mattupstate/overholt","sha":"e03209f7a059d165a9154355d090738af3159028","language":"Python","words":281,"score":3,"rules":["phrase:additionally,"]}
+{"repo":"nickspaargaren/no-google","sha":"652bff223de06d244a4bdc4d5517d588288d0598","language":"Python","words":542,"score":1,"rules":["char:’"]}
+{"repo":"hardbyte/python-can","sha":"6dc50e80534fbe3b51979b1ad2e2de67d5096fd8","language":"Python","words":378,"score":0}
+{"repo":"AdamNiederer/faster","sha":"0795fa67ec1e94ae18264cc6bd1006e7682509ec","language":"Rust","words":949,"score":1,"rules":["word:powerful"]}
+{"repo":"zetzit/zz","sha":"5a86bbd0a5676cc4644942174bb5b29cae58a2c8","language":"Rust","words":1919,"score":1,"rules":["word:innovative"]}
+{"repo":"max-niederman/ttyper","sha":"3bc12d4708f6218a96eebed9aa304a6c80ecf902","language":"Rust","words":293,"score":0}
+{"repo":"TraceMachina/nativelink","sha":"2edf514742e27cba2bc12c74539463494800a29c","language":"Rust","words":518,"score":2}
+{"repo":"EmbarkStudios/quilkin","sha":"a31ec4ac86a104d7795365422429a7421400aeef","language":"Rust","words":323,"score":2,"rules":["word:embark"]}
+{"repo":"nabijaczleweli/cargo-update","sha":"c3627823fe4a3355ad953ac5eaefbd3c8f3c9cbe","language":"Rust","words":437,"score":5,"rules":["replace","word:seamlessly"]}
+{"repo":"crate-ci/cargo-release","sha":"2cb7ab7f13f59061a939628d965b549d1c3f7b22","language":"Rust","words":254,"score":1}
+{"repo":"bodil/im-rs","sha":"3f4e01a43254fe228d1ce64e47dfaf4edc8f4f19","language":"Rust","words":101,"score":8,"rules":["word:blazing fast"]}
+{"repo":"la10736/rstest","sha":"d3284c7baae78e58f06db9c4ca7f4f2bad5fc50e","language":"Rust","words":672,"score":3,"rules":["structural:template-stem"]}
+{"repo":"denoland/deno_lint","sha":"370ccd2ad7e7d889fc3b44298a10e9eae378387b","language":"Rust","words":303,"score":3,"rules":["word:blazing fast"]}
+{"repo":"egoist/dum","sha":"01dfd5437c48d4b43a96b8f6be33120b5c97496e","language":"Rust","words":254,"score":0}
+{"repo":"hanford/next-offline","sha":"166442137dbe56eaff7fbd0300346e895c5d04f0","language":"JavaScript","words":1193,"score":1,"rules":["word:powerful"]}
+{"repo":"interactivethings/catalog","sha":"070137b8186a44bacb9521a5d660b76d8cea6912","language":"JavaScript","words":215,"score":0}
+{"repo":"lonekorean/wordpress-export-to-markdown","sha":"3f41e6d52a690f7294fa0020ca774e62ad285b37","language":"JavaScript","words":767,"score":3,"rules":["structural:template-stem"]}
+{"repo":"mxstbr/login-flow","sha":"44b34885d0bbfac18d57bd7879f886f022817774","language":"JavaScript","words":1201,"score":3,"rules":["char:–","char:—","char:’","phrase:in essence,","word:powerful"]}
+{"repo":"EvanAgee/vuejs-wordpress-theme-starter","sha":"65fb8ec93df2faf3339c157b6c3c65efa10ae122","language":"JavaScript","words":1028,"score":2,"rules":["structural:anaphora-run"]}
+{"repo":"simplegeo/polymaps","sha":"6cc4513810c3c063229f7f74d474418ce1929d6c","language":"JavaScript","words":407,"score":0}
+{"repo":"moroshko/rxviz","sha":"5985d15d8092f2cbef9ea8b5cf7f9d17f69a9fa7","language":"JavaScript","words":325,"score":0}
+{"repo":"evilsoft/crocks","sha":"6dcafb1ce06e0882ab900aa87e1808e0a7044324","language":"JavaScript","words":1274,"score":0}
+{"repo":"jorgebucaran/superfine","sha":"145ab11d70e94619e593f63139e218fa73d1b291","language":"JavaScript","words":624,"score":5,"rules":["char:—","structural:lets-take-a-look"]}
+{"repo":"marudy/react-native-responsive-screen","sha":"5b01afedf28a8c88eb11435bc34c5b2827637a78","language":"JavaScript","words":695,"score":2,"rules":["char:’","structural:emoji-heading-suffix"]}
+{"repo":"smooth-code/smooth-ui","sha":"3b02613f50fbc02dc0cbd6762086900d4c72da01","language":"JavaScript","words":134,"score":0}
+{"repo":"ptarjan/node-cache","sha":"27a1eeec18660b45d39cc5daf44d9647e696e48b","language":"JavaScript","words":370,"score":0}
+{"repo":"dessant/web-archives","sha":"085faa2a0d1e8483a9e50946c19d1cc110a00847","language":"JavaScript","words":194,"score":0}
+{"repo":"monet/monet.js","sha":"9300b4dad005f817dc4d25a752c7fd23093f7fab","language":"JavaScript","words":620,"score":3,"rules":["structural:think-of-it-as"]}
+{"repo":"the-road-to-graphql/react-graphql-github-apollo","sha":"a65fd7fd862f58169b10fb73df8d26c762d0a269","language":"JavaScript","words":164,"score":0}
+{"repo":"OWASP/threat-dragon","sha":"6c6d378b31a3bcfd4c036cdfa42b190efbd7432f","language":"JavaScript","words":555,"score":0}
+{"repo":"lloyd/JSONSelect","sha":"f4d8e0c7f569a0cdb6877b7609ee718ce7943630","language":"JavaScript","words":253,"score":2}
+{"repo":"kanytu/android-parallax-recyclerview","sha":"cad6b8d619a3d2d87efa35e7a8f456f55b120dc5","language":"Java","words":101,"score":0}
+{"repo":"RuedigerMoeller/fast-serialization","sha":"e8da5591daa09452791dcd992ea4f83b20937be7","language":"Java","words":342,"score":2}
+{"repo":"githubwing/DragPhotoView","sha":"cba7ada1e091f464c444d7e1b78ef2636b56ea93","language":"Java","words":101,"score":0,"rules":["char: "]}
+{"repo":"knowm/XChart","sha":"b21ee76f1600a498090b86d49bf3941e180e56f8","language":"Java","words":2076,"score":1,"rules":["structural:template-stem"]}
+{"repo":"jodconverter/jodconverter","sha":"536e74c652e62500f94860f66e52ed5e3e6af82c","language":"Java","words":614,"score":0}
+{"repo":"siddhi-io/siddhi","sha":"b225b0427c424803cb874911a089e046302ed9aa","language":"Java","words":243,"score":0}
+{"repo":"aNNiMON/Lightweight-Stream-API","sha":"8f020bc30abe69e883825c1af4b5c113695f7278","language":"Java","words":253,"score":0}
+{"repo":"mongomapper/mongomapper","sha":"0afe5ff5398b0ecd491e1568d43f23e028e67193","language":"Ruby","words":272,"score":4,"rules":["phrase:additionally,"]}
+{"repo":"liftoffcli/liftoff","sha":"76566a6f9802e6cffdb4aa7cb4ae51b3bb6e7e6f","language":"Ruby","words":739,"score":2,"rules":["word:powerful"]}
+{"repo":"thredded/thredded","sha":"a150b54104f82a4da09eb449c7f53c0e99b0abc7","language":"Ruby","words":2960,"score":2,"rules":["phrase:additionally,","structural:anaphora-run"]}
+{"repo":"codebrew/backbone-rails","sha":"231090bd690cd365a9486c17b00eec1e73ec37ec","language":"Ruby","words":437,"score":4,"rules":["structural:template-stem"]}
+{"repo":"uohzxela/clean-code-ruby","sha":"b11178c161543abe7e39e951992e7f1a37a7e4b0","language":"Ruby","words":3653,"score":3,"rules":["phrase:furthermore,","phrase:simply put,","structural:its-not-x-its-y","structural:lets-take-a-look","structural:reader-mind-reading","word:peace of mind"]}
+{"repo":"plentz/lol_dba","sha":"21e09a9b98633cc6895557f7a38377b3392ca423","language":"Ruby","words":207,"score":2}
+{"repo":"jfelchner/ruby-progressbar","sha":"cd4f57a1f1ff75e2cb1b83c7d241a108ac9ad7ad","language":"Ruby","words":347,"score":1}
+{"repo":"SlatherOrg/slather","sha":"ceac30d5beb28ae4a60eb036d6cbbce0088cda93","language":"Ruby","words":667,"score":0,"rules":["char:’"]}
+{"repo":"travis-ci/travis.rb","sha":"1a2d7741de85cd6eb9b1ba1bcfe1f6264a15c143","language":"Ruby","words":7079,"score":2,"rules":["phrase:additionally,","phrase:keep in mind that","structural:anaphora-run","structural:its-not-x-its-y","structural:template-stem","word:when it comes to"]}
+{"repo":"ElMassimo/vite_ruby","sha":"8fffe7927c4b86496f3582a25c4c784ee8600f5e","language":"Ruby","words":366,"score":21,"rules":["structural:assistant-signoff","structural:emoji-decoration","structural:emoji-heading-suffix"]}
+{"repo":"elastic/ansible-elasticsearch","sha":"f3a389e8ba9f837dd968f9ca4e22753f48c59eb1","language":"Ruby","words":2541,"score":1,"rules":["structural:polyptoton"]}
+{"repo":"geokit/geokit-rails","sha":"d1c210832eb7d0ab7b931cba28f5f80a3ddbec33","language":"Ruby","words":2531,"score":3,"rules":["char:…","structural:anaphora-run","structural:spaced-hyphen","word:leverage","word:powerful","word:utilize","word:utilizing"]}
+{"repo":"rails/tailwindcss-rails","sha":"bc12aed10a58a9236c785cffc127de98a83f3893","language":"Ruby","words":407,"score":0,"rules":["char:–"]}
+{"repo":"vdaubry/github-awards","sha":"a0ac22a73a8df7236b311297337bd8bc980181d0","language":"Ruby","words":644,"score":0}
+{"repo":"Casecommons/pg_search","sha":"d99727bda64664335c33ce14618b5f06a7a2c422","language":"Ruby","words":3286,"score":2,"rules":["char:–"]}
+{"repo":"tj/terminal-table","sha":"cb31efbff5f6e00091944aa90b76190221087b9f","language":"Ruby","words":717,"score":2}
+{"repo":"ffaker/ffaker","sha":"7c56c0f62b6cd315b6851fef8a1896b416611b82","language":"Ruby","words":460,"score":1}
+{"repo":"boxen/boxen","sha":"a11fcba2ee9fe9ad60109e36e4ec481c476c98e9","language":"Ruby","words":246,"score":0}
+{"repo":"ycjuan/libffm","sha":"94eb4c8fd8c63b5b292512fa8e952e1ecc83c1b2","language":"C++","words":680,"score":2,"rules":["phrase:it is worth noting that"]}
+{"repo":"mrcodetastic/ESP32-HUB75-MatrixPanel-DMA","sha":"09301f7562bede657a5adcb4c65c22209aea623c","language":"C++","words":1743,"score":4,"rules":["char:‑","structural:bold-bullet-run","word:leverage","word:utilizes","word:utilizing"]}
+{"repo":"HamletDuFromage/aio-switch-updater","sha":"88c17d767ab945495d487aa9a0d4b84efab06d24","language":"C++","words":668,"score":5,"rules":["structural:emoji-decoration"]}
+{"repo":"maciejczyzewski/libchaos","sha":"4412a894f353c6364169697b52515078760395f3","language":"C++","words":1392,"score":0}
+{"repo":"agauniyal/rang","sha":"a083cae9d64edd66d0ecdd4ddebac20d090c8693","language":"C++","words":773,"score":1}
+{"repo":"hugoam/toy","sha":"e0d160a506b646b6679d72a328b1c0981e214ccf","language":"C++","words":1220,"score":9,"rules":["structural:bold-bullet-run","word:best-in-class","word:cutting-edge","word:foster","word:powerful","word:robust","word:seamless","word:state-of-the-art"]}
+{"repo":"facebook/CacheLib","sha":"bd99d23a0c22920fe0f14b0e37f6fbd5c96b3265","language":"C++","words":335,"score":3,"rules":["word:leverage"]}
+{"repo":"microsoft/Pyjion","sha":"47f20e7183f277b615970f3f1dd414c6cba8c89f","language":"C++","words":786,"score":4,"rules":["structural:spaced-hyphen","word:utilizing"]}
+{"repo":"quick-lint/quick-lint-js","sha":"5c67758881151e46537a738d6a27a864e824846f","language":"C++","words":250,"score":6,"rules":["structural:bold-bullet-run"]}
+{"repo":"simulationcraft/simc","sha":"ec7dc933b03a4a9deed0a02da56f3bfd7e038a8a","language":"C++","words":687,"score":1,"rules":["word:synergy"]}
+{"repo":"niessner/BundleFusion","sha":"d1c0407784474f392b03b968ba516511632c2789","language":"C++","words":123,"score":0}
+{"repo":"nfrechette/acl","sha":"8b398ac36b62ad6745368f3aa0bc089eb3d0aae4","language":"C++","words":839,"score":6,"rules":["structural:emoji-heading-suffix","structural:not-just-but-also","structural:not-only-inversion","word:facilitate","word:powerful"]}
+{"repo":"horde3d/Horde3D","sha":"808f7dd2c5a1c9b8ba6719655897073c25f0044d","language":"C++","words":1561,"score":1}
+{"repo":"joyieldInc/predixy","sha":"c15f54e274afc596b8e8cd7fecac70164c95b9ec","language":"C++","words":384,"score":6,"rules":["structural:anaphora-run"]}
+{"repo":"vtil-project/VTIL-Core","sha":"bf80720098ea8d76dc679768f55d7351130e9fbc","language":"C++","words":266,"score":0}
+{"repo":"sideshow/apns2","sha":"9c1d7c6766466bdcc498dbec4915ef52a9dbff06","language":"Go","words":833,"score":0,"rules":["char:’"]}
+{"repo":"gruntwork-io/cloud-nuke","sha":"e4284cce998c4445a74d78b24047f43c1de08dde","language":"Go","words":2135,"score":0}
+{"repo":"yannh/kubeconform","sha":"607c90a0a91005f318d8ba5a74138222233d4d4f","language":"Go","words":930,"score":1}
+{"repo":"getgauge/gauge","sha":"fa853779d35cce74c24df9962b5695edf8989b81","language":"Go","words":265,"score":9,"rules":["structural:spaced-hyphen"]}
+{"repo":"soundcloud/roshi","sha":"37e77dceaadaf4a0a455079998d6128ef8383466","language":"Go","words":2058,"score":3,"rules":["char:—","word:comprehensive","word:leverages","word:utilizing"]}
+{"repo":"alecthomas/kong","sha":"88dcc90dde05844cd2b0b5353776429b766e475a","language":"Go","words":2169,"score":1,"rules":["word:robust"]}
+{"repo":"sa7mon/S3Scanner","sha":"6ccbc5783b8c172a9a651121bf94bbdbf440b7cf","language":"Go","words":522,"score":7,"rules":["structural:emoji-decoration"]}
+{"repo":"dosco/graphjin","sha":"90b3b9c4ae67ab1c08644fe95392359228186d7b","language":"Go","words":933,"score":1,"rules":["word:leverage"]}
+{"repo":"sqldef/sqldef","sha":"ffb72c6267a3d268f695de1b2d47b481a049f8bf","language":"Go","words":563,"score":5,"rules":["structural:template-stem"]}
+{"repo":"geohot/minikeyvalue","sha":"451d2480c571fa29df8a5a854315718b96ae1a77","language":"Go","words":206,"score":4}
+{"repo":"gorilla/sessions","sha":"0a84f353f00601bbc2fcf99e8da368ef368b4e51","language":"Go","words":322,"score":0}
+{"repo":"emeryberger/CSrankings","sha":"1d3289541a544975a6b2897d99a0b10c67e84e15","language":"Python","words":595,"score":2,"rules":["phrase:that said,"]}
+{"repo":"hydrusnetwork/hydrus","sha":"0a4600f9541ecb0134bddab096f1b5ec85bda663","language":"Python","words":287,"score":4,"rules":["word:comprehensive"]}
+{"repo":"pedroCabrera/PyFlow","sha":"df8e23510769dc167ef85b070b85ac5dc222fe32","language":"Python","words":511,"score":0}
+{"repo":"Netflix/consoleme","sha":"471592b718b22f83244609ab47d5bf3f9a715a4d","language":"Python","words":297,"score":0,"rules":["char:’","char:…"]}
+{"repo":"webdataset/webdataset","sha":"9df890a5be2754ef0fafacd298fc5d8e1c32e274","language":"Python","words":378,"score":0}
+{"repo":"blaze/blaze","sha":"6c377268f691c8e50c8c9ade1893b29889da0b61","language":"Python","words":436,"score":3,"rules":["word:powerful"]}
+{"repo":"jceb/vim-orgmode","sha":"4819bbc608a62baf6d0e29877be775818eeaef49","language":"Python","words":211,"score":0}
+{"repo":"astorfi/Deep-Learning-Roadmap","sha":"bdb0add473ee82155de3c92b06d9832cafa491e9","language":"Python","words":3014,"score":1,"rules":["word:comprehensive","word:robust"]}
+{"repo":"theseus-os/Theseus","sha":"dec48793bbf7cef9017372e74ff42053a9c0388c","language":"Rust","words":1524,"score":3,"rules":["structural:assistant-signoff","structural:bold-bullet-run","word:leverage"]}
+{"repo":"cloudflare/wrangler-legacy","sha":"4c92c94756f54a01f4e719297d0ce18def6183ab","language":"Rust","words":869,"score":7,"rules":["phrase:additionally,","structural:emoji-decoration","structural:template-stem"]}
+{"repo":"eclipse-zenoh/zenoh","sha":"9ce4957f3927d3e635003df77fa47b0d943f29d4","language":"Rust","words":956,"score":3,"rules":["structural:hedge-stack"]}
+{"repo":"rust-itertools/itertools","sha":"6c4fc2f8e745fe4780578dfa4feb44ccccffb521","language":"Rust","words":183,"score":1}
+{"repo":"qltysh/qlty","sha":"e941708f669c6af2b76f306f9dc5dbfeae342a6d","language":"Rust","words":726,"score":4,"rules":["structural:its-not-x-its-y","word:facilitate"]}
+{"repo":"graphprotocol/graph-node","sha":"6cf64b88f7d85017501c1e91f15c5b287d7fa4e4","language":"Rust","words":708,"score":3,"rules":["char:–","char:—"]}
+{"repo":"greshake/i3status-rust","sha":"b0b8b7c79f7a7e599465a33760eb574ad5307a37","language":"Rust","words":622,"score":0}
+{"repo":"kimchi-project/kimchi","sha":"36ed74be5d2016848ea6e453d7fb990d3d7fe3cd","language":"JavaScript","words":736,"score":3,"rules":["structural:uniform-paragraphs"]}
+{"repo":"SqueezerIO/squeezer","sha":"d1d4c5f4f5ad6c6aa6622fb50bc158d46c939878","language":"JavaScript","words":807,"score":1,"rules":["word:empowers"]}
+{"repo":"GladysAssistant/Gladys","sha":"afe4a2473333ef7f8984adf8a778f96f65becb76","language":"JavaScript","words":448,"score":0}
+{"repo":"hainproject/hain","sha":"7cbb09cbad51d09f34ad2b14de024e52a0d2afab","language":"JavaScript","words":199,"score":4,"rules":["word:powerful"]}
+{"repo":"nilbuild/githunt","sha":"1199d5a9e745cbc449a6dbcdc6f555d38f35de14","language":"JavaScript","words":176,"score":0,"rules":["char:–"]}
+{"repo":"soheilpro/mailwind","sha":"60d9c2ae74f805ccb8fa76c641336367ec7d8cf0","language":"JavaScript","words":261,"score":2}
+{"repo":"wasmerio/winterjs","sha":"4cd3f5b81f4c363c039631bf870e61a00c983f63","language":"JavaScript","words":309,"score":1}
+{"repo":"kciter/qart.js","sha":"d26a5b136ecc8e6f77c9f56a066ecab54adf414a","language":"JavaScript","words":193,"score":0}
+{"repo":"pmmmwh/react-refresh-webpack-plugin","sha":"69a837e58bc5195377cd3521600c440dedf59b72","language":"JavaScript","words":719,"score":0}
+{"repo":"plasma-umass/browsix","sha":"04f0830088560f27d480cde3e37c28269375f59f","language":"JavaScript","words":917,"score":2,"rules":["structural:spaced-hyphen"]}
+{"repo":"Wisser/Jailer","sha":"37b616fef3754d5044496a338c003617b5544d30","language":"Java","words":601,"score":0}
+{"repo":"nicolasgramlich/AndEngine","sha":"720897f99d2c56ba357e8fe361454bd8d88c37ed","language":"Java","words":366,"score":2,"rules":["word:powerful"]}
+{"repo":"bauerca/drag-sort-listview","sha":"c3cfccee21676149dfdf8e803c0ec2eaebc6b841","language":"Java","words":2508,"score":1,"rules":["phrase:that said,"]}
+{"repo":"jackpal/Android-Terminal-Emulator","sha":"35188f8a8b57989a4a4ec9485e11187b46be26d9","language":"Java","words":157,"score":0}
+{"repo":"wildfly/wildfly","sha":"48e8f66f18b96d5db2e44e2382cb3923513e0078","language":"Java","words":589,"score":0}
+{"repo":"alibaba/cobar","sha":"bc36a14d4a3f8acc0db0b3b07a7db8d38afefda5","language":"Java","words":145,"score":0}
+{"repo":"ragunathjawahar/android-saripaar","sha":"fe05e4efcb73460fc254891a42e603b4ca2c9118","language":"Java","words":539,"score":1,"rules":["word:powerful"]}
+{"repo":"evrencoskun/TableView","sha":"cf9c7f66e764aee2c6f30df816ca21c270ecd01a","language":"Java","words":441,"score":2,"rules":["word:powerful"]}
+{"repo":"yusugomori/DeepLearning","sha":"739dfd1d7919c328e0d3b8129855c2ad71b80036","language":"Java","words":166,"score":0}
+{"repo":"polymorphicshade/Tubular","sha":"ccbc3af9645b98e022750c668e0d0721396b15e8","language":"Java","words":945,"score":0}
+{"repo":"google/bindiff","sha":"bd982bc6282a50ae9cd9fa9ed532f6d333c4186e","language":"Java","words":811,"score":3,"rules":["char:’","structural:polyptoton","word:powerful"]}
+{"repo":"bluelinelabs/LoganSquare","sha":"6c5ec5281fb58d85a99413b7b6f55e9ef18a6e06","language":"Java","words":441,"score":4,"rules":["word:utilize"]}
+{"repo":"BruceEckel/OnJava8-Examples","sha":"ade1d5ef122bdfc1320370e2fde7a62245e26d41","language":"Java","words":2068,"score":1,"rules":["char:\u0026mdash;","char: "]}
+{"repo":"apache/hugegraph","sha":"132582af6fcfe2e6e730d43893635c8bac80e443","language":"Java","words":228,"score":4,"rules":["word:powerful"]}
+{"repo":"FabricMC/fabric-api","sha":"9481101883ae4a7283e9a142683939808f751c15","language":"Java","words":401,"score":1}
+{"repo":"pglombardo/PasswordPusher","sha":"3df73de052cb75ed6cbce55ed2999f4a4e02a48b","language":"Ruby","words":508,"score":5,"rules":["structural:emoji-decoration"]}
+{"repo":"voltrb/volt","sha":"f942b92385adbc894ee4a37903ee6a9c1a65e9a4","language":"Ruby","words":510,"score":0}
+{"repo":"RolifyCommunity/rolify","sha":"bb295d90963df61ed1547fe633ae0c4e60f5c634","language":"Ruby","words":656,"score":3,"rules":["structural:template-stem"]}
+{"repo":"peek/peek","sha":"d6c13747a4889375c7af5290af4340ad68f13f2d","language":"Ruby","words":871,"score":3,"rules":["structural:hedge-stack"]}
+{"repo":"apigy/selfstarter","sha":"740075f4d3f71b2b87e8ad6c9b04ef7e50eecfcb","language":"Ruby","words":625,"score":5,"rules":["structural:hedge-stack"]}
+{"repo":"defunkt/dotjs","sha":"434eaba374b02a3ee7e056408bb1c0fe76e837d3","language":"Ruby","words":343,"score":1}
+{"repo":"thoughtbot/factory_bot_rails","sha":"b149856be340f919a49bab8d4389050dce422cbc","language":"Ruby","words":525,"score":1}
+{"repo":"collabnix/kubelabs","sha":"a6e83346115850db9004ff82373d6b68cdc44742","language":"Ruby","words":670,"score":0}
+{"repo":"layervault/psd.rb","sha":"d8c11365a72c8c6ef2be1281ee6982255b1953db","language":"Ruby","words":828,"score":2,"rules":["structural:here-are-n"]}
+{"repo":"petergoldstein/dalli","sha":"d65244d02babd7aa23a4ea8dd3b3a955393bcbac","language":"Ruby","words":320,"score":0}
+{"repo":"gazay/gon","sha":"ab7e6113d0ba002fe4a7f2b72a423d602805c1ce","language":"Ruby","words":696,"score":3,"rules":["char:—","replace"]}
+{"repo":"inspec/inspec","sha":"4b9692c6fd40607bc3541766f592f0a8004752f7","language":"Ruby","words":1376,"score":3,"rules":["structural:bold-bullet-run"]}
+{"repo":"mustache/mustache","sha":"c76a5ca322afe3cab28c87af66ad363bf1b34d27","language":"Ruby","words":939,"score":3,"rules":["structural:anaphora-run","word:when it comes to"]}
+{"repo":"httprb/http","sha":"94ba71c34b25bcb16bbcc0dd67f48ffeb54daab6","language":"Ruby","words":509,"score":6,"rules":["structural:bold-bullet-run","word:breath of fresh air"]}
+{"repo":"elastic/elasticsearch-rails","sha":"835ea07643011544f9a6f0866557cc5f27ad1e51","language":"Ruby","words":499,"score":0}
+{"repo":"igrigorik/gharchive.org","sha":"85dff835adcf3abe04583eec852cfea4dc4a874b","language":"Ruby","words":164,"score":2}
+{"repo":"nathanvda/cocoon","sha":"208db1c09af013310dc6ebc92c53d89563c4c640","language":"Ruby","words":2111,"score":3,"rules":["phrase:additionally,","phrase:furthermore,","structural:bold-bullet-run"]}
+{"repo":"trailblazer/cells","sha":"573c411daa00ed41293824123b839949660b5daf","language":"Ruby","words":1400,"score":2,"rules":["phrase:keep in mind that","structural:not-just-but-also"]}
+{"repo":"DISTRHO/Cardinal","sha":"ea6652b87896fbe5c5d3746dadffe13a2e901432","language":"C++","words":1094,"score":0}
+{"repo":"ARM-software/ComputeLibrary","sha":"c4270cf958e85e0c41590030e1f9e228493a5ba0","language":"C++","words":543,"score":1}
+{"repo":"guillaumechereau/goxel","sha":"618b9d200ed2d34812747b81f8ca94bf3bdf3464","language":"C++","words":306,"score":0}
+{"repo":"subsurface/subsurface","sha":"44585352657aeb792a9220aa6d81791d0709b066","language":"C++","words":783,"score":2,"rules":["phrase:additionally,"]}
+{"repo":"ThirteenAG/WidescreenFixesPack","sha":"c86ededea72ec0b8bf6503880ba5b7969de252c9","language":"C++","words":3779,"score":0}
+{"repo":"Croteam-official/Serious-Engine","sha":"b408e88a16fd01aa1cfd0e0a999c86c2c1437c9e","language":"C++","words":675,"score":0}
+{"repo":"pichenettes/eurorack","sha":"ff32805c9ba894f516819b5c43dfdc75a8ba199f","language":"C++","words":206,"score":0}
+{"repo":"nomacs/nomacs","sha":"1f9eb211bc7ca6f91a1dae56fcc58bb8f08ca73b","language":"C++","words":377,"score":4,"rules":["structural:emoji-heading-suffix"]}
+{"repo":"NASA-SW-VnV/ikos","sha":"00a8bf9dcc57335f71053dd715847f171d47f555","language":"C++","words":862,"score":5,"rules":["structural:bold-bullet-run","word:facilitate","word:powerful","word:state-of-the-art"]}
+{"repo":"grame-cncm/faust","sha":"2efb9a4ae28c4e4a2739a790bc290f298c3173da","language":"C++","words":960,"score":1,"rules":["word:facilitate"]}
+{"repo":"Tencent/Tendis","sha":"a3ba1d1d7133071df689404148cd7b772bd3a71d","language":"C++","words":502,"score":0}
+{"repo":"magiblot/tvision","sha":"7ab5f195c572de0d496e92f4e3f7b3b0771ac699","language":"C++","words":6371,"score":2,"rules":["char:—","structural:not-just-but-also","structural:not-only-inversion","structural:template-stem"]}
+{"repo":"T-vK/ESP32-BLE-Keyboard","sha":"82959f26cc9f82399f6794c363753c095b4b8e16","language":"C++","words":578,"score":0}
+{"repo":"avelino/awesome-go","sha":"8a7d55b088d82e425c3bc8a24fa44d14fa3aa280","language":"Go","words":31149,"score":1,"rules":["char:—","char:‘","char:’","char:“","char:”","structural:mixed-script","structural:polyptoton","structural:think-of-it-as","word:comprehensive","word:delve","word:elegant","word:facilitate","word:facilitates","word:holistic","word:leveraging","word:powerful","word:robust","word:seamless","word:seamlessly","word:tailored to your","word:utilize"]}
+{"repo":"golang/go","sha":"6178d25fc0b28724b1b5aec2b1b74fc06d9294c7","language":"Go","words":177,"score":0}
+{"repo":"kubernetes/kubernetes","sha":"c5d8354e0e65255a310e7c5c609a23418b9f5021","language":"Go","words":309,"score":3,"rules":["phrase:that said,"]}
+{"repo":"microsoft/TypeScript","sha":"ef9fd97e4dbcc0a26fa5bac7007e8bfa594ccccd","language":"Go","words":254,"score":0}
+{"repo":"fatedier/frp","sha":"ea568e8a4fdb979748e4d456e24344eeacc8d275","language":"Go","words":2835,"score":1,"rules":["replace"]}
+{"repo":"gohugoio/hugo","sha":"0671ef55938d38778684502d6a1f107c9358555f","language":"Go","words":814,"score":1,"rules":["char:’"]}
+{"repo":"gin-gonic/gin","sha":"d062a6a6155236883f4c3292379ab94b1eac8b05","language":"Go","words":2466,"score":1,"rules":["structural:anaphora-run"]}
+{"repo":"syncthing/syncthing","sha":"c00c6b395721e6c193a64bf7ca45e9028c0b8871","language":"Go","words":488,"score":6,"rules":["structural:hedge-stack","word:empowering"]}
+{"repo":"junegunn/fzf","sha":"dc975e8974c4f569980676d9f605226368e20711","language":"Go","words":2053,"score":1,"rules":["word:comprehensive"]}
+{"repo":"jesseduffield/lazygit","sha":"9ef65574db3f0fd30b3782a8582212619edf4650","language":"Go","words":917,"score":2,"rules":["word:powerful"]}
+{"repo":"netdata/netdata","sha":"2546c02f89581b0c20f9805d65bd060ad9f8af49","language":"Go","words":1287,"score":5,"rules":["char:—","char:“","char:”","structural:bold-bullet-run","word:best-in-class","word:frictionless","word:leverage"]}
+{"repo":"caddyserver/caddy","sha":"3fe2c73dd04f7769a9d9673236cb94b79ac45659","language":"Go","words":1232,"score":6,"rules":["phrase:first and foremost,","structural:bold-bullet-run","structural:spaced-hyphen","word:powerful","word:unprecedented"]}
+{"repo":"moby/moby","sha":"4bdc20844935c5995637b40bdb8152640d2e0c1f","language":"Go","words":514,"score":2,"rules":["word:powerful"]}
+{"repo":"nektos/act","sha":"e9c4609dcadf70739e34f79680e69df973b24d8e","language":"Go","words":1319,"score":3,"rules":["phrase:additionally,","structural:template-stem"]}
+{"repo":"prometheus/prometheus","sha":"174a1147d53827a19422f5071b3a5d0c54fea90d","language":"Go","words":587,"score":3,"rules":["word:leverage","word:powerful"]}
+{"repo":"public-apis/public-apis","sha":"bf01c83b746da0c9d7c29cee3e33faf7df1c0ee0","language":"Python","words":24870,"score":0,"rules":["char:’","word:powerful","word:robust"]}
+{"repo":"EbookFoundation/free-programming-books","sha":"270629d4f87b366fd6c7b9c86f1709a04e878f77","language":"Python","words":960,"score":0}
+{"repo":"donnemartin/system-design-primer","sha":"e8a867ee286d0848ba32a2709051b6f275214714","language":"Python","words":11652,"score":2,"rules":["char:’","phrase:keep in mind that","structural:anaphora-run","structural:bold-bullet-run","structural:hedge-stack","structural:template-stem","word:leverage"]}
+{"repo":"vinta/awesome-python","sha":"edf110dd9f2e05692966cb65a001ce697a2da0f2","language":"Python","words":8978,"score":1,"rules":["char:’","word:comprehensive","word:effortlessly","word:elegant","word:powerful","word:robust","word:state-of-the-art","word:supercharged","word:world-class"]}
+{"repo":"practical-tutorials/project-based-learning","sha":"7dcba3b6ebc0b1cd5569b543931ed154d910d1ad","language":"Python","words":3287,"score":0,"rules":["char:–"]}
+{"repo":"TheAlgorithms/Python","sha":"9af2eef9b3761bf51580dedfb6fa7136ca0c5c2c","language":"Python","words":190,"score":1}
+{"repo":"yt-dlp/yt-dlp","sha":"26f2aa3db96cf44764d69b32db78b7a48752a016","language":"Python","words":11260,"score":2,"rules":["phrase:additionally,","phrase:furthermore,","phrase:notably,","phrase:to summarize,","structural:hedge-stack","structural:template-stem","word:cutting edge","word:powerful","word:robust","word:utilizing"]}
+{"repo":"huggingface/transformers","sha":"e68c3756fea7c811d02b8470539ae17ec3ec0e71","language":"Python","words":4439,"score":2,"rules":["char:​","char:—","char:’","structural:emoji-decoration","structural:here-are-n","word:seamless","word:seamlessly","word:state-of-the-art"]}
+{"repo":"ytdl-org/youtube-dl","sha":"5014bd67c22b421207b2650d4dc874b95b36dda1","language":"Python","words":7940,"score":2,"rules":["structural:hedge-stack","structural:template-stem","word:future-proof","word:powerful"]}
+{"repo":"clash-verge-rev/clash-verge-rev","sha":"3bab5ec3a77147bd2984d90c165ce2473c7e7701","language":"Rust","words":114,"score":0}
+{"repo":"rustdesk/rustdesk","sha":"ee088a8ddfdd933a490754ab86ee4b1f7e6af2b6","language":"Rust","words":573,"score":4,"rules":["phrase:additionally,"]}
+{"repo":"rust-lang/rust","sha":"09fa72ae84605b9997abe345293b8315f7a05d0d","language":"Rust","words":336,"score":1}
+{"repo":"tauri-apps/tauri","sha":"2d39f12060c3624174eff6ec0dc84156dc73ae1c","language":"Rust","words":1138,"score":2,"rules":["word:blazing fast","word:leverages","word:leveraging"]}
+{"repo":"denoland/deno","sha":"003534e8836043892499bac86424e059fc14c2f1","language":"Rust","words":180,"score":0}
+{"repo":"oven-sh/bun","sha":"eb142a6be556abd209a37efb5c9e9864de6e963b","language":"Rust","words":5085,"score":1,"rules":["char:’","phrase:additionally,","replace","structural:template-stem"]}
+{"repo":"zed-industries/zed","sha":"f499a1dfc2d9bc7acbba08d7edb5b9c115a311ad","language":"Rust","words":865,"score":4,"rules":["word:facilitate"]}
+{"repo":"BurntSushi/ripgrep","sha":"0b36942f680bfa9ae88a564f2636aa8286470073","language":"Rust","words":2037,"score":1}
+{"repo":"dani-garcia/vaultwarden","sha":"bf5aefd12976cef55276e00db770710b22d7b62f","language":"Rust","words":449,"score":5,"rules":["structural:emoji-decoration"]}
+{"repo":"alacritty/alacritty","sha":"e2b5219eb40eaf36d8255cd87c5202bbb8ba0825","language":"Rust","words":521,"score":4,"rules":["structural:polyptoton"]}
+{"repo":"react/react","sha":"3dc41d8a2590768a6ac906cd1f4c11ca00417eee","language":"JavaScript","words":552,"score":5,"rules":["structural:bold-bullet-run","word:powerful"]}
+{"repo":"trekhleb/javascript-algorithms","sha":"9bb60fa72f9d146e931b4634764dff7aebc7c1a2","language":"JavaScript","words":2310,"score":1,"rules":["char:–","char:’"]}
+{"repo":"airbnb/javascript","sha":"7a6ef3e7db0f988932d73386af9c6a15a739f64f","language":"JavaScript","words":4871,"score":0,"rules":["char:’"]}
+{"repo":"vercel/next.js","sha":"d72f5bd69dcd243645ce43722cd86db030b94e1e","language":"JavaScript","words":210,"score":1,"rules":["char:–"]}
+{"repo":"Chalarangelo/30-seconds-of-code","sha":"888f540f49e2dd877efa390473c1a0d1591fbeeb","language":"JavaScript","words":244,"score":0}
+{"repo":"nodejs/node","sha":"d0c11765331edc457a3f5023c21cbe3f89fa6d17","language":"JavaScript","words":2387,"score":0}
+{"repo":"mrdoob/three.js","sha":"2e47927b07857b43ea7c147f92df529742f5013f","language":"JavaScript","words":184,"score":0,"rules":["char:\u0026mdash;"]}
+{"repo":"axios/axios","sha":"ccc9516af8b762c51efd8ca1d326a63b9de76a41","language":"JavaScript","words":1314,"score":0}
+{"repo":"react/create-react-app","sha":"b79ef9c4638ff62c64973542d08e2a633d9bc2c5","language":"JavaScript","words":1168,"score":4,"rules":["char:–","char:’","char:“","char:”","structural:bold-bullet-run","structural:template-stem"]}
+{"repo":"mui/material-ui","sha":"e4c83e43be627ff31cdf0159645f4b63ec1e6097","language":"JavaScript","words":642,"score":4,"rules":["structural:emoji-heading-suffix"]}
+{"repo":"microsoft/Web-Dev-For-Beginners","sha":"668fcff0da975a5851966b30c2cc1f11c18fb502","language":"JavaScript","words":1517,"score":0}
+{"repo":"ryanmcdermott/clean-code-javascript","sha":"384665f8da2de749ad96c694a9e18227cfd08b45","language":"JavaScript","words":4117,"score":3,"rules":["structural:hedge-stack","structural:its-not-x-its-y","structural:lets-take-a-look","structural:reader-mind-reading","word:peace of mind"]}
+{"repo":"louislam/uptime-kuma","sha":"0e50b712902d66faf61950a69812fbb04ee8f97f","language":"JavaScript","words":542,"score":10,"rules":["structural:emoji-decoration","structural:template-stem"]}
+{"repo":"sveltejs/svelte","sha":"a4963d7c0e7c23a682b22b194966fd05bc9d52c3","language":"JavaScript","words":328,"score":5,"rules":["char:—"]}
+{"repo":"iluwatar/java-design-patterns","sha":"f670ae547b9bd03bcd06751caea3779d90d228b8","language":"Java","words":2676,"score":1,"rules":["structural:hedge-stack","word:showcases"]}
+{"repo":"spring-projects/spring-boot","sha":"b94fcd1ad7d2b2ec07500680934b3b24f8c8dc0e","language":"Java","words":1170,"score":3,"rules":["structural:spaced-hyphen","word:comprehensive"]}
+{"repo":"elastic/elasticsearch","sha":"dc1e28b8b452098f2b7c7db3b49728fb824de693","language":"Java","words":283,"score":0}
+{"repo":"NationalSecurityAgency/ghidra","sha":"aecec8988ee99aafd6ff3f812694956320d140e2","language":"Java","words":580,"score":1}
+{"repo":"kdn251/interviews","sha":"a70c2250ec5f2e43972a359e050182f970ea2ffd","language":"Java","words":2460,"score":2,"rules":["structural:bold-bullet-run","structural:polyptoton","word:leveraging","word:to the next level"]}
+{"repo":"termux/termux-app","sha":"6c24e6ac3b3554c90894fa893a9b7a15b7e0bc28","language":"Java","words":2033,"score":2,"rules":["char:’","phrase:moreover,","structural:bold-bullet-run"]}
+{"repo":"spring-projects/spring-framework","sha":"eb5022924ed2967d77efa09fe48e994df08039ef","language":"Java","words":239,"score":3,"rules":["word:pivotal"]}
+{"repo":"google/guava","sha":"c85a4cbff0aeb150e9755c408703c5c7464f5f57","language":"Java","words":606,"score":0}
+{"repo":"dbeaver/dbeaver","sha":"992acf494886f5f27e5fb35dd89d8bf0c187e484","language":"Java","words":485,"score":0,"rules":["char:“","char:”"]}
+{"repo":"skylot/jadx","sha":"c7795bfc48718a37081807c14b53bf44a4d87453","language":"Java","words":319,"score":0}
+{"repo":"ReactiveX/RxJava","sha":"0b58ee5edef5d7d9be67604a4fef66b0d9418deb","language":"Java","words":3195,"score":3,"rules":["structural:hedge-stack","structural:template-stem","word:powerful"]}
+{"repo":"lysine-dev/retrofit","sha":"faf5fa88849b51052a6bd907469dc0b7afcb7927","language":"Java","words":113,"score":2}
+{"repo":"rails/rails","sha":"ad60a8bb339353d631874ca234063757eb128405","language":"Ruby","words":584,"score":1,"rules":["char:’"]}
+{"repo":"jekyll/jekyll","sha":"df765950babd6ed4fe46aad3fc25c05c5249b0c6","language":"Ruby","words":461,"score":2,"rules":["char: ","char:—"]}
+{"repo":"mastodon/mastodon","sha":"d3db2eb7fb17e94ace3fc648153f14178e707830","language":"Ruby","words":564,"score":6,"rules":["structural:bold-bullet-run","word:seamlessly"]}
+{"repo":"huginn/huginn","sha":"b06cf4e0dc450af7b0e3f16abfc166dbc0802b7c","language":"Ruby","words":1174,"score":2,"rules":["structural:think-of-it-as","word:in the world of"]}
+{"repo":"Homebrew/brew","sha":"0a4f0de3bacb6109406074d116bb5e9443b14513","language":"Ruby","words":557,"score":1,"rules":["word:embark"]}
+{"repo":"discourse/discourse","sha":"4f815d2d830c1d730bb92484aebd1b848cf230af","language":"Ruby","words":692,"score":1,"rules":["char:\u0026mdash;","char:\u0026ndash;","char:“","char:”"]}
+{"repo":"fastlane/fastlane","sha":"605d2618da27cd63a088a0bdcbec78d7e0e5def1","language":"Ruby","words":743,"score":0}
+{"repo":"freeCodeCamp/devdocs","sha":"6ca82ce196bcc5f15ce8f74cfab3fc74c16ccd8a","language":"Ruby","words":1427,"score":1,"rules":["char:–","char:—","char:’","char:“","char:”"]}
+{"repo":"rapid7/metasploit-framework","sha":"c3e0f455ec59f1c312d8881270bdcabefa99ec56","language":"Ruby","words":219,"score":6,"rules":["word:unleashed"]}
+{"repo":"kilimchoi/engineering-blogs","sha":"db6872c5e1348d215a32e2d469b1b8da5820cc8d","language":"Ruby","words":2873,"score":0}
+{"repo":"chatwoot/chatwoot","sha":"223fb2b7e420b670d230e88b29f0b84b0da482a9","language":"Ruby","words":721,"score":7,"rules":["char:’","structural:bold-bullet-run","structural:emoji-heading-suffix"]}
+{"repo":"bayandin/awesome-awesomeness","sha":"61a5b55be64129df27fa5340981d2098c2e2a540","language":"Ruby","words":1013,"score":0}
+{"repo":"hashicorp/vagrant","sha":"025503412600a7ac54aec89f1f870641bcea4952","language":"Ruby","words":280,"score":0}
+{"repo":"matteocrippa/awesome-swift","sha":"528d053a82d7b57ef099f9d0aea882435209d4e6","language":"Ruby","words":14552,"score":1,"rules":["char:–","char:—","char:’","structural:mixed-script","structural:polyptoton","word:blazing fast","word:blazingly fast","word:effortlessly","word:elegant","word:holistic","word:leverage","word:leverages","word:powerful","word:robust","word:seamless","word:showcasing"]}
+{"repo":"gitlabhq/gitlabhq","sha":"81617e0e06a264b0991b14c465376e6351f63dcd","language":"Ruby","words":687,"score":0}
+{"repo":"heartcombo/devise","sha":"025b1c873491908b346e4d394f54481ec18fb02c","language":"Ruby","words":3405,"score":1,"rules":["char:’","phrase:keep in mind that"]}
+{"repo":"ruby/ruby","sha":"2fac066b3ad67767107cab30e1dd9a00562f1376","language":"Ruby","words":532,"score":1}
+{"repo":"tensorflow/tensorflow","sha":"221417c504c46295e72cd63acc6011f5a0cc0725","language":"C++","words":581,"score":3,"rules":["word:comprehensive","word:state-of-the-art"]}
+{"repo":"react/react-native","sha":"e22b760e594db97c22b34084a1770ac3a40c0ccf","language":"C++","words":706,"score":8,"rules":["structural:bold-bullet-run","structural:emoji-decoration"]}
+{"repo":"electron/electron","sha":"ac39cb14e9eb91441d060e6820d1957ee7a40f19","language":"C++","words":396,"score":0}
+{"repo":"godotengine/godot","sha":"bc2445d0eb1b4d00de7506fbea4384212c8dfe16","language":"C++","words":392,"score":4,"rules":["word:comprehensive","word:empowering"]}
+{"repo":"microsoft/terminal","sha":"1e22bfa8d6f86d0546c3f162d171274cf453db65","language":"C++","words":1642,"score":0}
+{"repo":"bitcoin/bitcoin","sha":"1831d43e8fb73358858907e1d95ce54e1f42b2e7","language":"C++","words":476,"score":1}
+{"repo":"tesseract-ocr/tesseract","sha":"6727aae7e92f0adfabc1ea1fa40ef1578f83e321","language":"C++","words":623,"score":0}
+{"repo":"ocornut/imgui","sha":"83d22f4e480c6f71ffc1514c2453feed0fce2733","language":"C++","words":2053,"score":2,"rules":["word:empower","word:showcasing"]}
+{"repo":"protocolbuffers/protobuf","sha":"5b3447ebd37b84e4c85813b590791457fe97798e","language":"C++","words":226,"score":19,"rules":["structural:bold-bullet-run","structural:mixed-script"]}
+{"repo":"LadybirdBrowser/ladybird","sha":"b6ba0f9fad93f7062098420602d407f9baeec775","language":"C++","words":666,"score":0}
+{"repo":"WerWolv/ImHex","sha":"f45cc3fc732d2b5e88e3980394d959228db41fb8","language":"C++","words":1084,"score":0}
+{"repo":"nlohmann/json","sha":"926df56ddba10079e1f3bbf47ccd3c7bfd5639b0","language":"C++","words":8495,"score":2,"rules":["char:“","char:”","phrase:furthermore,","structural:hedge-stack","structural:here-are-n","structural:template-stem","word:robust"]}
+{"repo":"ClickHouse/ClickHouse","sha":"f967bcdee966d573c1ebd4688737f4d7d0b73925","language":"C++","words":118,"score":7,"rules":["char:—"]}
+{"repo":"x64dbg/x64dbg","sha":"bee655771c4d565824ace3cf02346bb7f3982d8c","language":"C++","words":380,"score":2,"rules":["word:comprehensive"]}
