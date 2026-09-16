@@ -375,6 +375,11 @@ func TestCollectPinnedInto(t *testing.T) {
 	if got[0].SHA != "oldsha" || got[0].Text != "Prose from before the cutoff." {
 		t.Errorf("sample = %+v, want the pre-cutoff README", got[0])
 	}
+	// The ecosystem has to be recorded here too, or the pinned report cannot state its
+	// spread and the breadth claim goes back to being taken on trust.
+	if got[0].Language != collectLanguages[0] {
+		t.Errorf("language = %q, want %q", got[0].Language, collectLanguages[0])
+	}
 	if provenanceOf(got) == "" || !strings.Contains(provenanceOf(got), "maintained") {
 		t.Errorf("provenance = %q, want it to say the projects are maintained", provenanceOf(got))
 	}

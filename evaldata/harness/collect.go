@@ -386,6 +386,7 @@ func (c *client) collectPinnedInto(want int, path string, w io.Writer) error {
 					SHA:      sha,
 					PushedAt: "pinned<" + collectCutoff,
 					Stars:    h.Stars,
+					Language: lang,
 					Text:     text,
 				}); err != nil {
 					_, _ = fmt.Fprintf(w, "write %s: %v\n", h.FullName, err)
