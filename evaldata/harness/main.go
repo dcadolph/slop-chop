@@ -56,6 +56,8 @@ func main() {
 	genAI := flag.Int("generate-ai", 0, "generate N machine samples per model, genre, and prompt style")
 	genModels := flag.String("generate-models", "llama3.2:3b,qwen2.5-coder:14b", "comma separated ollama models to generate from")
 	genTag := flag.String("generate-tag", "", "the frozen ruleset tag to record on generated samples")
+	genHuman := flag.Int("collect-human", 0, "collect N register-matched human READMEs into the locked corpus")
+	genExclude := flag.String("collect-human-exclude", "", "file of repositories to skip, one per line")
 	seed := flag.Int("rate-seed", 1, "presentation order for this rater")
 	corpus := flag.String("pre2022-file", "evaldata/pre2022.jsonl", "where the pre-2022 READMEs are read from and written to")
 	flag.Parse()
@@ -72,6 +74,12 @@ func main() {
 			break
 		}
 		err = generateAI(strings.Split(*genModels, ","), *genAI, defaultPaths().samples, *genTag, os.Stdout)
+	case *genHuman > 0:
+		if strings.TrimSpace(*genTag) == "" {
+			err = errors.New("-generate-tag is required: a sample records the ruleset frozen before it")
+			break
+		}
+		err = collectHumanREADMEs(*genHuman, defaultPaths().samples, *genExclude, *genTag, os.Stdout)
 	case *rater != "":
 		p := defaultPaths()
 		err = runRate(p.samples, p.ratings, *rater, *seed, os.Stdin, os.Stdout)

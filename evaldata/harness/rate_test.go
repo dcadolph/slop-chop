@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -236,5 +237,127 @@ func TestGenerateAIFromContinuesIDs(t *testing.T) {
 			t.Errorf("duplicate id %s across runs", s.ID)
 		}
 		seen[s.ID] = true
+	}
+}
+
+// TestProseOnly checks the filter the human half depends on. A sample still carrying link
+// syntax, a code span, or a list fragment is distinguishable from a generated one on
+// markup alone, which hands the rater the answer as surely as the label would.
+func TestProseOnly(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		Name     string
+		In       string
+		WantHas  string
+		WantGone []string
+	}{{ // Test 0: A link keeps its words and loses its destination.
+		Name: "inline link", WantHas: "uses the Raft library for consensus",
+		In:       "This project uses the [Raft](https://example.com/raft) library for consensus here.",
+		WantGone: []string{"](", "http"},
+	}, { // Test 1: A code span is markup, not writing.
+		Name: "code span", WantHas: "",
+		In:       "Send the payload as `{\"name\": \"x\"}` to the server endpoint now.",
+		WantGone: []string{"`", "{"},
+	}, { // Test 2: A fenced block never reaches the sample.
+		Name: "fence", WantHas: "The prose survives the fence around it",
+		In:       "```go\nfunc main() {}\n```\nThe prose survives the fence around it.",
+		WantGone: []string{"func main"},
+	}, { // Test 3: A numbered list is a list whatever it starts with.
+		Name: "numbered list", WantHas: "",
+		In:       "1. First item here\n2) Second item there",
+		WantGone: []string{"First item", "Second item"},
+	}, { // Test 4: Headings, badges, tables, and bullets are structure.
+		Name: "structure", WantHas: "",
+		In:       "# Title\n![badge](x)\n| a | b |\n- bullet point here\n> quoted line here",
+		WantGone: []string{"Title", "badge", "bullet", "quoted"},
+	}}
+	for testNum, test := range tests {
+		t.Run(fmt.Sprintf("test %d %s", testNum, test.Name), func(t *testing.T) {
+			t.Parallel()
+			got := proseOnly(test.In)
+			if test.WantHas != "" && !strings.Contains(got, test.WantHas) {
+				t.Errorf("proseOnly dropped the prose: got %q, want it to contain %q", got, test.WantHas)
+			}
+			for _, gone := range test.WantGone {
+				if strings.Contains(got, gone) {
+					t.Errorf("proseOnly left %q in: %q", gone, got)
+				}
+			}
+		})
+	}
+}
+
+// TestLoadExcluded checks the lock guard: repositories already spent on the false
+// positive measurement must not reappear in the corpus that has to stay untouched.
+func TestLoadExcluded(t *testing.T) {
+	t.Parallel()
+	path := t.TempDir() + "/used.txt"
+	if err := os.WriteFile(path, []byte("owner/one\n\nowner/two\n"), 0o600); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	got, err := loadExcluded(path)
+	if err != nil {
+		t.Fatalf("loadExcluded: %v", err)
+	}
+	if !got["owner/one"] || !got["owner/two"] || len(got) != 2 {
+		t.Errorf("excluded = %v, want the two named repositories", got)
+	}
+	empty, err := loadExcluded("")
+	if err != nil || len(empty) != 0 {
+		t.Errorf("loadExcluded(\"\") = %v, %v, want an empty set and no error", empty, err)
+	}
+}
+
+// TestCollectHumanInto drives the human collection against a local server. The guards
+// that matter are the lock and the date: a repository already spent on the false positive
+// measurement must not reappear, and a repository pushed after the cutoff must not either.
+func TestCollectHumanInto(t *testing.T) {
+	t.Parallel()
+	prose := strings.TrimSpace(strings.Repeat("The scheduler keeps a queue of pending jobs and drains it in order. ", 14))
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/search/") {
+			_, _ = io.WriteString(w, `{"items":[
+				{"full_name":"owner/used","pushed_at":"2020-01-01T00:00:00Z"},
+				{"full_name":"owner/fresh","pushed_at":"2020-01-01T00:00:00Z"},
+				{"full_name":"owner/toonew","pushed_at":"2024-01-01T00:00:00Z"}]}`)
+			return
+		}
+		_, _ = io.WriteString(w, fmt.Sprintf(`{"content":%q,"encoding":"base64","sha":"abcdef1234567890"}`,
+			base64.StdEncoding.EncodeToString([]byte(prose))))
+	}))
+	defer srv.Close()
+
+	dir := t.TempDir()
+	exclude := dir + "/used.txt"
+	if err := os.WriteFile(exclude, []byte("owner/used\n"), 0o600); err != nil {
+		t.Fatalf("write exclude: %v", err)
+	}
+	samples := dir + "/samples.jsonl"
+	if err := testClient(srv).collectHumanInto(5, samples, exclude, "v1.2.3", io.Discard); err != nil {
+		t.Fatalf("collectHumanInto: %v", err)
+	}
+	got, err := readLines[Sample](samples)
+	if err != nil {
+		t.Fatalf("readLines: %v", err)
+	}
+	if len(got) == 0 {
+		t.Fatal("no human samples written")
+	}
+	for _, s := range got {
+		if s.Source != "human" {
+			t.Errorf("sample %s source = %q, want human", s.ID, s.Source)
+		}
+		if s.Meta["genre"] != "readme" || s.Meta["origin"] == "" {
+			t.Errorf("sample %s meta = %v, want genre and origin recorded", s.ID, s.Meta)
+		}
+		if strings.Contains(s.Meta["origin"], "owner/used") {
+			t.Errorf("a repository from the false positive run reached the locked corpus: %s", s.Meta["origin"])
+		}
+		if strings.Contains(s.Meta["origin"], "owner/toonew") {
+			t.Errorf("a repository pushed after the cutoff reached the corpus: %s", s.Meta["origin"])
+		}
+		if s.Rules != "v1.2.3" {
+			t.Errorf("sample %s rules = %q, want the frozen tag", s.ID, s.Rules)
+		}
 	}
 }

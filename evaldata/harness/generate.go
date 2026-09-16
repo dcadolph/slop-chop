@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -160,3 +161,181 @@ func generateAIFrom(base string, models []string, perCombo int, path, rulesTag s
 		written, skipped, genMinWords, genMaxWords)
 	return nil
 }
+
+// Human samples have to match the machine samples in register or the rating experiment
+// measures the wrong thing. A corpus of nineteenth century essays against modern work
+// email lets a rater separate the halves on century and genre alone, and score a perfect
+// result without ever judging whether prose reads machine-written. These are drawn from
+// README files written before 2022, which is the one modern human register available in
+// volume with a hard date guarantee.
+
+// humanExcludeFile names repositories already spent on the false-positive measurement.
+// Those were used to evaluate a candidate rule change, so the lock keeps them out of the
+// corpus that has to stay untouched.
+func loadExcluded(path string) (map[string]bool, error) {
+	out := map[string]bool{}
+	if path == "" {
+		return out, nil
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read %s: %w", path, err)
+	}
+	for _, line := range strings.Split(string(raw), "\n") {
+		if s := strings.TrimSpace(line); s != "" {
+			out[s] = true
+		}
+	}
+	return out, nil
+}
+
+// collectHumanREADMEs appends register-matched human samples to the locked corpus, taken
+// from repositories untouched since 2021 and never used for anything else. The prose band
+// and the language filter match the machine half, so neither side is selected for length.
+func collectHumanREADMEs(want int, samplesPath, excludePath, rulesTag string, w io.Writer) error {
+	c, err := newClient()
+	if err != nil {
+		return err
+	}
+	return c.collectHumanInto(want, samplesPath, excludePath, rulesTag, w)
+}
+
+// collectHumanInto is collectHumanREADMEs with the client supplied, so a test can drive
+// the whole path against a local server instead of GitHub.
+func (c *client) collectHumanInto(want int, samplesPath, excludePath, rulesTag string, w io.Writer) error {
+	excluded, err := loadExcluded(excludePath)
+	if err != nil {
+		return err
+	}
+	existing, err := readLines[Sample](samplesPath)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	next := 1
+	for _, s := range existing {
+		if strings.HasPrefix(s.ID, "h") {
+			next++
+		}
+	}
+
+	f, err := os.OpenFile(samplesPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+	if err != nil {
+		return fmt.Errorf("open %s: %w", samplesPath, err)
+	}
+	defer func() { _ = f.Close() }()
+	enc := json.NewEncoder(f)
+
+	written := 0
+	for _, slice := range starSlices {
+		for _, lang := range collectLanguages {
+			if written >= want {
+				break
+			}
+			hits, searchErr := c.searchRepos(lang, slice, 40)
+			if searchErr != nil {
+				_, _ = fmt.Fprintf(w, "search %s %s: %v\n", lang, slice, searchErr)
+			}
+			for _, h := range hits {
+				if written >= want || excluded[h.FullName] || h.PushedAt >= collectCutoff {
+					continue
+				}
+				text, sha, ok, readErr := c.readme(h.FullName)
+				if readErr != nil || !ok {
+					continue
+				}
+				// A README is mostly badges and fences. Take the prose paragraphs only,
+				// so the sample is writing rather than markup.
+				prose := proseOnly(text)
+				if n := len(strings.Fields(prose)); n < genMinWords || n > genMaxWords {
+					continue
+				}
+				if asciiShare(prose) < pre2022MinASCIILetters {
+					continue
+				}
+				if err := enc.Encode(Sample{
+					ID:     fmt.Sprintf("h%03d", next),
+					Source: "human",
+					Rules:  rulesTag,
+					Meta: map[string]string{
+						"origin": h.FullName + "@" + sha[:min(10, len(sha))],
+						"genre":  "readme",
+					},
+					Text: prose,
+				}); err != nil {
+					return fmt.Errorf("write %s: %w", samplesPath, err)
+				}
+				excluded[h.FullName] = true
+				next++
+				written++
+				_, _ = fmt.Fprintf(w, "h%03d <- %s\n", next-1, h.FullName)
+			}
+		}
+	}
+	_, _ = fmt.Fprintf(w, "wrote %d human sample(s)\n", written)
+	return nil
+}
+
+// proseOnly strips a README down to its prose paragraphs. Fences, headings, badges,
+// tables, and lists go, and so does the inline markup inside the lines that survive: a
+// sample still carrying link syntax or a code span is distinguishable from a generated one
+// on markup alone, which would hand a rater the answer as surely as the label would.
+func proseOnly(text string) string {
+	var out []string
+	inFence := false
+	for _, line := range strings.Split(text, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "```") || strings.HasPrefix(trimmed, "~~~") {
+			inFence = !inFence
+			continue
+		}
+		if inFence || skipLine(trimmed) {
+			continue
+		}
+		clean := strings.TrimSpace(stripInline(trimmed))
+		// Whatever is left has to read as a sentence rather than as the remains of one.
+		if len(strings.Fields(clean)) < 4 || strings.ContainsAny(clean, "|<>`") {
+			continue
+		}
+		out = append(out, clean)
+	}
+	return strings.TrimSpace(strings.Join(out, " "))
+}
+
+// skipLine reports whether a README line is structure rather than prose.
+func skipLine(trimmed string) bool {
+	if trimmed == "" {
+		return true
+	}
+	for _, prefix := range []string{"#", "|", ">", "-", "*", "<", "[", "!", "    ", "\t"} {
+		if strings.HasPrefix(trimmed, prefix) {
+			return true
+		}
+	}
+	// A numbered list item is a list whatever it starts with.
+	if len(trimmed) > 1 && trimmed[0] >= '0' && trimmed[0] <= '9' {
+		rest := strings.TrimLeft(trimmed, "0123456789")
+		if strings.HasPrefix(rest, ".") || strings.HasPrefix(rest, ")") {
+			return true
+		}
+	}
+	return false
+}
+
+// stripInline removes the markup that survives inside a prose line: link and image
+// syntax, code spans, and emphasis markers. A link keeps its visible text and loses its
+// destination, since the text is the writing and the URL is not.
+func stripInline(line string) string {
+	line = inlineImageRe.ReplaceAllString(line, "")
+	line = inlineLinkRe.ReplaceAllString(line, "$1")
+	line = codeSpanRe.ReplaceAllString(line, "")
+	line = bareURLInline.ReplaceAllString(line, "")
+	return strings.NewReplacer("**", "", "__", "", "*", "", "_", "").Replace(line)
+}
+
+//nolint:gochecknoglobals // Compiled once, never modified.
+var (
+	inlineImageRe = regexp.MustCompile(`!\[[^\]]*\]\([^)]*\)`)
+	inlineLinkRe  = regexp.MustCompile(`\[([^\]]*)\]\([^)]*\)`)
+	codeSpanRe    = regexp.MustCompile("`[^`]*`")
+	bareURLInline = regexp.MustCompile(`https?://\S+`)
+)
