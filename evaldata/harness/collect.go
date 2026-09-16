@@ -78,6 +78,12 @@ type client struct {
 	// http is the underlying client, with a timeout so one slow repository cannot hang
 	// a run of a thousand.
 	http *http.Client
+	// base is the API root. It is a field so a test can point the client at a local
+	// server instead of GitHub.
+	base string
+	// pause is how long to wait between search pages. The search endpoint is limited far
+	// more tightly than the rest of the API, and a test sets this to zero.
+	pause time.Duration
 }
 
 // newClient builds a collection client from the ambient GitHub credentials.
@@ -86,7 +92,12 @@ func newClient() (*client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &client{token: token, http: &http.Client{Timeout: 30 * time.Second}}, nil
+	return &client{
+		token: token,
+		http:  &http.Client{Timeout: 30 * time.Second},
+		base:  "https://api.github.com",
+		pause: 2 * time.Second,
+	}, nil
 }
 
 // get issues one authenticated GET and decodes the JSON body into v. A rate-limit reply
@@ -111,7 +122,7 @@ func (c *client) get(rawURL string, v any) error {
 		}
 		if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusTooManyRequests {
 			if attempt == 0 {
-				time.Sleep(60 * time.Second)
+				time.Sleep(30 * c.pause)
 				continue
 			}
 		}
@@ -135,8 +146,8 @@ func (c *client) searchRepos(lang, slice string, want int) ([]repoHit, error) {
 	var out []repoHit
 	for page := 1; page <= 10 && len(out) < want; page++ {
 		q := fmt.Sprintf("language:%s pushed:<%s stars:%s", lang, collectCutoff, slice)
-		u := fmt.Sprintf("https://api.github.com/search/repositories?q=%s&per_page=100&page=%d&sort=stars",
-			url.QueryEscape(q), page)
+		u := fmt.Sprintf("%s/search/repositories?q=%s&per_page=100&page=%d&sort=stars",
+			c.base, url.QueryEscape(q), page)
 		var page struct {
 			Items []repoHit `json:"items"`
 		}
@@ -147,8 +158,7 @@ func (c *client) searchRepos(lang, slice string, want int) ([]repoHit, error) {
 			break
 		}
 		out = append(out, page.Items...)
-		// The search endpoint is limited far more tightly than the rest of the API.
-		time.Sleep(2 * time.Second)
+		time.Sleep(c.pause)
 	}
 	return out, nil
 }
@@ -161,7 +171,7 @@ func (c *client) readme(repo string) (text, sha string, ok bool, err error) {
 		Encoding string `json:"encoding"`
 		SHA      string `json:"sha"`
 	}
-	if err := c.get("https://api.github.com/repos/"+repo+"/readme", &payload); err != nil {
+	if err := c.get(c.base+"/repos/"+repo+"/readme", &payload); err != nil {
 		if errors.Is(err, errNotFound) {
 			return "", "", false, nil
 		}
@@ -185,6 +195,12 @@ func collect(want int, path string, w io.Writer) error {
 	if err != nil {
 		return err
 	}
+	return c.collectInto(want, path, w)
+}
+
+// collectInto is collect with the client supplied, so a test can drive the whole path
+// against a local server instead of GitHub.
+func (c *client) collectInto(want int, path string, w io.Writer) error {
 	f, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("create %s: %w", path, err)
@@ -273,7 +289,7 @@ func (c *client) lastCommitBefore(repo, cutoff string) (sha string, ok bool, err
 	var commits []struct {
 		SHA string `json:"sha"`
 	}
-	u := fmt.Sprintf("https://api.github.com/repos/%s/commits?until=%sT00:00:00Z&per_page=1", repo, cutoff)
+	u := fmt.Sprintf("%s/repos/%s/commits?until=%sT00:00:00Z&per_page=1", c.base, repo, cutoff)
 	if err := c.get(u, &commits); err != nil {
 		return "", false, err
 	}
@@ -289,7 +305,7 @@ func (c *client) readmeAt(repo, ref string) (text string, ok bool, err error) {
 		Content  string `json:"content"`
 		Encoding string `json:"encoding"`
 	}
-	u := fmt.Sprintf("https://api.github.com/repos/%s/readme?ref=%s", repo, ref)
+	u := fmt.Sprintf("%s/repos/%s/readme?ref=%s", c.base, repo, ref)
 	if err := c.get(u, &payload); err != nil {
 		if errors.Is(err, errNotFound) {
 			return "", false, nil
@@ -313,6 +329,11 @@ func collectPinned(want int, path string, w io.Writer) error {
 	if err != nil {
 		return err
 	}
+	return c.collectPinnedInto(want, path, w)
+}
+
+// collectPinnedInto is collectPinned with the client supplied, for the same reason.
+func (c *client) collectPinnedInto(want int, path string, w io.Writer) error {
 	f, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("create %s: %w", path, err)
@@ -393,8 +414,8 @@ var pinnedStarSlices = []string{
 func (c *client) searchQuery(q string, want int) ([]repoHit, error) {
 	var out []repoHit
 	for page := 1; page <= 10 && len(out) < want; page++ {
-		u := fmt.Sprintf("https://api.github.com/search/repositories?q=%s&per_page=100&page=%d&sort=stars",
-			url.QueryEscape(q), page)
+		u := fmt.Sprintf("%s/search/repositories?q=%s&per_page=100&page=%d&sort=stars",
+			c.base, url.QueryEscape(q), page)
 		var payload struct {
 			Items []repoHit `json:"items"`
 		}
@@ -405,7 +426,7 @@ func (c *client) searchQuery(q string, want int) ([]repoHit, error) {
 			break
 		}
 		out = append(out, payload.Items...)
-		time.Sleep(2 * time.Second)
+		time.Sleep(c.pause)
 	}
 	return out, nil
 }
