@@ -95,6 +95,45 @@ perceive, on text it never trained against. A weak one says the score measures r
 compliance and the product language must keep saying so. Either result is worth having
 before rule two hundred, and either result gets published, failures included.
 
+## Rating the corpus
+
+The protocol asks for people to read samples without knowing which are machine-written,
+and until now nothing presented them that way, so the corpus sat collected and unrated.
+
+```sh
+go run ./evaldata/harness -rate your-id
+go run ./evaldata/harness -rate other-id -rate-seed 42
+```
+
+Samples come one at a time in an order derived from the seed, so two raters see different
+orders and either order can be reproduced. The label is never shown, the score is never
+shown, and nothing on screen hints at the answer. Answers are appended as they are given,
+so a session can be stopped with `q` and resumed later without repeating a sample.
+
+The blocker this leaves is the real one. The tool no longer stands in the way. Independent
+raters do, and a project nobody has heard of has no obvious source of them.
+
+## Generating the machine half
+
+```sh
+go run ./evaldata/harness -generate-ai 3 -generate-tag v0.39.2
+```
+
+Samples are generated locally through ollama, across genres and across three ways of
+asking: the plain ask, the styled ask, and the adversarial ask that names the cliches and
+tells the model to avoid them. The adversarial third matters most, since that is the prose
+a word list is least likely to catch. A reply outside the sixty to four hundred word band
+is discarded rather than trimmed, because trimming would edit the model's writing and the
+sample is supposed to be what it actually wrote.
+
+The limitation is worth stating before anyone quotes a number off this corpus. The
+protocol asks for at least five model families. What is here comes from small local open
+models, because they cost nothing and need no key, and small local models do not write the
+way the frontier models do. That makes this half of the corpus a weaker test than it looks:
+it measures whether the score tracks human perception of machine prose in general, not
+whether it tracks perception of the prose people actually mean when they say AI slop.
+Replacing it with frontier samples is the first thing to do when a key is available.
+
 ## The pre-2022 false positive measurement
 
 The rated corpus above needs people. This one needs nobody, and it is available today.
