@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -256,5 +258,48 @@ func TestLanguageSpread(t *testing.T) {
 	}
 	if got := languageSpread(nil); got != "" {
 		t.Errorf("languageSpread(nil) = %q, want empty", got)
+	}
+}
+
+// TestGenerateAIPromptSpread checks the axis the machine half depends on. The adversarial
+// ask is the one that produces prose a word list cannot catch, so it has to be in the
+// rotation rather than an afterthought, and every genre has to be reachable.
+func TestGenerateAIPromptSpread(t *testing.T) {
+	t.Parallel()
+	var adversarial bool
+	for _, s := range genStyles {
+		if s.name == "adversarial" {
+			adversarial = true
+			if !strings.Contains(s.instruction, "em-dash") {
+				t.Errorf("the adversarial ask does not name the tells it should dodge: %q", s.instruction)
+			}
+		}
+	}
+	if !adversarial {
+		t.Errorf("no adversarial prompt style, which is the half a word list misses")
+	}
+	if len(genGenres) < 5 {
+		t.Errorf("genres = %d, want the five the protocol asks for", len(genGenres))
+	}
+	seen := map[string]bool{}
+	for _, g := range genGenres {
+		if seen[g.name] {
+			t.Errorf("duplicate genre %q", g.name)
+		}
+		seen[g.name] = true
+		if g.task == "" {
+			t.Errorf("genre %q has no task", g.name)
+		}
+	}
+}
+
+// TestGenerateAINeedsDaemon checks that a missing ollama is an error rather than a corpus
+// quietly filled with empty samples.
+func TestGenerateAINeedsDaemon(t *testing.T) {
+	t.Parallel()
+	c := &http.Client{Timeout: time.Second}
+	// Port zero is never listening, so this is the daemon-absent path.
+	if _, err := ollamaGenerate(c, "http://127.0.0.1:1", "nope", "hi"); err == nil {
+		t.Skip("something is listening on the ollama port")
 	}
 }

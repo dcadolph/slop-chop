@@ -52,6 +52,11 @@ func main() {
 	pinned := flag.Int("collect-pinned", 0, "collect N READMEs from maintained repositories, read at their last pre-2022 commit")
 	falsePos := flag.Bool("pre2022", false, "score the pre-2022 READMEs and report the false-positive rate")
 	manifest := flag.String("pre2022-manifest", "", "also write a text-free manifest of the scored samples here")
+	rater := flag.String("rate", "", "rate the locked corpus blind as this rater id")
+	genAI := flag.Int("generate-ai", 0, "generate N machine samples per model, genre, and prompt style")
+	genModels := flag.String("generate-models", "llama3.2:3b,qwen2.5-coder:14b", "comma separated ollama models to generate from")
+	genTag := flag.String("generate-tag", "", "the frozen ruleset tag to record on generated samples")
+	seed := flag.Int("rate-seed", 1, "presentation order for this rater")
 	corpus := flag.String("pre2022-file", "evaldata/pre2022.jsonl", "where the pre-2022 READMEs are read from and written to")
 	flag.Parse()
 
@@ -61,6 +66,15 @@ func main() {
 		err = collect(*gather, *corpus, os.Stdout)
 	case *pinned > 0:
 		err = collectPinned(*pinned, *corpus, os.Stdout)
+	case *genAI > 0:
+		if strings.TrimSpace(*genTag) == "" {
+			err = errors.New("-generate-tag is required: a sample records the ruleset frozen before it")
+			break
+		}
+		err = generateAI(strings.Split(*genModels, ","), *genAI, defaultPaths().samples, *genTag, os.Stdout)
+	case *rater != "":
+		p := defaultPaths()
+		err = runRate(p.samples, p.ratings, *rater, *seed, os.Stdin, os.Stdout)
 	case *falsePos:
 		err = runPre2022(*corpus, *manifest, os.Stdout)
 	default:
