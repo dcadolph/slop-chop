@@ -47,11 +47,44 @@ var errCorpus = errors.New("corpus problems")
 
 func main() {
 	check := flag.Bool("check", false, "validate the corpus and the lock, then exit")
+	gather := flag.Int("collect-pre2022", 0, "collect N READMEs from repositories untouched since 2021")
+	pinned := flag.Int("collect-pinned", 0, "collect N READMEs from maintained repositories, read at their last pre-2022 commit")
+	falsePos := flag.Bool("pre2022", false, "score the pre-2022 READMEs and report the false-positive rate")
+	corpus := flag.String("pre2022-file", "evaldata/pre2022.jsonl", "where the pre-2022 READMEs are read from and written to")
 	flag.Parse()
-	if err := run(*check, defaultPaths(), os.Stdout); err != nil {
+
+	var err error
+	switch {
+	case *gather > 0:
+		err = collect(*gather, *corpus, os.Stdout)
+	case *pinned > 0:
+		err = collectPinned(*pinned, *corpus, os.Stdout)
+	case *falsePos:
+		err = runPre2022(*corpus, os.Stdout)
+	default:
+		err = run(*check, defaultPaths(), os.Stdout)
+	}
+	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+// runPre2022 scores the collected READMEs and writes the false-positive measurement to w.
+func runPre2022(path string, w io.Writer) error {
+	readmes, err := readLines[Readme](path)
+	if err != nil {
+		return err
+	}
+	s, err := sanitize.New(sanitize.DefaultProfile())
+	if err != nil {
+		return fmt.Errorf("sanitizer: %w", err)
+	}
+	results, skipped := scoreReadmes(s, readmes)
+	var b strings.Builder
+	pre2022Report(&b, results, skipped, provenanceOf(readmes), languageSpread(results))
+	_, err = io.WriteString(w, b.String())
+	return err
 }
 
 // run validates the corpora and, unless check is set, writes the analysis to w. Every
