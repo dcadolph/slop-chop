@@ -144,3 +144,47 @@ rate that holds across seven language ecosystems is worth more than one measured
 single community, which is why the collection spreads across them, but none of it
 generalizes to essays, marketing copy, or long-form argument. The number describes
 README prose and should be quoted that way.
+
+### Result, 2026-09-15, ruleset v0.39.2
+
+Both samples, scored once and published whatever they said.
+
+| | Push-date | Pinned |
+| --- | --- | --- |
+| Scored | 852 | 418 |
+| Ecosystems | 7 | 7 |
+| Median prose | 371 words | 543 words&nbsp; |
+| Median score | 1 | 1 |
+| p90 / p99 | 5 / 14 | 5 / 10 |
+| Worst sample | 20 | 21 |
+| **At or above 25** | **0 (0.0%)** | **0 (0.0%)** |
+
+1270 human documents, no false positives, and the worst of them sat four points under
+the line. The abandonment bias the pinned sample exists to check runs the opposite way
+from the flattering one: maintained projects write 46 percent more prose per README and
+are skipped far less often, so that sample hands the engine more surface to trip on and
+it still found nothing.
+
+`pre2022-manifest.jsonl` and `pinned-manifest.jsonl` carry one row per scored sample:
+repository, commit, ecosystem, word count, score, and the rules that fired. No README
+text is redistributed, and the commit makes every row re-fetchable, so the numbers above
+can be checked rather than believed.
+
+### What the result did not justify
+
+The rules that fire most on human prose are the lexical ones, and the attack command
+shows the lexical rules are also the evadable ones: 35 of 76 word tells and 8 of 12
+phrase tells fall to a thesaurus, against 2 of 66 structural tells. Two lines of evidence
+pointing the same way made a case for weighing the lexical half less.
+
+Measuring it did not support the change. Dropping word and phrase weight to 0.75 removes
+the one human false positive in the development corpus and loses one machine passage, and
+reading the two shows why: `That said, there are real tradeoffs` and a sentence of stacked
+corporate buzzwords both move from 32 to 24. The weight moves everything uniformly and
+separates nothing, so the trade is one true positive for one false positive.
+
+No rule in the 1270 documents fires on more than 6 percent of them, and the false positive
+that does exist comes from a single ordinary finding in an eighteen-word passage rather
+than from any rule being weighed too heavily. The evidence says the weighting is already
+where it should be, so it stays there. The lexical rules remain the evadable half, which
+is a fact about durability rather than about precision, and those are different claims.
