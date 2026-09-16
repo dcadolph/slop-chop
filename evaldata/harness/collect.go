@@ -345,8 +345,11 @@ func (c *client) collectPinnedInto(want int, path string, w io.Writer) error {
 	written := 0
 	perSlice := want/(len(pinnedStarSlices)*len(collectLanguages)) + 1
 
-	for _, lang := range collectLanguages {
-		for _, slice := range pinnedStarSlices {
+	// Star tier outer, ecosystem inner, for the same reason as the push-date sample: the
+	// other order lets the first ecosystem take its whole budget while the last one is
+	// never reached at all.
+	for _, slice := range pinnedStarSlices {
+		for _, lang := range collectLanguages {
 			if written >= want {
 				break
 			}
