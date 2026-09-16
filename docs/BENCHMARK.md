@@ -28,9 +28,9 @@ tell or the trap it exercises.
 
 | Label       | Passages | What it holds                                                          |
 |-------------|----------|------------------------------------------------------------------------|
-| `ai`        | 58       | Machine-register prose: each passage exercises specific tells, from buzzword density to the polished 2026 register with no lexical tells at all.&nbsp; |
-| `human`     | 35       | Human prose chosen to trip a careless detector: poetry heavy with em-dashes, ornate academic writing, plain conversational notes, a graduation speech. |
-| `technical` | 22       | Precision traps: RFC normative language, legal parallel structure, reference docs that repeat their subject, prose that has every right to sound formal. |
+| `ai`        | 68       | Machine-register prose: each passage exercises specific tells, from buzzword density to the polished 2026 register with no lexical tells at all.&nbsp; |
+| `human`     | 45       | Human prose chosen to trip a careless detector: poetry heavy with em-dashes, ornate academic writing, plain conversational notes, a graduation speech. |
+| `technical` | 36       | Precision traps: RFC normative language, legal parallel structure, reference docs that repeat their subject, prose that has every right to sound formal. |
 
 The passages were written and curated during adversarial audit rounds, on purpose, to
 probe where the engine fails. That is also the corpus's main limitation, covered below.
@@ -41,24 +41,24 @@ The benchmark reports these on every run and fails below the floors.
 
 | Metric                                | Current | Floor |
 |---------------------------------------|---------|-------|
-| Tell recall (AI passages with a tell) | 0.98    | 0.95  |
+| Tell recall (AI passages with a tell) | 0.99    | 0.95  |
 | Technical precision (no false tell)   | 1.00    | 0.98  |
-| Score recall (AI at 25 or higher)     | 0.98    | 0.95  |
-| Score precision (at 25 or higher)     | 0.98    | 0.98  |
-| Mean score, AI passages               | 77.8    |       |
-| Mean score, human passages            | 1.9     |       |
-| Score margin (AI mean minus human)    | 75.9    | 70    |
+| Score recall (AI at 25 or higher)     | 0.99    | 0.95  |
+| Score precision (at 25 or higher)     | 0.99    | 0.98  |
+| Mean score, AI passages               | 78.0    |       |
+| Mean score, human passages            | 1.5     |       |
+| Score margin (AI mean minus human)    | 76.6    | 70    |
 
 The floors sit below the current numbers so ordinary changes pass while a real
 regression fails. They ratchet up as the engine and the corpus improve.
 
 ## What fires on what
 
-116 distinct rules fire across the 58 AI passages. By class:
+119 distinct rules fire across the 68 AI passages. By class:
 
 | Class      | Findings | Score weight                     |
 |------------|----------|-----------------------------------|
-| Structural | 78       | 2 per finding                     |
+| Structural | 89       | 2 per finding                     |
 | Word       | 71       | 1                                 |
 | Phrase     | 13       | 1                                 |
 | Character  | 5        | 1 for the em-dash and invisibles&nbsp; |
@@ -68,11 +68,11 @@ Sentence shapes, not word lists, carry the most weight. That is deliberate: a st
 sentence shape is stronger evidence than one word, and word lists are the first thing a
 model gets trained away from.
 
-On the 35 human passages the engine finds typography almost exclusively: curly quotes,
-en-dashes, an ellipsis. Those carry zero score weight, which is why a professionally
-typeset human page averages 1.9 rather than getting flagged for its punctuation. One
-`that said,` and one semicolon round out the human findings. The 22 technical passages
-produce zero findings.
+On the 45 human passages the engine finds typography almost exclusively: nineteen curly
+quotes, en-dashes, and ellipses. Those carry zero score weight, which is why a
+professionally typeset human page averages 1.5 rather than getting flagged for its
+punctuation. One `that said,` and one semicolon round out the human findings. The 36
+technical passages produce zero findings.
 
 ## Attacking it on purpose
 
@@ -82,16 +82,19 @@ em-dash becomes punctuation no rule reads. Then it reports what survived. Every
 replacement it reaches for is itself checked against the default profile by a test, so an
 evasion that stops evading fails the build.
 
-Run against all 58 AI passages, the attack tells the story the score weighting rests on:
+Run against all 68 AI passages, the attack tells the story the score weighting rests on:
 
 | Class      | Evaded | Held | What that means                                                    |
 |------------|--------|------|---------------------------------------------------------------------|
 | Word       | 33     | 38   | A word list is a lookup, and a lookup loses to a thesaurus.&nbsp;    |
-| Structural | 1      | 77   | A sentence shape has to be rebuilt to escape, which no swap does.   |
+| Structural | 1      | 88   | A sentence shape has to be rebuilt to escape, which no swap does.   |
 
-54 of the 58 passages still carry a tell after the attack, and the mean score falls only
-from 77 to 72. That gap is why a structural tell counts two and a word counts one, and
-the test that measures it fails the build if the classes ever invert.
+64 of the 68 passages still carry a tell after the attack. That gap is why a structural
+tell counts two and a word counts one, and the test that measures it fails the build if
+the classes ever invert.
+
+The asymmetry is the most load-bearing number here. It says the durable half of the
+engine is the structural half, and that a published word list is a depreciating asset.
 
 Read the word row as a floor rather than a measurement of rule strength. The evasion
 table covers a few dozen entries against a block list of 161, so a fuller thesaurus would
@@ -99,6 +102,43 @@ evade more. The structural row is the real finding: substitution barely touches 
 
 [slop-chop on slop-chop](ITSELF.md) turns the engine on its own documentation and output:
 whether the docs pass, whether chopping settles, and what one pass actually leaves behind.
+
+## Prose the rules never saw
+
+The corpus above shares an author with the rules, which is the limitation its own section
+admits. One question it cannot answer is whether the engine fires on ordinary professional
+writing nobody involved here has read. That one has an answer that needs no raters, because
+ground truth can come from the calendar: a README in a repository with no push after 2021
+was written before a general writing model existed.
+
+| | Abandoned projects | Maintained projects&nbsp; |
+| --- | --- | --- |
+| READMEs scored | 852 | 418 |
+| Ecosystems | 7 | 7 |
+| Median prose | 371 words | 543 words |
+| Median score | 1 | 1 |
+| p90 / p99 | 5 / 14 | 5 / 10 |
+| Worst sample | 20 | 21 |
+| **Scoring 25 or higher** | **0** | **0** |
+
+1270 documents across Go, Python, Rust, JavaScript, Java, Ruby, and C++, and not one
+reached the reads-clean line. The second column is the check on the first: a repository
+untouched since 2021 is an abandoned one, and abandoned projects might write differently.
+They do, in the direction that makes the test harder rather than easier, since maintained
+projects carry half again as much prose per README for the engine to trip on.
+
+The rules that do fire on human prose are worth naming: `word:powerful` leads at six
+percent of documents, then curly quotes, `structural:bold-bullet-run`, and
+`structural:template-stem`. Nothing reaches seven percent. The character rules dominate the
+raw counts and contribute nothing to the score, which is the separation between a finding
+and a score weight doing its job on writing it has never seen.
+
+This measures quiet, not detection. There are no machine samples in it, so it says nothing
+about recall, and a clean sweep is evidence the engine stays out of the way rather than
+evidence it works. It is also one genre, and a README is terse and list-heavy, so the
+number describes README prose and is quoted that way. `evaldata/README.md` carries the
+method, and the two manifests beside it carry a row per sample with the commit it was read
+at, so the numbers can be rechecked rather than believed.
 
 ## Limitations, plainly
 
