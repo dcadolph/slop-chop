@@ -5,6 +5,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -50,6 +51,7 @@ func main() {
 	gather := flag.Int("collect-pre2022", 0, "collect N READMEs from repositories untouched since 2021")
 	pinned := flag.Int("collect-pinned", 0, "collect N READMEs from maintained repositories, read at their last pre-2022 commit")
 	falsePos := flag.Bool("pre2022", false, "score the pre-2022 READMEs and report the false-positive rate")
+	manifest := flag.String("pre2022-manifest", "", "also write a text-free manifest of the scored samples here")
 	corpus := flag.String("pre2022-file", "evaldata/pre2022.jsonl", "where the pre-2022 READMEs are read from and written to")
 	flag.Parse()
 
@@ -60,7 +62,7 @@ func main() {
 	case *pinned > 0:
 		err = collectPinned(*pinned, *corpus, os.Stdout)
 	case *falsePos:
-		err = runPre2022(*corpus, os.Stdout)
+		err = runPre2022(*corpus, *manifest, os.Stdout)
 	default:
 		err = run(*check, defaultPaths(), os.Stdout)
 	}
@@ -71,7 +73,7 @@ func main() {
 }
 
 // runPre2022 scores the collected READMEs and writes the false-positive measurement to w.
-func runPre2022(path string, w io.Writer) error {
+func runPre2022(path, manifestPath string, w io.Writer) error {
 	readmes, err := readLines[Readme](path)
 	if err != nil {
 		return err
@@ -81,6 +83,11 @@ func runPre2022(path string, w io.Writer) error {
 		return fmt.Errorf("sanitizer: %w", err)
 	}
 	results, skipped := scoreReadmes(s, readmes)
+	if manifestPath != "" {
+		if err := writeManifest(manifestPath, manifestOf(readmes, results)); err != nil {
+			return err
+		}
+	}
 	var b strings.Builder
 	pre2022Report(&b, results, skipped, provenanceOf(readmes), languageSpread(results))
 	_, err = io.WriteString(w, b.String())
@@ -139,4 +146,21 @@ func run(check bool, p paths, w io.Writer) error {
 	report(&b, rows, ratings)
 	_, err = io.WriteString(w, b.String())
 	return err
+}
+
+// writeManifest writes one manifest row per line, so a published result can be audited
+// against the commits it was measured on.
+func writeManifest(path string, rows []Manifest) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("create %s: %w", path, err)
+	}
+	defer func() { _ = f.Close() }()
+	enc := json.NewEncoder(f)
+	for _, r := range rows {
+		if err := enc.Encode(r); err != nil {
+			return fmt.Errorf("write %s: %w", path, err)
+		}
+	}
+	return nil
 }

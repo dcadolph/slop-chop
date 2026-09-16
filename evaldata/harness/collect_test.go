@@ -429,7 +429,7 @@ func TestRunPre2022(t *testing.T) {
 		t.Fatalf("write: %v", err)
 	}
 	var out strings.Builder
-	if err := runPre2022(path, &out); err != nil {
+	if err := runPre2022(path, "", &out); err != nil {
 		t.Fatalf("runPre2022: %v", err)
 	}
 	for _, want := range []string{"false positive measurement", "samples scored:   1", "Go 1"} {

@@ -264,6 +264,49 @@ func languageSpread(results []readmeResult) string {
 	return strings.Join(parts, ", ")
 }
 
+// Manifest is one scored sample without its text: enough to re-fetch the exact bytes and
+// check the number, and nothing that redistributes somebody else's README.
+type Manifest struct {
+	// Repo is the owner and name.
+	Repo string `json:"repo"`
+	// SHA is the commit the README was read at.
+	SHA string `json:"sha"`
+	// Language is the ecosystem.
+	Language string `json:"language"`
+	// Words is the prose word count the score was measured against.
+	Words int `json:"words"`
+	// Score is the slop score.
+	Score int `json:"score"`
+	// Rules are the tell rules that fired, deduplicated and sorted.
+	Rules []string `json:"rules,omitempty"`
+}
+
+// manifestOf pairs each scored result with the sample it came from, so a published number
+// can be checked against the exact commits behind it.
+func manifestOf(readmes []Readme, results []readmeResult) []Manifest {
+	shas := make(map[string]string, len(readmes))
+	for _, r := range readmes {
+		shas[r.Repo] = r.SHA
+	}
+	out := make([]Manifest, 0, len(results))
+	for _, r := range results {
+		seen := map[string]bool{}
+		var rules []string
+		for _, rule := range r.rules {
+			if !seen[rule] {
+				seen[rule] = true
+				rules = append(rules, rule)
+			}
+		}
+		sort.Strings(rules)
+		out = append(out, Manifest{
+			Repo: r.repo, SHA: shas[r.repo], Language: r.language,
+			Words: r.words, Score: r.score, Rules: rules,
+		})
+	}
+	return out
+}
+
 // pre2022Report writes the measurement: how the sample was drawn, how the scores are
 // distributed, how many cross the threshold, and which rules cost the most.
 func pre2022Report(w *strings.Builder, results []readmeResult, skipped int, provenance, spread string) {
