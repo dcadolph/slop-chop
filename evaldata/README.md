@@ -94,3 +94,53 @@ A strong correlation says the ruleset's patterns track the thing people actually
 perceive, on text it never trained against. A weak one says the score measures rule
 compliance and the product language must keep saying so. Either result is worth having
 before rule two hundred, and either result gets published, failures included.
+
+## The pre-2022 false positive measurement
+
+The rated corpus above needs people. This one needs nobody, and it is available today.
+
+Ground truth here is the calendar. A README written before 2022 predates any general
+writing model in ordinary use, so the prose is human by construction. That gives a large
+sample of real professional writing, drawn from repositories nobody involved with this
+project has ever seen, at no cost beyond the API calls.
+
+Two samples, because one of them has a bias worth removing:
+
+```sh
+# Repositories with no push since 2021. Cheap, and the guarantee is one field.
+go run ./evaldata/harness -collect-pre2022 1400 -pre2022-file evaldata/pre2022.jsonl
+
+# Maintained repositories, README read at the last commit before the cutoff. Costs two
+# more API calls per repository and removes the abandonment bias.
+go run ./evaldata/harness -collect-pinned 600 -pre2022-file evaldata/pinned.jsonl
+
+go run ./evaldata/harness -pre2022 -pre2022-file evaldata/pre2022.jsonl
+```
+
+A sample of repositories untouched since 2021 is a sample of abandoned projects, and
+abandoned projects may write differently from maintained ones. That bias runs in the
+direction that flatters the engine, so the pinned sample exists to check it. Agreement
+between the two is the result worth reporting.
+
+A README is scored only when it carries at least a hundred words of prose once code and
+fences are masked, and only when nine tenths of its letters are ASCII. The rest are badge
+walls, stubs, and READMEs in other languages, where a score reads nothing. The skip count
+is reported alongside the result, because it is large.
+
+### What this measures, and what it does not
+
+It measures one thing: how often the engine fires on professional human writing it has
+never seen. The report names the rate at the reads-clean threshold and, more usefully,
+ranks the rules by how many distinct human documents they fired on. A rule near the top
+of that list is either a real tell people use anyway or a rule that wants a guard.
+
+It cannot measure detection. There are no machine samples here, so the run says nothing
+about recall, and a low false positive rate is not evidence that the engine works. It is
+evidence that the engine is quiet where it should be quiet. Those are different claims
+and only the rated corpus above can make the other one.
+
+It is also one genre. READMEs are terse, technical, and heavy on lists and headings. A
+rate that holds across seven language ecosystems is worth more than one measured on a
+single community, which is why the collection spreads across them, but none of it
+generalizes to essays, marketing copy, or long-form argument. The number describes
+README prose and should be quoted that way.
