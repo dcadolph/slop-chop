@@ -134,6 +134,33 @@ it measures whether the score tracks human perception of machine prose in genera
 whether it tracks perception of the prose people actually mean when they say AI slop.
 Replacing it with frontier samples is the first thing to do when a key is available.
 
+## Matching the register, and why it nearly went wrong
+
+The two halves have to be comparable or the experiment measures the wrong thing. The human
+samples started as nineteenth century essays and letters, which was fine while there was
+nothing to compare them against. Filling the machine half with modern work email, READMEs,
+and status reports broke that: a rater set to separate Emerson from a generated
+maintenance notice can score a perfect result on century and genre alone, without once
+judging whether anything reads machine-written.
+
+That would not have looked like a failure. It would have looked like a strong correlation,
+which is the worst kind of wrong result to publish.
+
+So the human half now takes README prose from repositories untouched since 2021, the one
+modern human register available in volume with a hard date guarantee. Repositories already
+spent on the false positive measurement are excluded, since those were used to weigh a
+candidate rule change and the lock keeps them out.
+
+The markup is stripped rather than kept: fences, headings, badges, tables, and lists go,
+and so do link syntax and code spans inside the lines that survive. A human sample still
+carrying a backtick is separable from a generated one on markup alone, which hands over
+the answer as surely as the label would.
+
+Four of the five machine genres still have no human counterpart. Email, blog, report, and
+chat written before 2022 are not available in volume under a license that allows
+redistribution, so the corpus is honest about covering one genre on both sides rather than
+pretending to cover five. A number read off it describes README prose.
+
 ## The pre-2022 false positive measurement
 
 The rated corpus above needs people. This one needs nobody, and it is available today.
