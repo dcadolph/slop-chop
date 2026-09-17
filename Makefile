@@ -91,7 +91,10 @@ site: wasm
 site-deploy: site
 	npx -y wrangler@4 deploy --config wrangler.site.jsonc
 
-## check-versions: every shipped surface must name one version. The release fails its
+## check-versions: every shipped surface must name one version, including the ones a
+## stranger reads before installing anything: the plugin manifest and the pre-commit rev
+## in the install snippets. The plugin sat at 0.10.0 for twenty-nine minor releases because
+## nothing checked it, which told every visitor the project was abandoned. The release fails its
 ## README pin check when these drift, and OpenVSX looks for a vsix named from the tag, so
 ## a surface left behind silently misses its publish. The Obsidian manifest and the npm
 ## package are rewritten from the tag during the release and are checked here anyway, so
@@ -111,6 +114,12 @@ check-versions:
 	if [ "$$v" != "$$pin" ]; then echo "jetbrains/build.gradle.kts is $$v, README pins $$pin"; fail=1; fi; \
 	if ! grep -q "\"$$pin\"[[:space:]]*:" obsidian/versions.json; then \
 		echo "obsidian/versions.json has no entry for $$pin"; fail=1; fi; \
+	v=$$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' .claude-plugin/plugin.json | head -1); \
+	if [ "$$v" != "$$pin" ]; then echo ".claude-plugin/plugin.json is $$v, README pins $$pin"; fail=1; fi; \
+	for f in .pre-commit-hooks.yaml integrations/README.md; do \
+		bad=$$(grep -oE "rev: v[0-9]+\.[0-9]+\.[0-9]+" $$f | grep -v "rev: v$$pin" || true); \
+		if [ -n "$$bad" ]; then echo "$$f pins $$bad, README pins v$$pin"; fail=1; fi; \
+	done; \
 	if [ "$$fail" != "0" ]; then \
 		echo "every shipped surface must name $$pin before the tag is cut"; exit 1; fi; \
 	echo "every shipped surface names $$pin"
