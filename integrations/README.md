@@ -36,7 +36,7 @@ Flag slop in your commits with [pre-commit](https://pre-commit.com). In a repo's
 
 ```yaml
 - repo: https://github.com/dcadolph/slop-chop
-  rev: v0.23.0
+  rev: v0.39.2
   hooks:
     - id: slop-chop
 ```
