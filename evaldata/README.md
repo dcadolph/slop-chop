@@ -254,3 +254,53 @@ that does exist comes from a single ordinary finding in an eighteen-word passage
 than from any rule being weighed too heavily. The evidence says the weighting is already
 where it should be, so it stays there. The lexical rules remain the evadable half, which
 is a fact about durability rather than about precision, and those are different claims.
+
+### First result off the locked corpus, 2026-09-16, ruleset v0.39.2
+
+No ratings yet, so this answers the narrower question the labels alone can answer: does
+the score tell the halves apart on prose the rules never saw?
+
+| | Machine | Human |
+| --- | --- | --- |
+| Samples | 89 | 98 |
+| Mean score | 9.7 | 1.9 |
+| At or above 25 | 8 | 1 |
+
+Separation by score is 0.752, where 0.5 is chance and 1.0 is perfect.
+
+Put that beside the development corpus, where the machine half means 78.0 and 99 percent
+of it clears 25. Here 9 percent clears 25. The same engine, the same threshold, and a
+different answer, which is the whole reason a corpus collected after the rules were frozen
+is worth the trouble.
+
+By prompt style, machine samples at or above 25:
+
+| Ask | Samples | Mean | Cleared 25&nbsp; |
+| --- | --- | --- | --- |
+| styled | 27 | 11.9 | 4 |
+| plain | 31 | 9.4 | 3 |
+| adversarial | 31 | 8.0 | 1 |
+
+The gradient runs the way it should. A model told to sound polished writes the most
+catchable prose, and a model told to avoid the cliches by name writes prose the ruleset
+almost never flags. That is the ruleset working exactly as advertised against the tells it
+lists, and it is also the ceiling on what a list of tells can do.
+
+### What this result does not say
+
+It does not say the engine fails. The separation is well above chance, the human half is
+nearly silent at 1 of 98, and that silence matches the 1270 README measurement. On the
+question of not bothering honest writing, two independent corpora now agree.
+
+It does not say the engine detects machine writing in general. Nine percent at the
+threshold is what it says, on this corpus.
+
+And the corpus has a limitation that cuts toward the engine's defense rather than against
+it. The machine samples come from two small local models, and small models do not write
+the polished register the ruleset was built from. A frontier model asked for a confident
+professional voice produces far more of the prose these rules target. Replacing the
+machine half with frontier samples is the first thing to do when a key is available, and
+the number above should be read as provisional until that happens.
+
+No rule was changed after seeing this. The lock holds, the samples stay frozen, and the
+result is published as it came out.
