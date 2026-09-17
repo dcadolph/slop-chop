@@ -160,8 +160,11 @@ func run(check bool, p paths, w io.Writer) error {
 	}
 	rows := scoreSamples(s, samples, ratings)
 	if len(rows) == 0 {
-		_, err := fmt.Fprintln(w,
-			"evaldata: samples exist but none are rated yet; see the rating protocol")
+		// No ratings yet, but the labels alone answer a narrower question, so report
+		// that rather than nothing.
+		var b strings.Builder
+		labelReport(&b, s, samples)
+		_, err := io.WriteString(w, b.String())
 		return err
 	}
 	var b strings.Builder

@@ -302,6 +302,59 @@ func scoreSamples(s *sanitize.Sanitizer, samples []Sample, ratings []Rating) []s
 	return out
 }
 
+// labelReport writes what the corpus can say before a single rater has seen it. The
+// separation between the machine and human halves needs only the ground truth labels, so
+// it is available the moment the corpus is collected, and it is the sharpest thing the
+// corpus tests: whether the score tells the halves apart on prose the rules never saw.
+// It is not the headline the protocol is after, which is agreement with human judgment,
+// and it cannot become that however good it looks.
+func labelReport(w *strings.Builder, s *sanitize.Sanitizer, samples []Sample) {
+	var ai, human []float64
+	byGenre := map[string][]float64{}
+	for _, sample := range samples {
+		v := float64(s.Score(sample.Text).Value)
+		if sample.Source == "ai" {
+			ai = append(ai, v)
+		} else {
+			human = append(human, v)
+		}
+		if g := sample.Meta["genre"]; g != "" {
+			byGenre[g] = append(byGenre[g], v)
+		}
+	}
+	fmt.Fprintf(w, "unrated corpus: %d machine, %d human\n\n", len(ai), len(human))
+	fmt.Fprintf(w, "mean score, machine: %s\n", num(mean(ai)))
+	fmt.Fprintf(w, "mean score, human:   %s\n", num(mean(human)))
+	fmt.Fprintf(w, "separation by score: %s (0.5 chance, 1.0 perfect)\n", num(separation(ai, human)))
+	fmt.Fprintf(w, "machine at or above 25: %d of %d\n", atOrAbove(ai, 25), len(ai))
+	fmt.Fprintf(w, "human at or above 25:   %d of %d\n", atOrAbove(human, 25), len(human))
+	fmt.Fprintf(w, "\nThis is separation, not agreement with a reader. The protocol's question\n")
+	fmt.Fprintf(w, "needs blind human ratings and none have been collected.\n")
+}
+
+// mean returns the average of values, or zero when there are none.
+func mean(values []float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+	var sum float64
+	for _, v := range values {
+		sum += v
+	}
+	return sum / float64(len(values))
+}
+
+// atOrAbove counts the values at or above a threshold.
+func atOrAbove(values []float64, threshold float64) int {
+	n := 0
+	for _, v := range values {
+		if v >= threshold {
+			n++
+		}
+	}
+	return n
+}
+
 // report writes the full analysis. The disagreement lists are the finding whatever the
 // headline number says, so they print either way.
 func report(w *strings.Builder, rows []scored, ratings []Rating) {

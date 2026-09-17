@@ -301,10 +301,11 @@ func TestRun(t *testing.T) {
 		Name:    "no samples",
 		Paths:   paths{samples: empty, ratings: empty, dev: dev},
 		WantOut: "no samples yet",
-	}, { // Test 3: Samples with no ratings cannot be analyzed yet.
+	}, { // Test 3: Without ratings the labels still answer the narrower question, and the
+		// report has to say which question that is rather than let it pass for the other.
 		Name:    "unrated",
 		Paths:   paths{samples: good, ratings: empty, dev: dev},
-		WantOut: "none are rated yet",
+		WantOut: "separation, not agreement with a reader",
 	}, { // Test 4: A rated corpus produces the analysis.
 		Name:    "analysis",
 		Paths:   paths{samples: good, ratings: rated, dev: dev},
