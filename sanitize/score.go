@@ -7,15 +7,20 @@ import (
 	"unicode"
 )
 
-// Score is a read on how much a text reads like AI wrote it, from 0 for clean to 100 for
-// heavy slop. It sums named signals: the weighted density of rule tells and how
+// Score is a lint result: how densely a text carries the patterns the active profile
+// lists, from 0 for none to 100 for saturated. It is not a reading on who wrote the text
+// and cannot be turned into one, since the same patterns appear in writing people produce
+// on purpose. What it measures is compliance with a named ruleset, which is why a profile
+// that lists different patterns yields a different number for the same prose.
+//
+// It sums named signals: the weighted density of rule tells and how
 // hedge-heavy the register is. Typography normalization and house-style cleanups are
 // reported as findings but carry no score weight, so a professionally typeset human page
 // never reads as slop for its curly quotes. Repeats of one rule count with halving
 // weight, so a poet's em-dashes or a writer's pet word read as a habit, while the same
 // density spread across distinct tells reads as a machine.
 type Score struct {
-	// Value is the 0 to 100 score, the capped sum of the signals below.
+	// Value is the 0 to 100 lint score, the capped sum of the signals below.
 	Value int `json:"value"`
 	// Tells is the number of rule findings in the text.
 	Tells int `json:"tells"`

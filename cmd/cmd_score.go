@@ -72,7 +72,9 @@ func runScore(cmd *cobra.Command, args []string) error {
 }
 
 // scoreBand names the band a score falls in, the same scale the web app shows, so every
-// surface reads the number the same way.
+// surface reads the number the same way. The names describe how much the ruleset found
+// rather than declaring what the text is: "heavy slop" was a verdict on the writing, and
+// the number behind it only ever measured pattern density against a profile.
 func scoreBand(v int) string {
 	switch {
 	case v < 25:
@@ -80,7 +82,7 @@ func scoreBand(v int) string {
 	case v < 55:
 		return "mixed"
 	}
-	return "heavy slop"
+	return "dense with tells"
 }
 
 // scoreOne scores one input and writes the result to stdout. It returns errFindings when

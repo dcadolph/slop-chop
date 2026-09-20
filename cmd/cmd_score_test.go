@@ -97,8 +97,8 @@ func TestScoreByParagraph(t *testing.T) {
 	if len(lines) != 14 {
 		t.Fatalf("lines = %d, want 14 (%q)", len(lines), stdout)
 	}
-	if !strings.Contains(lines[1], path+":3:") || !strings.Contains(lines[1], "heavy slop") {
-		t.Errorf("slop paragraph = %q, want line 3 flagged heavy", lines[1])
+	if !strings.Contains(lines[1], path+":3:") || !strings.Contains(lines[1], "dense with tells") {
+		t.Errorf("slop paragraph = %q, want line 3 in the densest band", lines[1])
 	}
 	for i, l := range lines {
 		if i != 1 && !strings.Contains(l, "reads clean") {
