@@ -133,3 +133,34 @@ cannot put back the tells the rules just cut.
 The rules pass is a function of the text and your profile. It runs in the server process on
 your machine, reaches no network, and writes nothing to disk. The only text that leaves is what
 you send to a model, and only when a call sets `model_rewrite`. See [Privacy](PRIVACY.md).
+
+## Publishing to the MCP registry
+
+The registry indexes metadata, not artifacts. It cannot point at a Go binary directly, so
+the server ships as MCP bundles: a zip holding the binary and a manifest, attached to the
+release and named in `server.json` by URL and SHA-256. The release workflow builds and
+attaches one bundle per platform, which is why the order below puts the release first.
+
+```sh
+# 1. Cut the release. The workflow builds six bundles and attaches them.
+gh release create vX.Y.Z --generate-notes --title "vX.Y.Z: Title"
+
+# 2. Build the same bundles locally and write server.json against that tag.
+make mcpb MCPB_VERSION=X.Y.Z
+make server-json MCPB_VERSION=X.Y.Z
+make check-versions
+
+# 3. Publish. The login is a device flow against your own GitHub account.
+mcp-publisher login github
+mcp-publisher publish
+```
+
+The namespace is `io.github.dcadolph/slop-chop`, which GitHub authentication proves. A
+name under a domain instead would need a DNS TXT record and buys nothing here.
+
+Two things worth knowing before relying on the listing. The registry is in preview and its
+own documentation warns that data resets can happen before general availability, so an
+entry may need republishing. And the hashes in `server.json` have to match bundles that are
+already downloadable, which is why `server-json` runs after the release rather than before.
+`check-versions` fails when `server.json` names a version or a release URL that disagrees
+with the rest of the tree.
