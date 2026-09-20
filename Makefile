@@ -12,7 +12,7 @@ GOBIN := $(shell $(GO) env GOPATH)/bin
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: build install uninstall test cover vet lint fmt tidy clean wasm obsidian npm-package worker site site-deploy check-versions help
+.PHONY: build install uninstall test cover vet lint fmt tidy clean wasm obsidian npm-package worker site site-deploy mcpb server-json check-versions help
 
 ## build: compile the binary into the repo root with the version stamped
 build:
@@ -91,6 +91,83 @@ site: wasm
 site-deploy: site
 	npx -y wrangler@4 deploy --config wrangler.site.jsonc
 
+## mcpb: build one MCP bundle per platform into dist/. A bundle is a zip holding the
+## binary and a manifest, which is how the MCP registry takes a compiled server: it indexes
+## metadata only, so the artifact has to live on a GitHub release and be named by URL and
+## hash. MCPB_VERSION defaults to the version the other surfaces carry.
+MCPB_VERSION ?= $(shell sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' npm/package.json | head -1)
+
+mcpb:
+	@set -eu; \
+	rm -rf build/mcpb dist/*.mcpb; \
+	mkdir -p build/mcpb dist; \
+	for target in darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64 windows/arm64; do \
+		os=$${target%%/*}; arch=$${target##*/}; \
+		bin=slop-chop; ext=""; \
+		if [ "$$os" = windows ]; then bin=slop-chop.exe; ext=".exe"; fi; \
+		work=build/mcpb/$$os-$$arch; mkdir -p $$work/server; \
+		GOOS=$$os GOARCH=$$arch $(GO) build -trimpath \
+			-ldflags "-s -w -X $(MODULE)/cmd.version=$(MCPB_VERSION)" \
+			-o $$work/server/$$bin .; \
+		printf '%s\n' \
+			'{' \
+			'  "manifest_version": "0.3",' \
+			'  "name": "slop-chop",' \
+			'  "display_name": "slop-chop",' \
+			'  "version": "$(MCPB_VERSION)",' \
+			'  "description": "Find and remove the writing patterns a profile lists. Deterministic, local, no model and no network.",' \
+			'  "author": { "name": "dcadolph", "url": "https://github.com/dcadolph" },' \
+			'  "homepage": "https://slop-chop.com",' \
+			'  "documentation": "https://github.com/dcadolph/slop-chop/blob/main/docs/MCP.md",' \
+			'  "license": "MIT",' \
+			'  "server": {' \
+			'    "type": "binary",' \
+			"    \"entry_point\": \"server/$$bin\"," \
+			'    "mcp_config": {' \
+			"      \"command\": \"server/$$bin\"," \
+			'      "args": ["mcp"],' \
+			'      "env": {}' \
+			'    }' \
+			'  }' \
+			'}' > $$work/manifest.json; \
+		( cd $$work && zip -qr "../../../dist/slop-chop-mcp_$(MCPB_VERSION)_$${os}_$${arch}.mcpb" manifest.json server ); \
+	done; \
+	echo "built $$(ls dist/*.mcpb | wc -l | tr -d ' ') bundle(s) in dist/"
+
+## server-json: write server.json from the bundles in dist/, naming each by its release
+## URL and SHA-256. The registry indexes metadata only, so the hashes have to match
+## artifacts that are already attached to the release the URLs name. Run it after the
+## release is published, not before, or it points at files nobody can download.
+server-json:
+	@set -eu; \
+	test -n "$$(ls dist/*.mcpb 2>/dev/null)" || { echo "no bundles in dist/: run make mcpb first"; exit 1; }; \
+	ver="$(MCPB_VERSION)"; \
+	{ \
+		printf '%s\n' '{'; \
+		printf '  "$$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",\n'; \
+		printf '  "name": "io.github.dcadolph/slop-chop",\n'; \
+		printf '  "title": "slop-chop",\n'; \
+		printf '  "description": "Find and remove the writing patterns a profile lists. Deterministic, local, no model and no network.",\n'; \
+		printf '  "repository": { "url": "https://github.com/dcadolph/slop-chop", "source": "github" },\n'; \
+		printf '  "websiteUrl": "https://slop-chop.com",\n'; \
+		printf '  "version": "%s",\n' "$$ver"; \
+		printf '  "packages": [\n'; \
+		first=1; \
+		for f in dist/*.mcpb; do \
+			sha=$$(shasum -a 256 "$$f" | cut -d" " -f1); \
+			if [ $$first -eq 0 ]; then printf ',\n'; fi; first=0; \
+			printf '    {\n'; \
+			printf '      "registryType": "mcpb",\n'; \
+			printf '      "identifier": "https://github.com/dcadolph/slop-chop/releases/download/v%s/%s",\n' "$$ver" "$$(basename $$f)"; \
+			printf '      "version": "%s",\n' "$$ver"; \
+			printf '      "fileSha256": "%s",\n' "$$sha"; \
+			printf '      "transport": { "type": "stdio" }\n'; \
+			printf '    }'; \
+		done; \
+		printf '\n  ]\n}\n'; \
+	} > server.json; \
+	echo "server.json written for v$$ver with $$(ls dist/*.mcpb | wc -l | tr -d ' ') bundle(s)"
+
 ## check-versions: every shipped surface must name one version, including the ones a
 ## stranger reads before installing anything: the plugin manifest and the pre-commit rev
 ## in the install snippets. The plugin sat at 0.10.0 for twenty-nine minor releases because
@@ -114,6 +191,12 @@ check-versions:
 	if [ "$$v" != "$$pin" ]; then echo "jetbrains/build.gradle.kts is $$v, README pins $$pin"; fail=1; fi; \
 	if ! grep -q "\"$$pin\"[[:space:]]*:" obsidian/versions.json; then \
 		echo "obsidian/versions.json has no entry for $$pin"; fail=1; fi; \
+	if [ -f server.json ]; then \
+		v=$$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' server.json | head -1); \
+		if [ "$$v" != "$$pin" ]; then echo "server.json is $$v, README pins $$pin"; fail=1; fi; \
+		if grep -q "download/v$$pin/" server.json; then :; else \
+			echo "server.json names release URLs for a different version than v$$pin"; fail=1; fi; \
+	fi; \
 	v=$$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' .claude-plugin/plugin.json | head -1); \
 	if [ "$$v" != "$$pin" ]; then echo ".claude-plugin/plugin.json is $$v, README pins $$pin"; fail=1; fi; \
 	for f in .pre-commit-hooks.yaml integrations/README.md; do \
@@ -127,7 +210,7 @@ check-versions:
 ## clean: remove the built binary, wasm artifacts, and coverage profile
 clean:
 	rm -f $(BINARY) coverage.out docs/assets/slop-chop.wasm docs/assets/wasm_exec.js
-	rm -rf obsidian/dist obsidian/engine
+	rm -rf obsidian/dist obsidian/engine build dist server.json
 
 ## help: list available targets
 help:

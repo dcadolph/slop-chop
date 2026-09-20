@@ -62,3 +62,6 @@ vendor/
 
 # Packaged VS Code extension, produced by vsce package
 /vscode/*.vsix
+
+# Cross-build scratch and MCP bundle staging, produced by make mcpb.
+/build/
