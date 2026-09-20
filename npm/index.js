@@ -69,7 +69,8 @@ async function chop(text, opts = {}) {
   return res;
 }
 
-// score rates text from 0 for clean to 100 for heavy slop, using the same options as chop.
+// score rates text from 0 to 100 by how densely it carries the profile's patterns, using
+// the same options as chop. It is a lint result, not a reading on who wrote the text.
 async function score(text, opts = {}) {
   const res = await chop(text, opts);
   return res.score.value;

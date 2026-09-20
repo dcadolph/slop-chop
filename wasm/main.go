@@ -40,7 +40,8 @@ type chopResult struct {
 	Output string `json:"output"`
 	// Findings lists every rule match against the original text.
 	Findings []sanitize.Finding `json:"findings"`
-	// Score rates the original text from 0 for clean to 100 for heavy slop.
+	// Score rates the original text from 0 to 100 by how densely it carries the profile's
+	// patterns. It is a lint result rather than a reading on who wrote the text.
 	Score sanitize.Score `json:"score"`
 	// ScoreAfter rates the cleaned output on the same scale, so the page can show how far
 	// the chop moved the needle.

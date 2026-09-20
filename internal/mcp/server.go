@@ -139,7 +139,7 @@ type chopOutput struct {
 	Text string `json:"text"`
 	// Findings is every tell the rules found in the input.
 	Findings []sanitize.Finding `json:"findings"`
-	// Score rates the input from 0 for clean to 100 for heavy slop.
+	// Score rates the input from 0 to 100 by how densely it carries the profile's patterns.
 	Score int `json:"score"`
 	// ScoreAfter is the same rating for the cleaned text, so the caller sees the movement.
 	ScoreAfter int `json:"scoreAfter"`
@@ -162,7 +162,7 @@ type checkOutput struct {
 	// Findings is every tell found in the text, each with its rule, position, and the swap
 	// the chop tool would make.
 	Findings []sanitize.Finding `json:"findings"`
-	// Score rates the text from 0 for clean to 100 for heavy slop.
+	// Score rates the text from 0 to 100 by how densely it carries the profile's patterns.
 	Score int `json:"score"`
 }
 
@@ -212,11 +212,13 @@ func (srv *Server) register() {
 	mcpsdk.AddTool(srv.sdk, &mcpsdk.Tool{
 		Name:  "check",
 		Title: "Report the AI tells",
-		Description: "Report the AI writing tells in text without changing a word. Use it to " +
-			"find out whether a draft reads as AI-generated, and where. Each finding carries " +
-			"the rule that matched, the exact text, its line and column, and the swap the " +
-			"chop tool would make. It also returns a slop score from 0 for clean to 100 for " +
-			"heavy slop. Deterministic, free, and local: nothing is uploaded.",
+		Description: "Report the writing tells in text without changing a word. Use it to find " +
+			"where a draft carries the patterns the profile lists, and which ones. Each " +
+			"finding carries the rule that matched, the exact text, its line and column, and " +
+			"the swap the chop tool would make. It also returns a lint score from 0 to 100 " +
+			"measuring how densely those patterns appear. The score is not a reading on who " +
+			"wrote the text and must not be reported as one. Deterministic, free, and local: " +
+			"nothing is uploaded.",
 	}, srv.check)
 
 	mcpsdk.AddTool(srv.sdk, &mcpsdk.Tool{
