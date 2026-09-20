@@ -301,6 +301,47 @@ catchable prose, and a model told to avoid the cliches by name writes prose the 
 almost never flags. That is the ruleset working exactly as advertised against the tells it
 lists, and it is also the ceiling on what a list of tells can do.
 
+### Second result, 2026-09-20, five model families
+
+The machine half was extended from two families to five. The detection rules did not
+change between the two tags, so the numbers are measured by the same engine and the
+corpora combine.
+
+| | First | Second |
+| --- | --- | --- |
+| Machine samples | 89 | 151 |
+| Families | 2 | 5 |
+| Human samples | 98 | 98 |
+| Separation | 0.752 | 0.785 |
+| Machine at or above 25 | 8 (9%) | 21 (14%) |
+| Human at or above 25 | 1 | 1 |
+
+The aggregate moved the right way. The breakdown says not to trust it.
+
+| Model | Samples | Mean | Cleared 25&nbsp; |
+| --- | --- | --- | --- |
+| gemma2:2b | 16 | 19.5 | 38% |
+| mistral:7b | 30 | 14.2 | 23% |
+| qwen2.5-coder:14b | 40 | 12.1 | 15% |
+| llama3.2:3b | 49 | 7.7 | 4% |
+| phi3:mini | 16 | 6.4 | 0% |
+
+Thirty-eight points of spread across five models, none of them frontier, all given the
+same prompts. Whether a passage trips the rules depends more on which model wrote it than
+on anything the corpus was built to measure, and the headline rate is therefore a fact
+about the mix of models in the sample rather than a fact about machine writing. Change the
+mix and the number moves, which is why the first result's nine percent and this one's
+fourteen are the same finding rather than an improvement.
+
+The prompt gradient held across the larger sample: styled 22 percent, plain 14, and the
+adversarial ask that names the cliches 6. A model told to sound polished still writes the
+most catchable prose, and a model told to dodge the tells still mostly dodges them.
+
+This makes the frontier gap worse, not better. If five small models span nothing to
+thirty-eight percent, a number measured without any frontier model in the sample says very
+little about the prose people mean when they say AI slop. Nothing here was tuned after the
+result, and the samples stay frozen.
+
 ### What this result does not say
 
 It does not say the engine fails. The separation is well above chance, the human half is
