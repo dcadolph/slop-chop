@@ -77,6 +77,9 @@ jobs:
           GOOS=windows GOARCH=arm64 go build \
             -ldflags="-s -w -X github.com/dcadolph/slop-chop/cmd.version=${VER}" \
             -o build/slop-chop_windows_arm64.exe .
+          # MCP bundles: the registry indexes metadata only, so the artifact it names
+          # has to be attached here. Built from the same source as the archives above.
+          make mcpb MCPB_VERSION="${VER}"
           for f in build/slop-chop_*; do
             base="${f#build/slop-chop_}"
             base="${base%.exe}"
@@ -94,7 +97,7 @@ jobs:
               rm build/slop-chop
             fi
           done
-          ( cd dist && sha256sum *.tar.gz *.zip | tee checksums.txt )
+          ( cd dist && sha256sum *.tar.gz *.zip *.mcpb | tee checksums.txt )
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
@@ -103,6 +106,7 @@ jobs:
           files: |
             dist/*.tar.gz
             dist/*.zip
+            dist/*.mcpb
             dist/checksums.txt
           fail_on_unmatched_files: true
 
