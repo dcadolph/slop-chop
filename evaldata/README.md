@@ -110,6 +110,21 @@ orders and either order can be reproduced. The label is never shown, the score i
 shown, and nothing on screen hints at the answer. Answers are appended as they are given,
 so a session can be stopped with `q` and resumed later without repeating a sample.
 
+A rater is somebody doing a favor, not somebody setting up a development environment, so
+there is a second path that asks nothing of them but reading and typing a number:
+
+```sh
+go run ./evaldata/harness -rate-sheet sheet.csv -rate-seed 42   # send this file out
+go run ./evaldata/harness -rate-import filled.csv -rate their-id
+```
+
+The sheet is a CSV with an id, the text, and an empty answer column. It carries no label,
+no model name, and no origin, because a spreadsheet is exactly the kind of file somebody
+scrolls sideways in. On the way back a blank is a skip and an answer outside one to seven
+is refused out loud, since a corpus quietly holding a rating nobody gave is worse than one
+missing a rating. The columns are matched by header name, so a rater who reorders them in
+a spreadsheet does not shift every answer onto the wrong sample.
+
 The blocker this leaves is the real one. The tool no longer stands in the way. Independent
 raters do, and a project nobody has heard of has no obvious source of them.
 
