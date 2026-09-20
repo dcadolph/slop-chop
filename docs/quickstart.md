@@ -48,7 +48,7 @@ slop-chop check --json notes.md
 
 ## Score it
 
-`score` rates the text from 0 for clean to 100 for heavy slop:
+`score` rates the text from 0 to 100 by how densely it carries the profile's patterns:
 
 ```sh
 slop-chop score notes.md          # prints a number like 42

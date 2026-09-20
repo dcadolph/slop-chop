@@ -33,7 +33,7 @@ hide:
 <div class="sc-score-legend">
 <span><i class="dot low"></i>under 25 reads clean</span>
 <span><i class="dot mid"></i>25 to 54 mixed</span>
-<span><i class="dot high"></i>55 and up heavy slop</span>
+<span><i class="dot high"></i>55 and up dense with tells</span>
 </div>
 <dl class="sc-score-stats">
 <div><dt>Tells</dt><dd id="sc-pop-tells"></dd></div>
@@ -162,7 +162,7 @@ go install github.com/dcadolph/slop-chop@latest
 
 <div class="sc-steps">
 <div class="step"><span class="num">1</span><strong>Rules pass</strong>Fast and deterministic. Swaps characters, drops flagged words, rewrites stock phrases, fixes spelling to one dialect, tidies punctuation. No model, no cost, same output every run. Code blocks come through untouched.</div>
-<div class="step"><span class="num">2</span><strong>Score</strong>One number from 0 for clean to 100 for heavy slop. It weighs rule tells, with stock sentence shapes counted double, against flat cadence and a hedge-heavy register. Pass <code>--max</code> to gate a build.</div>
+<div class="step"><span class="num">2</span><strong>Score</strong>One number from 0 to 100 for how densely the profile's patterns appear, with stock sentence shapes counted double. A lint result, not a reading on who wrote the text. Pass <code>--max</code> to gate a build.</div>
 <div class="step"><span class="num">3</span><strong>Rewrite</strong>Optional. Hands the text to a model for the things rules cannot manage, like reworking a sentence so it no longer needs a semicolon, or bending the writing toward your voice.</div>
 </div>
 

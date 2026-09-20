@@ -137,9 +137,10 @@ the matched text, the suggested replacement, and a line and column.
   explanations the web app shows on a tap.
 - `fix` writes the cleaned text to stdout and leaves your file alone. Pass `-w` to change
   the file in place instead.
-- `score` measures the density of AI-writing tells, 0 to 100. A high score means the text
-carries many patterns common in machine writing, not proof of authorship. Under 25 reads
-clean, 25 to 54 is mixed, and 55 and up is heavy slop, the same bands the web app shows.
+- `score` measures how densely the text carries the patterns your profile lists, 0 to 100.
+It is a lint result, not a reading on who wrote the text, and it cannot be turned into one:
+the same patterns appear in writing people produce on purpose. Under 25 reads clean, 25 to
+54 is mixed, and 55 and up is dense with tells, the same bands the web app shows.
 `score --by-paragraph` scores each paragraph on its own, which is how a document with two
 generated paragraphs buried in a thousand human words shows where they are, and `--max`
 then gates on the hottest paragraph instead of the diluted whole.
@@ -153,10 +154,11 @@ like `.json` and `.csv`, are skipped with a note.
 
 ## Score
 
-`score` gives a single number from 0 for clean to 100 for heavy slop. It weighs the density
-of rule tells against how flat the sentence cadence is, since an even, machine-like rhythm
-is a tell no word list catches. A structural tell counts double toward the density, because
-a stock sentence shape is stronger evidence of machine writing than any one word.
+`score` gives a single number from 0 to 100 for how densely the text carries the patterns
+the active profile lists. Change the profile and the same prose scores differently, which
+is the clearest statement of what the number is: compliance with a named ruleset. A
+structural tell counts double toward the density, because a stock sentence shape survives
+a thesaurus where a listed word does not.
 
 The engine ships with a labeled corpus of AI, human, and technical passages under
 `sanitize/testdata/`, and `TestBenchmark` measures recall, precision, and the score margin
@@ -389,7 +391,7 @@ go get github.com/dcadolph/slop-chop/sanitize
 
 Build a sanitizer once from a profile and reuse it. `Fix` returns the cleaned text and the
 tells it found, `Check` reports the tells without changing the text, and `Score` rates it from
-0 for clean to 100 for heavy slop.
+0 to 100 by how densely the profile's patterns appear.
 
 ```go
 package main
