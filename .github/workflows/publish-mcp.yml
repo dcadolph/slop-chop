@@ -1,0 +1,81 @@
+name: publish-mcp
+
+# Publishes server.json to the MCP registry. Run by hand rather than on a tag, because the
+# hashes in server.json have to match bundles that are already downloadable, and a tag
+# fires before its release assets exist. The order is: cut the release, regenerate
+# server.json with make server-json, commit it, then run this.
+#
+# Authentication is GitHub OIDC, the same mechanism the npm publish uses. There is no
+# secret to add and nothing to rotate, and it needs no browser, which is the whole reason
+# this exists next to the interactive mcp-publisher login.
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      # A server.json naming a version the rest of the tree has moved past would publish a
+      # registry entry pointing at the wrong release, so the same gate the release uses
+      # runs here before anything reaches the registry.
+      - name: Every shipped surface must carry the same version
+        run: make check-versions
+
+      - name: Install mcp-publisher
+        run: |
+          set -euo pipefail
+          curl -fL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" \
+            | tar xz mcp-publisher
+          ./mcp-publisher --help >/dev/null
+
+      # The registry checks the schema, and the bundles it names have to be fetchable with
+      # the hash server.json claims. A mismatch here is an entry that installs for nobody,
+      # so it is caught before publishing rather than by the first person who tries.
+      - name: The bundles server.json names must exist and match their hashes
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, sys, urllib.request
+          doc = json.load(open("server.json"))
+          bad = 0
+          for p in doc["packages"]:
+              url = p["identifier"]
+              try:
+                  live = hashlib.sha256(urllib.request.urlopen(url).read()).hexdigest()
+              except Exception as err:
+                  print(f"::error::{url} is not downloadable: {err}")
+                  bad += 1
+                  continue
+              if live != p["fileSha256"]:
+                  print(f"::error::{url} hashes {live}, server.json claims {p['fileSha256']}")
+                  bad += 1
+          if bad:
+              sys.exit(f"{bad} package(s) in server.json cannot be installed as written")
+          print(f"all {len(doc['packages'])} bundle(s) downloadable and hash-matched")
+          PY
+
+      - name: Validate server.json
+        run: ./mcp-publisher validate
+
+      - name: Authenticate to the MCP registry
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish
+        run: ./mcp-publisher publish
+
+      - name: Confirm the entry is live
+        run: |
+          set -euo pipefail
+          name=$(python3 -c "import json;print(json.load(open('server.json'))['name'])")
+          curl -fsS "https://registry.modelcontextprotocol.io/v0.1/servers?search=${name}" \
+            | python3 -c "import json,sys;d=json.load(sys.stdin);print('registry holds:', [s['name'] for s in d.get('servers',[])])"
