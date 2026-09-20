@@ -77,5 +77,13 @@ jobs:
         run: |
           set -euo pipefail
           name=$(python3 -c "import json;print(json.load(open('server.json'))['name'])")
+          # Results nest the entry under servers[].server, so reading servers[].name
+          # reports a failure on a publish that worked.
           curl -fsS "https://registry.modelcontextprotocol.io/v0.1/servers?search=${name}" \
-            | python3 -c "import json,sys;d=json.load(sys.stdin);print('registry holds:', [s['name'] for s in d.get('servers',[])])"
+            | python3 -c "
+          import json, sys
+          found = [e.get('server', e) for e in json.load(sys.stdin).get('servers', [])]
+          names = [s.get('name') for s in found]
+          print('registry holds:', names)
+          sys.exit(0 if '${name}' in names else 'the entry is not in the registry')
+          "
