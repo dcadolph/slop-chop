@@ -145,8 +145,7 @@ attaches one bundle per platform, which is why the order below puts the release 
 # 1. Cut the release. The workflow builds six bundles and attaches them.
 gh release create vX.Y.Z --generate-notes --title "vX.Y.Z: Title"
 
-# 2. Build the same bundles locally and write server.json against that tag.
-make mcpb MCPB_VERSION=X.Y.Z
+# 2. Write server.json from the bundles the release published.
 make server-json MCPB_VERSION=X.Y.Z
 make check-versions
 
@@ -157,6 +156,12 @@ mcp-publisher publish
 
 The namespace is `io.github.dcadolph/slop-chop`, which GitHub authentication proves. A
 name under a domain instead would need a DNS TXT record and buys nothing here.
+
+The hashes come from the published assets rather than a local rebuild. A rebuild is not
+bit-identical to the one CI produced, since the binary and the zip both carry build-time
+detail, and clients verify the hash before installing. Hashing a local copy ships an entry
+that fails every install, which is why `server-json` downloads the release assets instead
+of the bundles sitting in `dist/`.
 
 Two things worth knowing before relying on the listing. The registry is in preview and its
 own documentation warns that data resets can happen before general availability, so an

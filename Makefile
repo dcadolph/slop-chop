@@ -134,14 +134,19 @@ mcpb:
 	done; \
 	echo "built $$(ls dist/*.mcpb | wc -l | tr -d ' ') bundle(s) in dist/"
 
-## server-json: write server.json from the bundles in dist/, naming each by its release
-## URL and SHA-256. The registry indexes metadata only, so the hashes have to match
-## artifacts that are already attached to the release the URLs name. Run it after the
-## release is published, not before, or it points at files nobody can download.
+## server-json: write server.json from the bundles attached to the release, naming each by
+## its URL and SHA-256. The hashes come from the published artifacts rather than a local
+## rebuild, because a rebuild is not bit-identical to the one CI produced and clients
+## verify the hash before installing. Hashing a local copy ships an entry that fails every
+## install. Run it after the release is published.
 server-json:
 	@set -eu; \
-	test -n "$$(ls dist/*.mcpb 2>/dev/null)" || { echo "no bundles in dist/: run make mcpb first"; exit 1; }; \
 	ver="$(MCPB_VERSION)"; \
+	tmp=$$(mktemp -d); \
+	trap 'rm -rf "$$tmp"' EXIT; \
+	gh release download "v$$ver" --pattern '*.mcpb' --dir "$$tmp" >/dev/null 2>&1 || { \
+		echo "no .mcpb assets on release v$$ver: cut the release first"; exit 1; }; \
+	test -n "$$(ls $$tmp/*.mcpb 2>/dev/null)" || { echo "release v$$ver has no bundles"; exit 1; }; \
 	{ \
 		printf '%s\n' '{'; \
 		printf '  "$$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",\n'; \
@@ -153,7 +158,7 @@ server-json:
 		printf '  "version": "%s",\n' "$$ver"; \
 		printf '  "packages": [\n'; \
 		first=1; \
-		for f in dist/*.mcpb; do \
+		for f in $$tmp/*.mcpb; do \
 			sha=$$(shasum -a 256 "$$f" | cut -d" " -f1); \
 			if [ $$first -eq 0 ]; then printf ',\n'; fi; first=0; \
 			printf '    {\n'; \
@@ -166,7 +171,7 @@ server-json:
 		done; \
 		printf '\n  ]\n}\n'; \
 	} > server.json; \
-	echo "server.json written for v$$ver with $$(ls dist/*.mcpb | wc -l | tr -d ' ') bundle(s)"
+	echo "server.json written from the v$$ver release assets ($$(ls $$tmp/*.mcpb | wc -l | tr -d ' ') bundles)"
 
 ## check-versions: every shipped surface must name one version, including the ones a
 ## stranger reads before installing anything: the plugin manifest and the pre-commit rev
