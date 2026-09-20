@@ -59,6 +59,8 @@ func main() {
 	genHuman := flag.Int("collect-human", 0, "collect N register-matched human READMEs into the locked corpus")
 	genExclude := flag.String("collect-human-exclude", "", "file of repositories to skip, one per line")
 	seed := flag.Int("rate-seed", 1, "presentation order for this rater")
+	sheetOut := flag.String("rate-sheet", "", "export the corpus to this CSV for rating outside the repo")
+	sheetIn := flag.String("rate-import", "", "read a filled rating sheet back in")
 	corpus := flag.String("pre2022-file", "evaldata/pre2022.jsonl", "where the pre-2022 READMEs are read from and written to")
 	flag.Parse()
 
@@ -80,6 +82,14 @@ func main() {
 			break
 		}
 		err = collectHumanREADMEs(*genHuman, defaultPaths().samples, *genExclude, *genTag, os.Stdout)
+	case *sheetOut != "":
+		err = exportSheet(defaultPaths().samples, *sheetOut, *seed)
+	case *sheetIn != "":
+		if strings.TrimSpace(*rater) == "" {
+			err = errors.New("-rate-import needs -rate to name the rater")
+			break
+		}
+		err = importSheet(*sheetIn, defaultPaths().ratings, *rater, os.Stdout)
 	case *rater != "":
 		p := defaultPaths()
 		err = runRate(p.samples, p.ratings, *rater, *seed, os.Stdin, os.Stdout)

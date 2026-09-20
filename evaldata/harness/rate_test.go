@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/base64"
+	"encoding/csv"
 	"fmt"
 	"io"
 	"net/http"
@@ -359,5 +360,102 @@ func TestCollectHumanInto(t *testing.T) {
 		if s.Rules != "v1.2.3" {
 			t.Errorf("sample %s rules = %q, want the frozen tag", s.ID, s.Rules)
 		}
+	}
+}
+
+// TestExportSheetIsBlind checks the property the whole instrument rests on: a sheet handed
+// to a rater must not carry the answer. A spreadsheet is exactly the kind of file somebody
+// scrolls sideways in, so a stray label column would be found.
+func TestExportSheetIsBlind(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	samples := dir + "/samples.jsonl"
+	body := `{"id":"h001","source":"human","rules":"v1","meta":{"origin":"somewhere"},"text":"A person wrote this."}
+{"id":"a001","source":"ai","rules":"v1","meta":{"model":"some-model"},"text":"A machine wrote this."}`
+	if err := os.WriteFile(samples, []byte(body+"\n"), 0o600); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	out := dir + "/sheet.csv"
+	if err := exportSheet(samples, out, 1); err != nil {
+		t.Fatalf("exportSheet: %v", err)
+	}
+	raw, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	text := string(raw)
+	for _, leak := range []string{"source", "human", "\"ai\"", "some-model", "somewhere", "rules"} {
+		if strings.Contains(text, leak) {
+			t.Errorf("the sheet carries %q, which tells the rater the answer:\n%s", leak, text)
+		}
+	}
+	rows, err := csv.NewReader(strings.NewReader(text)).ReadAll()
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if len(rows) != 3 {
+		t.Fatalf("rows = %d, want a header and two samples", len(rows))
+	}
+	if rows[0][0] != "id" || rows[0][2] != "machine_1_to_7" {
+		t.Errorf("header = %v, want id and the answer column", rows[0])
+	}
+	for _, r := range rows[1:] {
+		if r[2] != "" {
+			t.Errorf("answer column is prefilled with %q", r[2])
+		}
+	}
+}
+
+// TestImportSheet checks that a filled sheet lands only the answers a person actually
+// gave. A blank is a skip and an out-of-range value is refused out loud, because a corpus
+// quietly holding a rating nobody gave is worse than one missing a rating.
+func TestImportSheet(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	sheet := dir + "/filled.csv"
+	rows := "id,text,machine_1_to_7\nh001,some text,3\na001,other text,\nh002,more text,99\nh003,last text,7\n"
+	if err := os.WriteFile(sheet, []byte(rows), 0o600); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	ratings := dir + "/ratings.jsonl"
+	var out strings.Builder
+	if err := importSheet(sheet, ratings, "volunteer", &out); err != nil {
+		t.Fatalf("importSheet: %v", err)
+	}
+	got, err := readLines[Rating](ratings)
+	if err != nil {
+		t.Fatalf("readLines: %v", err)
+	}
+	want := []Rating{{Sample: "h001", Rater: "volunteer", Machine: 3}, {Sample: "h003", Rater: "volunteer", Machine: 7}}
+	if diff := cmp.Diff(want, got, cmpopts.EquateEmpty()); diff != "" {
+		t.Errorf("ratings mismatch (-want +got):\n%s", diff)
+	}
+	if !strings.Contains(out.String(), "not a 1 to 7 answer") {
+		t.Errorf("the bad value was not reported:\n%s", out.String())
+	}
+}
+
+// TestSheetColumnsByName checks that the columns are found by header rather than by
+// position, so a rater who reorders or adds a column in a spreadsheet does not silently
+// shift every answer onto the wrong sample.
+func TestSheetColumnsByName(t *testing.T) {
+	t.Parallel()
+	id, answer, err := sheetColumns([]string{"notes", "machine_1_to_7", "text", "id"})
+	if err != nil {
+		t.Fatalf("sheetColumns: %v", err)
+	}
+	if id != 3 || answer != 1 {
+		t.Errorf("id=%d answer=%d, want 3 and 1", id, answer)
+	}
+	if _, _, err := sheetColumns([]string{"text", "guess"}); err == nil {
+		t.Errorf("err = nil, want a refusal when the columns are missing")
+	}
+}
+
+// TestImportSheetNeedsRater checks that an imported answer is always attributable.
+func TestImportSheetNeedsRater(t *testing.T) {
+	t.Parallel()
+	if err := importSheet("x", "y", "   ", &strings.Builder{}); err == nil {
+		t.Errorf("err = nil, want a refusal without a rater id")
 	}
 }
