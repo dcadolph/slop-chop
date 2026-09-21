@@ -65,3 +65,9 @@ vendor/
 
 # Cross-build scratch and MCP bundle staging, produced by make mcpb.
 /build/
+
+# Collected README text for the false positive measurement. The committed artifact is
+# the text-free manifest beside it, so the corpus itself is re-collected rather than
+# carried in history.
+/evaldata/pre2022.jsonl
+/evaldata/pinned.jsonl

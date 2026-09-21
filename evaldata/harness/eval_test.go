@@ -291,28 +291,28 @@ func TestRun(t *testing.T) {
 		WantOut string
 	}{{ // Test 0: An empty corpus passes the lock and says so.
 		Name: "empty check", Check: true,
-		Paths:   paths{samples: empty, ratings: empty, dev: dev},
+		Paths:   paths{samples: empty, ratings: empty, dev: []string{dev}},
 		WantOut: "0 sample(s) and 0 rating(s), lock holds",
 	}, { // Test 1: A sample whose text is in the development corpus breaks the lock.
 		Name:  "lock broken",
-		Paths: paths{samples: locked, ratings: empty, dev: dev},
+		Paths: paths{samples: locked, ratings: empty, dev: []string{dev}},
 		Want:  errCorpus,
 	}, { // Test 2: A run with no samples names the protocol rather than reporting nothing.
 		Name:    "no samples",
-		Paths:   paths{samples: empty, ratings: empty, dev: dev},
+		Paths:   paths{samples: empty, ratings: empty, dev: []string{dev}},
 		WantOut: "no samples yet",
 	}, { // Test 3: Without ratings the labels still answer the narrower question, and the
 		// report has to say which question that is rather than let it pass for the other.
 		Name:    "unrated",
-		Paths:   paths{samples: good, ratings: empty, dev: dev},
+		Paths:   paths{samples: good, ratings: empty, dev: []string{dev}},
 		WantOut: "separation, not agreement with a reader",
 	}, { // Test 4: A rated corpus produces the analysis.
 		Name:    "analysis",
-		Paths:   paths{samples: good, ratings: rated, dev: dev},
+		Paths:   paths{samples: good, ratings: rated, dev: []string{dev}},
 		WantOut: "rated samples: 1",
 	}, { // Test 5: An unreadable samples file is an error, not an empty corpus.
 		Name:  "bad json",
-		Paths: paths{samples: writeBad(t, dir), ratings: empty, dev: dev},
+		Paths: paths{samples: writeBad(t, dir), ratings: empty, dev: []string{dev}},
 		Want:  nil, // any error; checked below
 	}}
 	for testNum, test := range tests {

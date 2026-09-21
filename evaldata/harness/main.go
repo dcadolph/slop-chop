@@ -29,8 +29,10 @@ type paths struct {
 	samples string
 	// ratings is the blind human ratings for those samples.
 	ratings string
-	// dev is the development corpus the lock keeps the samples away from.
-	dev string
+	// dev names every development corpus the lock keeps the samples away from. It is a
+	// list rather than one path because a development corpus outside the lock is a corpus
+	// the rules can be tuned on, which is the one thing the lock exists to prevent.
+	dev []string
 }
 
 // defaultPaths returns the repository's corpora, which is what a plain run reads.
@@ -38,7 +40,10 @@ func defaultPaths() paths {
 	return paths{
 		samples: "evaldata/samples.jsonl",
 		ratings: "evaldata/ratings.jsonl",
-		dev:     "sanitize/testdata/corpus.jsonl",
+		dev: []string{
+			"sanitize/testdata/corpus.jsonl",
+			"sanitize/testdata/longform.jsonl",
+		},
 	}
 }
 
@@ -62,6 +67,12 @@ func main() {
 	sheetOut := flag.String("rate-sheet", "", "export the corpus to this CSV for rating outside the repo")
 	sheetIn := flag.String("rate-import", "", "read a filled rating sheet back in")
 	corpus := flag.String("pre2022-file", "evaldata/pre2022.jsonl", "where the pre-2022 READMEs are read from and written to")
+	longHuman := flag.Int("collect-longform", 0, "collect N long human passages into the long-form development corpus")
+	longAI := flag.Int("generate-longform", 0, "generate N machine long-form passages per model, genre, and prompt style")
+	longModels := flag.String("longform-models", "llama3.2:3b,qwen2.5-coder:14b,mistral:7b,phi3:mini,gemma2:2b",
+		"comma separated ollama models to generate long-form samples from")
+	longGenres := flag.String("longform-genres", "", "comma separated long-form genres to generate, empty for all")
+	longFile := flag.String("longform-file", "sanitize/testdata/longform.jsonl", "the long-form development corpus")
 	flag.Parse()
 
 	var err error
@@ -82,6 +93,11 @@ func main() {
 			break
 		}
 		err = collectHumanREADMEs(*genHuman, defaultPaths().samples, *genExclude, *genTag, os.Stdout)
+	case *longHuman > 0:
+		err = collectLongform(*longHuman, *longFile, longformManifests, os.Stdout)
+	case *longAI > 0:
+		err = generateLongform(ollamaBase, strings.Split(*longModels, ","),
+			strings.Split(*longGenres, ","), *longAI, *longFile, os.Stdout)
 	case *sheetOut != "":
 		err = exportSheet(defaultPaths().samples, *sheetOut, *seed)
 	case *sheetIn != "":
@@ -137,13 +153,15 @@ func run(check bool, p paths, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	dev, err := readLines[devPassage](p.dev)
-	if err != nil {
-		return err
-	}
-	devTexts := make([]string, 0, len(dev))
-	for _, d := range dev {
-		devTexts = append(devTexts, d.Text)
+	var devTexts []string
+	for _, path := range p.dev {
+		dev, devErr := readLines[devPassage](path)
+		if devErr != nil {
+			return devErr
+		}
+		for _, d := range dev {
+			devTexts = append(devTexts, d.Text)
+		}
 	}
 
 	if problems := append(checkCorpus(samples, devTexts), checkRatings(ratings, samples)...); len(problems) > 0 {
