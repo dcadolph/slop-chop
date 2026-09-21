@@ -184,3 +184,35 @@ func TestScoreRepetitionDecay(t *testing.T) {
 		t.Errorf("repeated density %d not below diverse density %d", repeated.Density, diverse.Density)
 	}
 }
+
+// TestScoreCadenceWeighted pins the signal the corpus said was the strongest separator
+// available: sentence length that barely moves. It is a gradient rather than a cliff, and
+// it stays off for text too short for the statistic to mean anything.
+func TestScoreCadenceWeighted(t *testing.T) {
+	t.Parallel()
+	s, err := New(DefaultProfile())
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	flat := strings.Repeat("The team shipped the change on time. ", 8)
+	varied := "The team shipped the change on time. " +
+		"Nobody expected that, least of all the two people who had spent the previous fortnight " +
+		"arguing about whether the migration could be done at all without a weekend of downtime. " +
+		"It could. " +
+		"The rollback plan, which ran to four pages and had been rehearsed twice, went unused, " +
+		"and the on-call engineer spent the night reading. " +
+		"Monday was quiet."
+
+	if got := s.Score(flat).Cadence; got == 0 {
+		t.Errorf("flat cadence scored 0, want a penalty (%+v)", s.Score(flat))
+	}
+	if got := s.Score(varied).Cadence; got != 0 {
+		t.Errorf("varied cadence scored %d, want 0 (%+v)", got, s.Score(varied))
+	}
+	// Three even sentences are a note, not a document, and a coefficient of variation
+	// over three samples is noise.
+	short := "The cat sat on the mat. The dog ran in the park. The bird flew to the tree."
+	if got := s.Score(short); got.Cadence != 0 || got.Value != 0 {
+		t.Errorf("short flat note scored %d (cadence %d), want 0: too few sentences to judge", got.Value, got.Cadence)
+	}
+}

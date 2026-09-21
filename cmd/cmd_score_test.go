@@ -82,10 +82,29 @@ func TestScoreJSONMultiFile(t *testing.T) {
 // its starting line, and that --max gates on the hottest paragraph rather than the
 // diluted whole.
 func TestScoreByParagraph(t *testing.T) {
-	human := "The mail arrived late and nobody minded much at all today, and the dog barked twice.\n\n"
-	doc := human +
-		"In summary, we leverage comprehensive synergy to seamlessly revolutionize robust workflows.\n\n" +
-		strings.Repeat(human, 12)
+	// The filler varies its sentence length the way ordinary prose does. An earlier
+	// version of this fixture repeated one sentence thirteen times, which drove the
+	// rhythm signal to its floor and failed the whole-document gate below for a reason
+	// this test is not about.
+	filler := []string{
+		"It rained hard all morning and then stopped without warning.",
+		"She read the whole report on the train, made notes in the margin, argued with " +
+			"one footnote for a page and a half, and got off at the wrong stop because of it.",
+		"The dog barked twice at the gate and then went back to sleep.",
+		"Nobody had told him the meeting moved, so he sat in an empty room for twenty " +
+			"minutes before anyone thought to check on him.",
+		"That was Tuesday, and the week did not improve from there.",
+		"The yard held water until evening and the gate swelled shut, which is why the " +
+			"delivery went back to the depot without anyone signing for it.",
+	}
+	parts := []string{
+		"The mail arrived late and nobody minded much at all today.",
+		"In summary, we leverage comprehensive synergy to seamlessly revolutionize robust workflows.",
+	}
+	for i := 0; i < 12; i++ {
+		parts = append(parts, filler[i%len(filler)])
+	}
+	doc := strings.Join(parts, "\n\n")
 	dir := t.TempDir()
 	path := writeTemp(t, dir, "mixed.md", doc)
 
