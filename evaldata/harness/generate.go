@@ -59,6 +59,84 @@ var (
 	}
 )
 
+// anthropicBase is the Messages API root. It is a variable so a test can point at a local
+// server, and it is the only thing about this path that is not plain HTTP.
+//
+//nolint:gochecknoglobals // Overridden only by tests.
+var anthropicBase = "https://api.anthropic.com"
+
+// anthropicVersionHeader pins the wire format so the request shape cannot drift under the
+// corpus, which would change what the samples are without anything recording it.
+const anthropicVersionHeader = "2023-06-01"
+
+// isAnthropicModel reports whether a model name should be generated through the Messages
+// API rather than through the local daemon. Dispatching on the name keeps one flag doing
+// the work: -generate-models claude-opus-4-8,llama3.2:3b mixes both in one run.
+func isAnthropicModel(model string) bool {
+	return strings.HasPrefix(model, "claude-")
+}
+
+// anthropicGenerate asks a frontier model for one completion. The corpus has only ever
+// held prose from small local models, which span nothing to thirty-eight percent against
+// the same rules, so a number measured without a frontier model in the sample says little
+// about the writing people mean. This is the path that closes that gap.
+func anthropicGenerate(client *http.Client, key, model, prompt string) (string, error) {
+	if key == "" {
+		return "", fmt.Errorf("ANTHROPIC_API_KEY is not set")
+	}
+	body, err := json.Marshal(map[string]any{
+		"model":      model,
+		"max_tokens": 2048,
+		"messages":   []map[string]string{{"role": "user", "content": prompt}},
+	})
+	if err != nil {
+		return "", fmt.Errorf("encode request: %w", err)
+	}
+	req, err := http.NewRequest(http.MethodPost, anthropicBase+"/v1/messages", strings.NewReader(string(body)))
+	if err != nil {
+		return "", fmt.Errorf("request: %w", err)
+	}
+	req.Header.Set("content-type", "application/json")
+	req.Header.Set("x-api-key", key)
+	req.Header.Set("anthropic-version", anthropicVersionHeader)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("anthropic: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("anthropic read: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("anthropic: %s: %s", resp.Status, strings.TrimSpace(string(raw)))
+	}
+	var out struct {
+		StopReason string `json:"stop_reason"`
+		Content    []struct {
+			Type string `json:"type"`
+			Text string `json:"text"`
+		} `json:"content"`
+	}
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return "", fmt.Errorf("anthropic decode: %w", err)
+	}
+	// A truncated reply is a sample the model did not finish writing, and a refusal is no
+	// sample at all. Either one silently entering the corpus would be a passage nobody
+	// actually produced, so both are errors and the caller discards them.
+	if out.StopReason != "end_turn" {
+		return "", fmt.Errorf("anthropic: stop_reason %q", out.StopReason)
+	}
+	var b strings.Builder
+	for _, block := range out.Content {
+		if block.Type == "text" {
+			b.WriteString(block.Text)
+		}
+	}
+	return strings.TrimSpace(b.String()), nil
+}
+
 // ollamaGenerate asks a local model for one completion. It talks to the daemon directly
 // rather than shelling out, so a failure comes back as an error instead of as text.
 func ollamaGenerate(client *http.Client, base, model, prompt string) (string, error) {
@@ -129,7 +207,13 @@ func generateAIFrom(base string, models []string, perCombo int, path, rulesTag s
 			for _, style := range genStyles {
 				for range perCombo {
 					prompt := genre.task + style.instruction + " Reply with the writing only, no preamble and no title."
-					text, genErr := ollamaGenerate(client, base, model, prompt)
+					var text string
+					var genErr error
+					if isAnthropicModel(model) {
+						text, genErr = anthropicGenerate(client, os.Getenv("ANTHROPIC_API_KEY"), model, prompt)
+					} else {
+						text, genErr = ollamaGenerate(client, base, model, prompt)
+					}
 					if genErr != nil {
 						_, _ = fmt.Fprintf(w, "%s %s/%s: %v\n", model, genre.name, style.name, genErr)
 						continue

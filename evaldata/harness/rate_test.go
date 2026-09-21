@@ -459,3 +459,84 @@ func TestImportSheetNeedsRater(t *testing.T) {
 		t.Errorf("err = nil, want a refusal without a rater id")
 	}
 }
+
+// TestIsAnthropicModel checks the dispatch that lets one flag mix frontier and local
+// models in a single run.
+func TestIsAnthropicModel(t *testing.T) {
+	t.Parallel()
+	for _, test := range []struct {
+		Model string
+		Want  bool
+	}{
+		{Model: "claude-opus-4-8", Want: true},    // Test 0.
+		{Model: "claude-sonnet-5", Want: true},    // Test 1.
+		{Model: "llama3.2:3b", Want: false},       // Test 2.
+		{Model: "qwen2.5-coder:14b", Want: false}, // Test 3.
+		{Model: "", Want: false},                  // Test 4.
+	} {
+		if got := isAnthropicModel(test.Model); got != test.Want {
+			t.Errorf("isAnthropicModel(%q) = %v, want %v", test.Model, got, test.Want)
+		}
+	}
+}
+
+// TestAnthropicGenerate drives the frontier path against a local server. The cases that
+// matter are the two that must never reach the corpus: a reply the model did not finish,
+// and one it declined to write. Either would be a sample nobody actually produced.
+func TestAnthropicGenerate(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		Name    string
+		Status  int
+		Body    string
+		WantErr bool
+		Want    string
+	}{{ // Test 0: A normal completion.
+		Name: "ok", Status: 200, Want: "Some generated prose.",
+		Body: `{"stop_reason":"end_turn","content":[{"type":"text","text":"Some generated prose."}]}`,
+	}, { // Test 1: Truncated at the token cap is not a finished sample.
+		Name: "truncated", Status: 200, WantErr: true,
+		Body: `{"stop_reason":"max_tokens","content":[{"type":"text","text":"half a th"}]}`,
+	}, { // Test 2: A refusal is no sample at all.
+		Name: "refusal", Status: 200, WantErr: true,
+		Body: `{"stop_reason":"refusal","content":[]}`,
+	}, { // Test 3: An API error surfaces rather than becoming empty text.
+		Name: "api error", Status: 401, WantErr: true, Body: `{"error":"bad key"}`,
+	}}
+	for testNum, test := range tests {
+		t.Run(fmt.Sprintf("test %d %s", testNum, test.Name), func(t *testing.T) {
+			t.Parallel()
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Header.Get("x-api-key") != "test-key" {
+					t.Errorf("x-api-key = %q, want the key", r.Header.Get("x-api-key"))
+				}
+				if r.Header.Get("anthropic-version") != anthropicVersionHeader {
+					t.Errorf("anthropic-version = %q, want it pinned", r.Header.Get("anthropic-version"))
+				}
+				w.WriteHeader(test.Status)
+				_, _ = io.WriteString(w, test.Body)
+			}))
+			defer srv.Close()
+			old := anthropicBase
+			anthropicBase = srv.URL
+			defer func() { anthropicBase = old }()
+
+			got, err := anthropicGenerate(srv.Client(), "test-key", "claude-opus-4-8", "write something")
+			if gotErr := err != nil; gotErr != test.WantErr {
+				t.Fatalf("err = %v, want failure %v", err, test.WantErr)
+			}
+			if !test.WantErr && got != test.Want {
+				t.Errorf("text = %q, want %q", got, test.Want)
+			}
+		})
+	}
+}
+
+// TestAnthropicGenerateNeedsKey checks that a missing key is an error rather than a run
+// that quietly produces nothing.
+func TestAnthropicGenerateNeedsKey(t *testing.T) {
+	t.Parallel()
+	if _, err := anthropicGenerate(http.DefaultClient, "", "claude-opus-4-8", "x"); err == nil {
+		t.Errorf("err = nil, want a refusal without a key")
+	}
+}
