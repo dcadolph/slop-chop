@@ -153,11 +153,9 @@ func TestSentenceSpansKey(t *testing.T) {
 		Want string
 	}{
 		{Name: "two words lower-cased", In: "We Needed retries.", Want: "we needed"}, // Test 0.
-		// Test 1: Only the second word is trimmed. The key keeps punctuation on the first,
-		// so "We, needed" and "We needed" do not group into one run. That asymmetry is the
-		// behavior as written rather than a decision anyone recorded, and it is pinned here
-		// so changing it is a choice instead of an accident.
-		{Name: "first word keeps its punctuation", In: "We, needed retries.", Want: "we, needed"},
+		// Test 1: Punctuation comes off both words, so a run survives a comma after its
+		// opener. Trimming only the second used to split that run in half.
+		{Name: "punctuation trimmed from both", In: "We, needed retries.", Want: "we needed"},
 		{Name: "one word has no key", In: "Stop.", Want: ""},                           // Test 2.
 		{Name: "too long has no key", In: strings.Repeat("word ", 13) + ".", Want: ""}, // Test 3.
 	}

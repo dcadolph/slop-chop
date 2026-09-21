@@ -141,15 +141,19 @@ func sentenceSpans(text string) []sentSpan {
 }
 
 // anaphoraKey returns the lower-cased first two words of sentence, or empty when the
-// sentence is too short or too long to count toward an anaphora run.
+// sentence is too short or too long to count toward an anaphora run. Punctuation comes off
+// both words. Trimming only the second was an asymmetry rather than a decision, and it
+// meant "We, needed retries." and "We needed observability." opened differently and never
+// joined one run, which is the drumbeat the rule exists to catch.
 func anaphoraKey(sentence string) string {
 	fields := strings.Fields(sentence)
 	if len(fields) < 2 || len(fields) > anaphoraMaxWords {
 		return ""
 	}
+	first := strings.TrimRight(fields[0], ".!?,;:")
 	second := strings.TrimRight(fields[1], ".!?,;:")
-	if second == "" {
+	if first == "" || second == "" {
 		return ""
 	}
-	return strings.ToLower(fields[0] + " " + second)
+	return strings.ToLower(first + " " + second)
 }
