@@ -141,6 +141,18 @@ a word list is least likely to catch. A reply outside the sixty to four hundred 
 is discarded rather than trimmed, because trimming would edit the model's writing and the
 sample is supposed to be what it actually wrote.
 
+A model name beginning with `claude-` goes through the Messages API instead of the local
+daemon, so one flag mixes both in a run:
+
+```sh
+export ANTHROPIC_API_KEY=...
+go run ./evaldata/harness -generate-ai 2 \
+  -generate-models claude-opus-4-8,llama3.2:3b -generate-tag vX.Y.Z
+```
+
+A reply the model did not finish and one it declined to write are both discarded rather
+than stored, since either would put a passage in the corpus that nobody actually produced.
+
 The limitation is worth stating before anyone quotes a number off this corpus. The
 protocol asks for at least five model families. What is here comes from small local open
 models, because they cost nothing and need no key, and small local models do not write the
