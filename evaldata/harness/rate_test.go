@@ -484,7 +484,6 @@ func TestIsAnthropicModel(t *testing.T) {
 // matter are the two that must never reach the corpus: a reply the model did not finish,
 // and one it declined to write. Either would be a sample nobody actually produced.
 func TestAnthropicGenerate(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		Name    string
 		Status  int
@@ -504,8 +503,9 @@ func TestAnthropicGenerate(t *testing.T) {
 		Name: "api error", Status: 401, WantErr: true, Body: `{"error":"bad key"}`,
 	}}
 	for testNum, test := range tests {
+		// Not parallel: these swap the package-level API root, so running them at the
+		// same time points one case at another case's server.
 		t.Run(fmt.Sprintf("test %d %s", testNum, test.Name), func(t *testing.T) {
-			t.Parallel()
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Header.Get("x-api-key") != "test-key" {
 					t.Errorf("x-api-key = %q, want the key", r.Header.Get("x-api-key"))
