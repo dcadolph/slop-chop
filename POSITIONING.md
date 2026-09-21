@@ -26,10 +26,12 @@ rules without improving it, then reports what survived. By class: 35 of 76 word 
 8 of 12 phrase tells fall to a thesaurus. 2 of 66 structural tells do. A lookup loses to
 a lookup. A sentence shape has to be rebuilt.
 
-**The engine is already quiet on writing it has never seen.** 1270 README files from
-repositories with no push after 2021, across seven language ecosystems, scored once: no
-false positives, worst sample four points under the reads-clean line. The rules that do
-fire on human prose are the lexical ones, and none reaches seven percent of documents.
+**The engine is quiet on writing it has never seen.** 886 README files from repositories
+with no push after 2021, across seven language ecosystems: seven reach the reads-clean
+line, 0.79 percent. An earlier draw of 1270 reached zero, and the difference is the
+evidence component, which is what lets a long machine document score at all. The rules
+that fire on human prose are the lexical ones, and none reaches seven percent of
+documents.
 
 **The score does not yet claim what people think it claims.** The locked corpus has never
 been rated, so there is no evidence the number tracks what a reader perceives. Until
@@ -55,8 +57,8 @@ currently correlate with AI-assisted writing" is a claim the repository can defe
 ## The three options
 
 Leave it as it stands. The docs already disclaim the strong claim in several places. The
-cost is that the strongest evidence in the repository, the attack asymmetry and the 1270
-documents, stays behind a framing that invites a different argument.
+cost is that the strongest evidence in the repository, the attack asymmetry and the
+false positive measurement, stays behind a framing that invites a different argument.
 
 Reframe the wording and keep the product. Lead on deterministic, local, programmable, and
 keep the AI-tells profile as the default and the reason to show up. Costs an afternoon of

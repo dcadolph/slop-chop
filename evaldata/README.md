@@ -23,6 +23,74 @@ Three rules make this corpus evidence rather than more homework.
 Once a result is published, the samples behind it stay frozen. New samples extend the
 corpus. They never replace what a published number rests on.
 
+### These samples are burned, 2026-09-21
+
+Rule one was broken, and by the person who wrote it down. On 2026-09-21 this corpus was
+used to hunt for features that separate the halves, and then to choose the threshold and
+the weight of the cadence penalty that came out of that hunt. That is development, done
+against evaluation samples, which is the one thing the lock exists to prevent.
+
+Every sample here is therefore disqualified for measuring the ruleset that hunt produced.
+The separation figures published below are training numbers. They are kept rather than
+deleted, because a corpus that quietly loses its embarrassing results is worth less than
+one that keeps them, but none of them is held-out evidence and none should be quoted as
+though it were.
+
+The precision results are not affected. Those were measured on README prose collected
+separately, never used to tune anything, and the cadence penalty was checked against a
+fresh sample of it after the fact rather than fitted to it.
+
+What a real separation number needs now is a corpus collected after the current ruleset
+was frozen and never read while changing it. That corpus does not exist yet. Until it
+does, the honest statement about how well the score separates machine prose from human
+prose is that it is unmeasured.
+
+### The cadence penalty replicated, on data collected afterward
+
+The burn leaves the size of the effect unmeasured, not the existence of it. The long-form
+development corpus described below was collected after the cadence weight was frozen and
+was never used to adjust it. On it, machine prose runs at a coefficient of variation of
+0.360 against 0.707 for human, a Cohen's d of -1.78, firing on 86 percent of machine
+passages and 20 percent of human ones.
+
+That is a replication and not a held-out result. It is development data by designation, so
+the first time anything is tuned against it the number becomes a training number in exactly
+the way the ones below did. It is recorded here so the penalty is not carried on nothing
+while the real corpus is collected.
+
+### Why it happened, and what changed so it cannot happen the same way
+
+Calling the violation carelessness would be letting the repository off. The development
+corpus at `sanitize/testdata/corpus.jsonl` is a rule exemplar file: every passage is the
+smallest text that reproduces one tell. That is what makes it a precise regression net,
+and it is two sentences long at the median. The rhythm signals need six sentences before
+they act at all, so ten of its hundred and thirteen passages were eligible to trigger the
+one under test.
+
+The evaluation corpus was the only full-length prose in the repository. A signal that
+could not be measured anywhere else was going to be measured there, and it was.
+
+The fix is a second development corpus, `sanitize/testdata/longform.jsonl`, holding
+full-length passages of both labels, collected the same way this corpus is and held under
+the same lock. The lock now takes a list of development corpora rather than one path,
+since a development corpus outside the lock is a corpus the rules can be tuned on.
+
+```sh
+# Human half: long README prose from repositories untouched since 2021, skipping every
+# repository this corpus has already spent.
+go run ./evaldata/harness -collect-longform 80
+
+# Machine half: local models across six long-form genres and three prompt styles.
+go run ./evaldata/harness -generate-longform 1
+```
+
+The first collection run pulled twenty-eight locked samples straight back in, because the
+skip list read the false-positive manifests and nothing else, and the human half of this
+corpus records its origins only on the samples themselves. The lock caught all twenty-eight
+before anything was measured, which is the first time it has been the thing that stopped a
+mistake rather than a rule that was merely agreed to. The skip list now reads all three
+records.
+
 ## Collecting samples
 
 Target at least 150 machine and 150 human samples before publishing anything. Each
@@ -253,7 +321,11 @@ Both samples, scored once and published whatever they said.
 | **At or above 25** | **0 (0.0%)** | **0 (0.0%)** |
 
 1270 human documents, no false positives, and the worst of them sat four points under
-the line. The abandonment bias the pinned sample exists to check runs the opposite way
+the line. That result belongs to v0.39.2 and no longer describes the engine: the evidence
+component added on 2026-09-21 takes a fresh collection of 886 documents to seven at the
+line, which is the price of being able to see a long machine document at all. The
+measurement is redone in docs/BENCHMARK.md and the trade is set out there. The numbers
+below are kept as the record of what v0.39.2 measured. The abandonment bias the pinned sample exists to check runs the opposite way
 from the flattering one: maintained projects write 46 percent more prose per README and
 are skipped far less often, so that sample hands the engine more surface to trip on and
 it still found nothing.
@@ -283,6 +355,9 @@ where it should be, so it stays there. The lexical rules remain the evadable hal
 is a fact about durability rather than about precision, and those are different claims.
 
 ### First result off the locked corpus, 2026-09-16, ruleset v0.39.2
+
+See the burn notice above. This number was held-out when published and is not any more,
+because the samples behind it were later used to tune the cadence penalty.
 
 No ratings yet, so this answers the narrower question the labels alone can answer: does
 the score tell the halves apart on prose the rules never saw?
@@ -314,6 +389,8 @@ almost never flags. That is the ruleset working exactly as advertised against th
 lists, and it is also the ceiling on what a list of tells can do.
 
 ### Second result, 2026-09-20, five model families
+
+See the burn notice above. Same samples, same disqualification.
 
 The machine half was extended from two families to five. The detection rules did not
 change between the two tags, so the numbers are measured by the same engine and the
@@ -353,6 +430,49 @@ This makes the frontier gap worse, not better. If five small models span nothing
 thirty-eight percent, a number measured without any frontier model in the sample says very
 little about the prose people mean when they say AI slop. Nothing here was tuned after the
 result, and the samples stay frozen.
+
+### Third result, 2026-09-21: the cadence finding
+
+This is the hunt that burned the corpus. The separation figures in it are training
+numbers and the precision figures are not, which is the only reason the change it produced
+was kept.
+
+The corpus was asked, for the first time, what actually separates the halves rather than
+whether a rule fires. Ten features measured on both, no hypothesis in front of it.
+
+| Feature | Machine | Human | Effect |
+| --- | --- | --- | --- |
+| **cadence variation** | **0.342** | **0.587** | **d = -1.31** |
+| short copula rate | 0.004 | 0.034 | -0.70 |
+| colon rate | 0.089 | 0.428 | -0.67 |
+
+Every feature ran the same direction, and machine prose had less of all of them. The
+largest by a distance is sentence length that barely moves, and it holds with the genre
+fixed: measured against human README prose alone the gap widens rather than closing.
+
+That contradicted the reasoning the score had carried for months, which was that modern
+model prose varies its rhythm on purpose and a flat cadence would only punish plain
+competent human writing. The first half is wrong on this sample. The second half is not,
+and the shape of the change is built around it.
+
+| | Separation | Machine at or above 25 | Human at or above 25&nbsp; |
+| --- | --- | --- | --- |
+| Before | 0.785 | 21 of 151 (14%) | 1 of 98 |
+| After | 0.845 | 30 of 151 (20%) | 1 of 98 |
+
+Detection rose by half and the human half did not move. Against 311 passages of human
+prose pulled fresh, 26 percent take some penalty and the rate at the threshold stays at
+one, with the ninety-ninth percentile at 18 and seven points of headroom under the line.
+
+Two choices keep it honest. The penalty scales with how flat the rhythm is rather than
+switching on at a boundary, so prose near the line is nudged instead of condemned. And it
+does nothing below six sentences, because a coefficient of variation over three is noise
+and three short even sentences are a note rather than a document.
+
+A larger cap was available. Twenty-five points reached 0.911 separation and 32 percent
+detection with the same single false positive, and it was not taken: it left five points
+of headroom where fifteen leaves seven, and precision is the claim this project can
+actually defend.
 
 ### What this result does not say
 

@@ -687,11 +687,21 @@
       $("sc-pop-tells").textContent = String(s.tells);
       $("sc-pop-words").textContent = String(s.words);
       $("sc-pop-density").textContent = s.tellsPer100 + " tells per 100 words";
+      /* Density is a rate, so a long document dilutes the same evidence. The evidence
+         component is what the rate misses, and showing it is what explains why a page
+         and a sentence carrying the same tells do not score the same. */
+      $("sc-pop-evidence").textContent =
+        s.evidence > 0
+          ? "adds " + s.evidence + " for tells accumulated regardless of length"
+          : "nothing accumulated";
+      /* Whether a rhythm counts as flat is the engine's call, and it reports that by
+         charging points for it. Reading s.cadence instead of comparing the cv against a
+         number here keeps one threshold in the project rather than two that drift. */
       $("sc-pop-cadence").textContent =
         s.cadenceCv < 0
           ? "too short to judge"
-          : s.cadenceCv < 0.5
-            ? "flat (cv " + s.cadenceCv + "), even sentence lengths read machine-written"
+          : s.cadence > 0
+            ? "flat (cv " + s.cadenceCv + "), adding " + s.cadence + " to the score"
             : "varied (cv " + s.cadenceCv + ")";
       // The after-chop score sits beside the before score, so the improvement is visible.
       const after = res.scoreAfter;
