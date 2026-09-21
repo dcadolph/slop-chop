@@ -302,6 +302,14 @@ func scoreSamples(s *sanitize.Sanitizer, samples []Sample, ratings []Rating) []s
 	return out
 }
 
+// burnNotice rides on every report this corpus produces. On 2026-09-21 these samples were
+// used to find and then tune the cadence penalty, which disqualifies them for measuring
+// the ruleset that came out of it. A caveat that lives only in a document is a caveat
+// somebody quotes a number without, so it is attached to the number instead.
+const burnNotice = "NOTE: these samples were used to tune the cadence penalty on 2026-09-21,\n" +
+	"so every separation figure below is a training number rather than held-out\n" +
+	"evidence. See the burn notice in evaldata/README.md.\n\n"
+
 // labelReport writes what the corpus can say before a single rater has seen it. The
 // separation between the machine and human halves needs only the ground truth labels, so
 // it is available the moment the corpus is collected, and it is the sharpest thing the
@@ -322,6 +330,7 @@ func labelReport(w *strings.Builder, s *sanitize.Sanitizer, samples []Sample) {
 			byGenre[g] = append(byGenre[g], v)
 		}
 	}
+	w.WriteString(burnNotice)
 	fmt.Fprintf(w, "unrated corpus: %d machine, %d human\n\n", len(ai), len(human))
 	fmt.Fprintf(w, "mean score, machine: %s\n", num(mean(ai)))
 	fmt.Fprintf(w, "mean score, human:   %s\n", num(mean(human)))
@@ -372,6 +381,7 @@ func report(w *strings.Builder, rows []scored, ratings []Rating) {
 			underRated++
 		}
 	}
+	w.WriteString(burnNotice)
 	fmt.Fprintf(w, "rated samples: %d (%d ai, %d human)\n", len(rows), len(ai), len(human))
 	if underRated > 0 {
 		fmt.Fprintf(w, "warning: %d sample(s) have fewer than 3 raters\n", underRated)
