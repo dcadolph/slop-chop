@@ -322,9 +322,9 @@ slop-chop attack draft.md
 leaving it no better written, then reports which tells held.
 
 Buzzwords fall to a thesaurus: 33 of 71 word tells slip past. Sentence shapes do not,
-because escaping one means rebuilding the sentence, so 1 of 78 gets through. After the
-attack 54 of the 58 passages still carry a tell, and the mean score falls only from 77
-to 72. A structural tell counts double in the score for that reason.
+because escaping one means rebuilding the sentence, so 1 of 89 gets through. After the
+attack 64 of the 68 passages still carry a tell, and the mean score falls only from 85
+to 79. A structural tell counts double in the score for that reason.
 
 Run it on your own profile to find which rules a thesaurus can defeat. `-w` saves the
 evasive rewrites as a corpus. [docs/BENCHMARK.md](docs/BENCHMARK.md) has the full table
