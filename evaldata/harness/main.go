@@ -61,6 +61,7 @@ func main() {
 	genAI := flag.Int("generate-ai", 0, "generate N machine samples per model, genre, and prompt style")
 	genModels := flag.String("generate-models", "llama3.2:3b,qwen2.5-coder:14b", "comma separated ollama models to generate from")
 	genTag := flag.String("generate-tag", "", "the frozen ruleset tag to record on generated samples")
+	genGenres := flag.String("generate-genres", "", "comma separated genres to generate, empty for all")
 	genHuman := flag.Int("collect-human", 0, "collect N register-matched human READMEs into the locked corpus")
 	genExclude := flag.String("collect-human-exclude", "", "file of repositories to skip, one per line")
 	seed := flag.Int("rate-seed", 1, "presentation order for this rater")
@@ -86,7 +87,8 @@ func main() {
 			err = errors.New("-generate-tag is required: a sample records the ruleset frozen before it")
 			break
 		}
-		err = generateAI(strings.Split(*genModels, ","), *genAI, defaultPaths().samples, *genTag, os.Stdout)
+		err = generateAI(strings.Split(*genModels, ","), strings.Split(*genGenres, ","),
+			*genAI, defaultPaths().samples, *genTag, os.Stdout)
 	case *genHuman > 0:
 		if strings.TrimSpace(*genTag) == "" {
 			err = errors.New("-generate-tag is required: a sample records the ruleset frozen before it")
@@ -105,7 +107,7 @@ func main() {
 			err = errors.New("-rate-import needs -rate to name the rater")
 			break
 		}
-		err = importSheet(*sheetIn, defaultPaths().ratings, *rater, os.Stdout)
+		err = importSheet(*sheetIn, defaultPaths().samples, defaultPaths().ratings, *rater, os.Stdout)
 	case *rater != "":
 		p := defaultPaths()
 		err = runRate(p.samples, p.ratings, *rater, *seed, os.Stdin, os.Stdout)

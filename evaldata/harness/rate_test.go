@@ -3,11 +3,13 @@ package main
 import (
 	"encoding/base64"
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -175,7 +177,7 @@ func TestGenerateAIFrom(t *testing.T) {
 
 	path := t.TempDir() + "/samples.jsonl"
 	var out strings.Builder
-	if err := generateAIFrom(srv.URL, []string{"testmodel"}, 1, path, "v9.9.9", &out); err != nil {
+	if err := generateAIFrom(srv.URL, []string{"testmodel"}, nil, 1, path, "v9.9.9", &out); err != nil {
 		t.Fatalf("generateAIFrom: %v", err)
 	}
 	got, err := readLines[Sample](path)
@@ -224,7 +226,7 @@ func TestGenerateAIFromContinuesIDs(t *testing.T) {
 
 	path := t.TempDir() + "/samples.jsonl"
 	for range 2 {
-		if err := generateAIFrom(srv.URL, []string{"m"}, 1, path, "v1", io.Discard); err != nil {
+		if err := generateAIFrom(srv.URL, []string{"m"}, nil, 1, path, "v1", io.Discard); err != nil {
 			t.Fatalf("generateAIFrom: %v", err)
 		}
 	}
@@ -384,7 +386,9 @@ func TestExportSheetIsBlind(t *testing.T) {
 		t.Fatalf("read: %v", err)
 	}
 	text := string(raw)
-	for _, leak := range []string{"source", "human", "\"ai\"", "some-model", "somewhere", "rules"} {
+	// The ids are the leak this test originally missed: they encode provenance in their
+	// first character, so a sheet carrying them is not blind however clean the rest is.
+	for _, leak := range []string{"source", "human", "\"ai\"", "some-model", "somewhere", "rules", "h001", "a001"} {
 		if strings.Contains(text, leak) {
 			t.Errorf("the sheet carries %q, which tells the rater the answer:\n%s", leak, text)
 		}
@@ -396,12 +400,15 @@ func TestExportSheetIsBlind(t *testing.T) {
 	if len(rows) != 3 {
 		t.Fatalf("rows = %d, want a header and two samples", len(rows))
 	}
-	if rows[0][0] != "id" || rows[0][2] != "machine_1_to_7" {
-		t.Errorf("header = %v, want id and the answer column", rows[0])
+	if rows[0][0] != "key" || rows[0][2] != "machine_1_to_7" {
+		t.Errorf("header = %v, want the key and the answer column", rows[0])
 	}
 	for _, r := range rows[1:] {
 		if r[2] != "" {
 			t.Errorf("answer column is prefilled with %q", r[2])
+		}
+		if r[0] != sheetKey("h001") && r[0] != sheetKey("a001") {
+			t.Errorf("key %q is not derived from a sample id, so the sheet cannot be imported", r[0])
 		}
 	}
 }
@@ -412,26 +419,45 @@ func TestExportSheetIsBlind(t *testing.T) {
 func TestImportSheet(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
+	samples := dir + "/samples.jsonl"
+	body := `{"id":"h001","source":"human","rules":"v1","text":"one"}
+{"id":"a001","source":"ai","rules":"v1","text":"two"}
+{"id":"h002","source":"human","rules":"v1","text":"three"}
+{"id":"h003","source":"human","rules":"v1","text":"four"}`
+	if err := os.WriteFile(samples, []byte(body+"\n"), 0o600); err != nil {
+		t.Fatalf("write samples: %v", err)
+	}
 	sheet := dir + "/filled.csv"
-	rows := "id,text,machine_1_to_7\nh001,some text,3\na001,other text,\nh002,more text,99\nh003,last text,7\n"
+	rows := "key,text,machine_1_to_7\n" +
+		sheetKey("h001") + ",some text,3\n" +
+		sheetKey("a001") + ",other text,\n" +
+		sheetKey("h002") + ",more text,99\n" +
+		sheetKey("h003") + ",last text,7\n" +
+		"deadbeef00,a row from nowhere,4\n"
 	if err := os.WriteFile(sheet, []byte(rows), 0o600); err != nil {
-		t.Fatalf("write: %v", err)
+		t.Fatalf("write sheet: %v", err)
 	}
 	ratings := dir + "/ratings.jsonl"
 	var out strings.Builder
-	if err := importSheet(sheet, ratings, "volunteer", &out); err != nil {
+	if err := importSheet(sheet, samples, ratings, "volunteer", &out); err != nil {
 		t.Fatalf("importSheet: %v", err)
 	}
 	got, err := readLines[Rating](ratings)
 	if err != nil {
 		t.Fatalf("readLines: %v", err)
 	}
-	want := []Rating{{Sample: "h001", Rater: "volunteer", Machine: 3}, {Sample: "h003", Rater: "volunteer", Machine: 7}}
+	want := []Rating{
+		{Sample: "h001", Rater: "volunteer", Machine: 3},
+		{Sample: "h003", Rater: "volunteer", Machine: 7},
+	}
 	if diff := cmp.Diff(want, got, cmpopts.EquateEmpty()); diff != "" {
 		t.Errorf("ratings mismatch (-want +got):\n%s", diff)
 	}
 	if !strings.Contains(out.String(), "not a 1 to 7 answer") {
-		t.Errorf("the bad value was not reported:\n%s", out.String())
+		t.Errorf("an out-of-range answer was taken quietly:\n%s", out.String())
+	}
+	if !strings.Contains(out.String(), "matches no sample") {
+		t.Errorf("a key belonging to no sample was taken quietly:\n%s", out.String())
 	}
 }
 
@@ -455,7 +481,7 @@ func TestSheetColumnsByName(t *testing.T) {
 // TestImportSheetNeedsRater checks that an imported answer is always attributable.
 func TestImportSheetNeedsRater(t *testing.T) {
 	t.Parallel()
-	if err := importSheet("x", "y", "   ", &strings.Builder{}); err == nil {
+	if err := importSheet("x", "y", "z", "   ", &strings.Builder{}); err == nil {
 		t.Errorf("err = nil, want a refusal without a rater id")
 	}
 }
@@ -538,5 +564,83 @@ func TestAnthropicGenerateNeedsKey(t *testing.T) {
 	t.Parallel()
 	if _, err := anthropicGenerate(http.DefaultClient, "", "claude-opus-4-8", "x"); err == nil {
 		t.Errorf("err = nil, want a refusal without a key")
+	}
+}
+
+// TestGenerateAIGenreFilter checks that naming genres restricts the run to them. The human
+// half of this corpus is README prose and nothing else, so a machine half carrying work
+// emails and chat replies can be separated on genre alone, which reads as a strong rating
+// result and measures nothing about whether the prose looks machine-written.
+func TestGenerateAIGenreFilter(t *testing.T) {
+	var prompts []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Prompt string `json:"prompt"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		prompts = append(prompts, body.Prompt)
+		_, _ = io.WriteString(w, fmt.Sprintf(`{"response":%q}`, strings.Repeat("A plain sentence here. ", 40)))
+	}))
+	defer srv.Close()
+
+	path := filepath.Join(t.TempDir(), "samples.jsonl")
+	if err := generateAIFrom(srv.URL, []string{"m"}, []string{"readme"}, 1, path, "v1", io.Discard); err != nil {
+		t.Fatalf("generateAIFrom: %v", err)
+	}
+	if len(prompts) != len(genStyles) {
+		t.Fatalf("made %d call(s), want %d: one per style of the single named genre",
+			len(prompts), len(genStyles))
+	}
+	for _, p := range prompts {
+		if !strings.Contains(p, "README") {
+			t.Errorf("a genre outside the filter was generated: %q", p)
+		}
+	}
+}
+
+// TestRateShuffleInterleaves checks that presentation order does not group the labels. The
+// corpus is stored as every human sample then every machine one, and the previous stride
+// walked it in arithmetic steps, which produced runs of seventeen human samples before the
+// first machine one. A rater does not need to decode that consciously for it to ruin the
+// instrument, so the run length is pinned rather than trusted.
+func TestRateShuffleInterleaves(t *testing.T) {
+	t.Parallel()
+	var samples []Sample
+	for i := 0; i < 50; i++ {
+		samples = append(samples, Sample{ID: fmt.Sprintf("h%03d", i), Source: "human"})
+	}
+	for i := 0; i < 38; i++ {
+		samples = append(samples, Sample{ID: fmt.Sprintf("a%03d", i), Source: "ai"})
+	}
+	for seed := 1; seed <= 5; seed++ {
+		got := rateShuffle(samples, seed)
+		if len(got) != len(samples) {
+			t.Fatalf("seed %d returned %d samples, want %d", seed, len(got), len(samples))
+		}
+		seen := map[string]bool{}
+		longest, run := 1, 1
+		for i, s := range got {
+			if seen[s.ID] {
+				t.Fatalf("seed %d repeats %s, so the order is not a permutation", seed, s.ID)
+			}
+			seen[s.ID] = true
+			if i > 0 {
+				if s.Source == got[i-1].Source {
+					run++
+				} else {
+					run = 1
+				}
+				if run > longest {
+					longest = run
+				}
+			}
+		}
+		// Ten in a row is far past anything a fair shuffle of this corpus produces and
+		// well short of the seventeen the stride gave, so it separates the two without
+		// failing on ordinary randomness.
+		if longest > 10 {
+			t.Errorf("seed %d puts %d samples of one label in a row: the order leaks the label",
+				seed, longest)
+		}
 	}
 }

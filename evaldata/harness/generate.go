@@ -172,8 +172,8 @@ func ollamaGenerate(client *http.Client, base, model, prompt string) (string, er
 // generateAI writes machine samples into path, walking genres and prompt styles across
 // every model so no one combination dominates the corpus. Existing samples are read first
 // so ids continue rather than collide, and the file is appended rather than replaced.
-func generateAI(models []string, perCombo int, path, rulesTag string, w io.Writer) error {
-	return generateAIFrom(ollamaBase, models, perCombo, path, rulesTag, w)
+func generateAI(models, genres []string, perCombo int, path, rulesTag string, w io.Writer) error {
+	return generateAIFrom(ollamaBase, models, genres, perCombo, path, rulesTag, w)
 }
 
 // ollamaBase is where the local daemon listens.
@@ -181,7 +181,20 @@ const ollamaBase = "http://localhost:11434"
 
 // generateAIFrom is generateAI with the daemon address supplied, so a test can drive the
 // whole path against a local server instead of a model.
-func generateAIFrom(base string, models []string, perCombo int, path, rulesTag string, w io.Writer) error {
+func generateAIFrom(
+	base string, models, genres []string, perCombo int, path, rulesTag string, w io.Writer,
+) error {
+	// Naming genres restricts the run to them. The human half of this corpus is README
+	// prose and nothing else, so a machine half spread across five genres lets a rater
+	// separate the two on genre alone and score well without ever judging whether
+	// anything reads machine-written. Matching the register is what makes the rating
+	// mean something.
+	only := map[string]bool{}
+	for _, g := range genres {
+		if g = strings.TrimSpace(g); g != "" {
+			only[g] = true
+		}
+	}
 	existing, err := readLines[Sample](path)
 	if err != nil && !os.IsNotExist(err) {
 		return err
@@ -204,6 +217,9 @@ func generateAIFrom(base string, models []string, perCombo int, path, rulesTag s
 	written, skipped := 0, 0
 	for _, model := range models {
 		for _, genre := range genGenres {
+			if len(only) > 0 && !only[genre.name] {
+				continue
+			}
 			for _, style := range genStyles {
 				for range perCombo {
 					prompt := genre.task + style.instruction + " Reply with the writing only, no preamble and no title."

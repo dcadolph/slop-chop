@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -31,25 +32,13 @@ func rateShuffle(samples []Sample, seed int) []Sample {
 	if len(out) < 2 {
 		return out
 	}
-	// A step coprime with the length visits every index exactly once.
-	step := seed%len(out) + 1
-	for gcd(step, len(out)) != 1 {
-		step++
-	}
-	shuffled := make([]Sample, 0, len(out))
-	for i, at := 0, seed%len(out); i < len(out); i++ {
-		shuffled = append(shuffled, out[at])
-		at = (at + step) % len(out)
-	}
-	return shuffled
-}
-
-// gcd returns the greatest common divisor of a and b.
-func gcd(a, b int) int {
-	for b != 0 {
-		a, b = b, a%b
-	}
-	return a
+	// A coprime stride visits every index once, which makes it a permutation and not a
+	// shuffle. Walking a corpus stored as one label after the other, it produced runs of
+	// seventeen human samples before the first machine one, so the block structure told a
+	// rater the answer whether or not they meant to use it.
+	r := rand.New(rand.NewSource(int64(seed)))
+	r.Shuffle(len(out), func(i, j int) { out[i], out[j] = out[j], out[i] })
+	return out
 }
 
 // rated returns the set of sample ids this rater has already answered, so a session can

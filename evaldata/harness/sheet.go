@@ -1,7 +1,9 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/csv"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -21,7 +23,16 @@ import (
 // because that is where a person's eye lands after reading.
 //
 //nolint:gochecknoglobals // Immutable lookup.
-var sheetHeader = []string{"id", "text", "machine_1_to_7"}
+var sheetHeader = []string{"key", "text", "machine_1_to_7"}
+
+// sheetKey is the opaque handle a rater sees instead of the sample id. The ids encode
+// provenance in their first character, h for human and a for machine, so a sheet carrying
+// them hands over the answer to anyone who notices the pattern in the first two rows. The
+// key is derived from the id, so a returned sheet still matches without a mapping file.
+func sheetKey(id string) string {
+	sum := sha256.Sum256([]byte(id))
+	return hex.EncodeToString(sum[:])[:10]
+}
 
 // exportSheet writes the samples to CSV in a shuffled order, one row each, with an empty
 // answer column. The source label is never written: a sheet that carries it is not a blind
@@ -45,7 +56,7 @@ func exportSheet(samplesPath, out string, seed int) error {
 		return fmt.Errorf("write %s: %w", out, err)
 	}
 	for _, s := range rateShuffle(samples, seed) {
-		if err := w.Write([]string{s.ID, strings.TrimSpace(s.Text), ""}); err != nil {
+		if err := w.Write([]string{sheetKey(s.ID), strings.TrimSpace(s.Text), ""}); err != nil {
 			return fmt.Errorf("write %s: %w", out, err)
 		}
 	}
@@ -57,31 +68,39 @@ func exportSheet(samplesPath, out string, seed int) error {
 // answer is a row the rater skipped and is passed over rather than guessed at. An answer
 // outside one to seven is reported and skipped, since a corpus quietly holding a rating
 // nobody gave is worse than a corpus missing one.
-func importSheet(sheet, ratingsPath, rater string, w io.Writer) error {
+func importSheet(sheet, samplesPath, ratingsPath, rater string, w io.Writer) error {
 	if strings.TrimSpace(rater) == "" {
 		return fmt.Errorf("a rater id is required, so a rating can be attributed")
 	}
-	f, err := os.Open(sheet)
+	samples, err := readLines[Sample](samplesPath)
 	if err != nil {
-		return fmt.Errorf("open %s: %w", sheet, err)
+		return err
+	}
+	bySheetKey := make(map[string]string, len(samples))
+	for _, s := range samples {
+		bySheetKey[sheetKey(s.ID)] = s.ID
+	}
+	f, openErr := os.Open(sheet)
+	if openErr != nil {
+		return fmt.Errorf("open %s: %w", sheet, openErr)
 	}
 	defer func() { _ = f.Close() }()
 
-	rows, err := csv.NewReader(f).ReadAll()
-	if err != nil {
-		return fmt.Errorf("read %s: %w", sheet, err)
+	rows, readErr := csv.NewReader(f).ReadAll()
+	if readErr != nil {
+		return fmt.Errorf("read %s: %w", sheet, readErr)
 	}
 	if len(rows) < 2 {
 		return fmt.Errorf("%s holds no rows", sheet)
 	}
-	id, answer, err := sheetColumns(rows[0])
-	if err != nil {
-		return err
+	id, answer, colErr := sheetColumns(rows[0])
+	if colErr != nil {
+		return colErr
 	}
 
-	out, err := os.OpenFile(ratingsPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
-	if err != nil {
-		return fmt.Errorf("open %s: %w", ratingsPath, err)
+	out, outErr := os.OpenFile(ratingsPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+	if outErr != nil {
+		return fmt.Errorf("open %s: %w", ratingsPath, outErr)
 	}
 	defer func() { _ = out.Close() }()
 	enc := json.NewEncoder(out)
@@ -101,7 +120,13 @@ func importSheet(sheet, ratingsPath, rater string, w io.Writer) error {
 			skipped++
 			continue
 		}
-		if err := enc.Encode(Rating{Sample: strings.TrimSpace(row[id]), Rater: rater, Machine: n}); err != nil {
+		sample, known := bySheetKey[strings.TrimSpace(row[id])]
+		if !known {
+			_, _ = fmt.Fprintf(w, "row %d: %q matches no sample in the corpus, skipped\n", i+2, row[id])
+			skipped++
+			continue
+		}
+		if err := enc.Encode(Rating{Sample: sample, Rater: rater, Machine: n}); err != nil {
 			return fmt.Errorf("write %s: %w", ratingsPath, err)
 		}
 		added++
@@ -117,14 +142,14 @@ func sheetColumns(header []string) (id, answer int, err error) {
 	id, answer = -1, -1
 	for i, h := range header {
 		switch strings.TrimSpace(strings.ToLower(h)) {
-		case "id":
+		case "key", "id":
 			id = i
 		case "machine_1_to_7":
 			answer = i
 		}
 	}
 	if id < 0 || answer < 0 {
-		return 0, 0, fmt.Errorf("sheet needs an %q and a %q column, got %v", "id", "machine_1_to_7", header)
+		return 0, 0, fmt.Errorf("sheet needs a %q and a %q column, got %v", "key", "machine_1_to_7", header)
 	}
 	return id, answer, nil
 }
