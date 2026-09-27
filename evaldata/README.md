@@ -45,6 +45,56 @@ was frozen and never read while changing it. That corpus does not exist yet. Unt
 does, the honest statement about how well the score separates machine prose from human
 prose is that it is unmeasured.
 
+### The replacement corpus, 2026-09-27
+
+The burned samples are kept at `evaldata/samples-burned-20260921.jsonl` as the record of
+what they were, and `evaldata/samples.jsonl` now holds a corpus collected from scratch:
+
+| | |
+| --- | --- |
+| Samples | 88 |
+| Human | 50, READMEs from repositories with no push after 2021 |
+| Machine&nbsp; | 38, five local model families across three prompt styles |
+| Genre | README on both sides |
+| Ruleset frozen at | v0.41.0 |
+| Ratings | none yet |
+
+Nothing in it has been scored. Looking at how the ruleset performs on these samples is the
+act that burned the last set, so the only things read off it so far are counts.
+
+Collection excluded 1405 repositories across three records: the repositories the burned
+corpus spent, the two false positive manifests, and the long-form development corpus. The
+first attempt missed that third one and the lock rejected seventeen samples, which is the
+second time it has caught this exact class of mistake.
+
+Both halves are README prose. A machine half spread across work emails and chat replies
+lets a rater separate the corpus on genre alone and score well without once judging
+whether anything reads machine-written, which is the failure the note on matching the
+register describes further down. The generator now takes a genre filter so the halves can
+be held to one register.
+
+One asymmetry remains and is not fixed: human samples run to a median of 107 words and
+machine samples to 150, inside a shared band of 60 to 400. Length is a weaker cue than
+genre and the ranges overlap almost completely, but it is there.
+
+### Two faults in the rating instrument, found before any human saw it
+
+Exporting the first sheets turned up two problems that would each have invalidated the
+experiment on their own.
+
+The sheet carried the sample id, and ids encode provenance in their first character: `h`
+for human and `a` for machine. Two rows is enough to notice. The sheet now carries an
+opaque key derived from the id, so a returned sheet still matches without handing over the
+answer. The blindness test had been checking for the source field, the model name and the
+origin, and never considered the id itself.
+
+Presentation order was worse. What the code called a shuffle walked the corpus in a fixed
+arithmetic stride, which visits every index once and is therefore a permutation, but the
+corpus is stored as every human sample followed by every machine one. The result was runs
+of seventeen human samples before the first machine one. A rater does not have to work
+that out consciously for it to wreck the instrument. It is a seeded shuffle now, and the
+longest run of one label is pinned by a test.
+
 ### The cadence penalty replicated, on data collected afterward
 
 The burn leaves the size of the effect unmeasured, not the existence of it. The long-form
