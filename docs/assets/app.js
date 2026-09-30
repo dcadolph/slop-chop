@@ -5,10 +5,8 @@
 
   const STORE_KEY = "slop-chop-settings-v1";
   const SAMPLE =
-    "In today's fast-paced, digital-first landscape, teams leverage a myriad of robust tools " +
-    "to stay aligned—often juggling five or six apps just to seamlessly ship one feature. Our " +
-    "dashboard streamlines all of it, pulling your tasks, docs, and messages into a single " +
-    "view that updates in real time.";
+    "First and foremost, hello. It is important to note that my name is Inigo Montoya. " +
+    "Furthermore, you killed my father. In conclusion, prepare to die.";
 
   /* The service worker caches the page and the engine, so the chopper keeps working
      with no network. Best-effort: without it the online site is unchanged. */
