@@ -121,6 +121,30 @@ async function main() {
   await page3.close();
   log("mangled share hash still boots: ok");
 
+  // Step 8b: the Share button copies a link that reopens the same text, chopped.
+  const shareCtx = await browser.newContext({ permissions: ["clipboard-read", "clipboard-write"] });
+  const page4 = await shareCtx.newPage();
+  await page4.goto(BASE, { waitUntil: "load" });
+  await waitForApp(page4);
+  const shareText = "In summary, the heist is robust—very robust.";
+  await page4.fill("#sc-in", shareText);
+  await page4.click("#sc-share-text");
+  const textHref = await page4.evaluate(() => navigator.clipboard.readText());
+  if (!/#t=[A-Za-z0-9_-]+$/.test(textHref)) throw new Error("share link malformed: " + textHref);
+  const page5 = await shareCtx.newPage();
+  await page5.goto(textHref, { waitUntil: "load" });
+  await waitForApp(page5);
+  const got = await page5.evaluate(() => ({
+    in: document.getElementById("sc-in").value,
+    out: document.getElementById("sc-out").value,
+    hash: location.hash,
+  }));
+  if (got.in !== shareText) throw new Error("shared text not loaded: " + JSON.stringify(got.in));
+  if (got.out.includes("—") || /in summary/i.test(got.out)) throw new Error("shared text not chopped");
+  if (got.hash !== "") throw new Error("text hash not cleaned from url");
+  await shareCtx.close();
+  log("text share link round-trip: ok");
+
   // Step 9: a dropped file shows the hint, loads, chops, and reports its name.
   await page.click("#sc-drawer-close");
   await page.evaluate(() => {

@@ -4,6 +4,8 @@
   "use strict";
 
   const STORE_KEY = "slop-chop-settings-v1";
+  // MAX_SHARE_TEXT keeps result links short enough for chat apps and address bars.
+  const MAX_SHARE_TEXT = 4000;
   const SAMPLE =
     "First and foremost, hello. It is important to note that my name is Inigo Montoya. " +
     "Furthermore, you killed my father. In conclusion, prepare to die.";
@@ -126,6 +128,13 @@
     return m ? decodeShare(m[1]) : null;
   }
 
+  /* readShareText returns the text carried in the page URL by a result link, if any. */
+  function readShareText() {
+    const m = /[#&]t=([A-Za-z0-9_-]+)/.exec(location.hash);
+    const state = m ? decodeShare(m[1]) : null;
+    return state && typeof state.t === "string" ? state.t : null;
+  }
+
   /* diffOps runs a Myers diff over two token lists. It returns [op, token] pairs where
      0 keeps a token, 1 adds one, and -1 drops one, or null when the lists diverge past
      the cap and a diff would not help anyone. */
@@ -227,6 +236,7 @@
     const scoreAfter = $("sc-score-after");
     const status = $("sc-status");
     const copyBtn = $("sc-copy");
+    const shareTextBtn = $("sc-share-text");
     const downloadBtn = $("sc-download");
     const clearBtn = $("sc-clear");
     const findingsBox = $("sc-findings");
@@ -1054,6 +1064,16 @@
     copyBtn.addEventListener("click", async () => {
       if (await toClipboard(output.value)) flash(copyBtn, "Copied");
     });
+    shareTextBtn.addEventListener("click", async () => {
+      if (!input.value) return;
+      if (input.value.length > MAX_SHARE_TEXT) {
+        flash(shareTextBtn, "Too long");
+        return;
+      }
+      const url = new URL(document.baseURI);
+      url.hash = "t=" + encodeShare({ t: input.value });
+      if (await toClipboard(url.href)) flash(shareTextBtn, "Copied");
+    });
     downloadBtn.addEventListener("click", () => {
       if (!output.value) return;
       const blob = new Blob([output.value], { type: "text/plain;charset=utf-8" });
@@ -1146,6 +1166,8 @@
       chop();
     });
 
+    const sharedText = readShareText();
+    if (sharedText !== null) input.value = sharedText;
     if (!input.value) input.value = SAMPLE;
     setStatus("Loading the chopper...");
 
@@ -1154,14 +1176,15 @@
         renderPresets();
         const shared = readShareHash();
         applySettings(shared || loadSettings() || {});
-        if (shared) {
-          saveSettings();
+        if (shared) saveSettings();
+        if (shared || sharedText !== null) {
           history.replaceState(null, "", location.pathname + location.search);
         }
         if (engineTag) engineTag.textContent = "engine " + engineVersion;
         setStatus("");
         chop().then(() => {
           if (shared) setStatus("Settings loaded from the shared link.");
+          else if (sharedText !== null) setStatus("Text loaded from the shared link.");
         });
       })
       .catch((err) => {

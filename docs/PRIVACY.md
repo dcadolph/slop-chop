@@ -18,6 +18,13 @@ machine it is a local binary. Your text never leaves your device.
 Settings you choose, such as your keep, prefer, and avoid word lists and the selected preset, are
 stored locally on your device, in browser storage or a local file. They are not sent anywhere.
 
+## Share links
+
+The web app's Share button copies a link with your text encoded in it, after the `#`. Browsers do
+not send that part of a link to the server, so opening the link does not transmit the text to
+slop-chop. Anyone you give the link to can read the text, so share it only where you would share
+the text itself.
+
 ## Optional model rewrite
 
 The tools offer an optional rewrite step that sends your text to an AI model for a deeper edit. It

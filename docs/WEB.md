@@ -74,6 +74,11 @@ Copy link packs the settings into the URL hash as base64 JSON. API keys are stri
 before encoding. On load, a valid hash applies the settings and cleans itself from the
 URL. A mangled hash degrades to a normal visit.
 
+Share, in the Chopped pane, does the same for the input text under `t=` instead of `s=`.
+The link opens the page with that text chopped under the visitor's own settings. Text
+over 4000 characters is refused, because longer links break in chat apps and address
+bars.
+
 ## Offline
 
 A service worker caches the page, the engine, and the theme's hashed bundles on the
