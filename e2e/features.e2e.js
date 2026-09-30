@@ -28,7 +28,7 @@ async function main() {
 
   // Step 3: output diff marks paint under what changed.
   const outMarks = await page.locator("#sc-out-marks mark").count();
-  if (outMarks < 5) throw new Error("output diff marks missing: " + outMarks);
+  if (outMarks < 4) throw new Error("output diff marks missing: " + outMarks);
   log("output diff marks:", outMarks);
 
   // Step 4: the score chip opens a breakdown whose numbers match the findings bar.

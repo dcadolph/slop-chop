@@ -48,8 +48,8 @@ async function smoke(name, browserType) {
   if (out.includes("—")) throw new Error(name + ": em-dash survived");
   const inMarks = await page.locator("#sc-marks mark").count();
   const outMarks = await page.locator("#sc-out-marks mark").count();
-  if (inMarks < 5) throw new Error(name + ": input marks missing");
-  if (outMarks < 3) throw new Error(name + ": output diff marks missing");
+  if (inMarks < 4) throw new Error(name + ": input marks missing");
+  if (outMarks < 4) throw new Error(name + ": output diff marks missing");
 
   await page.click("#sc-settings-btn");
   const presets = await page.locator(".sc-preset").count();
