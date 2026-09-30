@@ -74,23 +74,23 @@ make uninstall   # remove it again
 
 Run `make` with no target for the full list (`build`, `test`, `cover`, `lint`, `fmt`, `tidy`, `clean`).
 
-## Everywhere else
+## Does it work?
 
-The same engine runs on many surfaces. All local and free unless noted.
+Three measurements, all reproducible from this repository. [docs/BENCHMARK.md](docs/BENCHMARK.md)
+has the method and the caveats.
 
-| Where | Get it |
-| --- | --- |
-| Web app | [slop-chop.com](https://slop-chop.com), nothing to install |
-| VS Code, Cursor, VSCodium | search **slop-chop** on [Open VSX](https://open-vsx.org/extension/dcadolph/slop-chop) |
-| JetBrains IDEs | the Marketplace plugin, or LSP4IJ with `slop-chop lsp`, see [docs/LSP.md](docs/LSP.md) |
-| Neovim, Helix, any LSP editor | `slop-chop lsp`, see [docs/LSP.md](docs/LSP.md) |
-| Obsidian | the desktop plugin, see [obsidian/](obsidian/) |
-| Node | `npm install slop-chop-wasm` |
-| Go programs | `import github.com/dcadolph/slop-chop/sanitize`, see [below](#use-it-as-a-go-library) |
-| HTTP API | `POST https://api.slop-chop.com/chop`, see [docs/API.md](docs/API.md) |
-| Slack | a `/chop` command and a message shortcut, see [docs/SLACK.md](docs/SLACK.md) |
-| Claude Desktop, Cursor, any MCP client | `slop-chop mcp`, see [docs/MCP.md](docs/MCP.md) |
-| CI, Raycast, macOS, pre-commit | the GitHub Action and [integrations/](integrations/) |
+It stays quiet on human writing. Scored against 886 open-source READMEs across seven
+language ecosystems, most from projects with no push since 2021, seven reach the line where
+text stops reading clean. That is 0.79 percent.
+
+Word lists lose to a thesaurus and sentence shapes do not. `slop-chop attack` rewrites text
+to dodge the rules without improving it. 33 of 71 word tells slip past. 1 of 89 structural
+tells does.
+
+The test that would settle it has not been run. Nobody has yet checked whether the score
+ranks text the way human readers do. The rating protocol and the harness are in
+[evaldata/](evaldata/). Until that runs, the claim stays narrow: same input, same output,
+and the patterns the rules know get caught every time.
 
 ## Usage
 
@@ -421,6 +421,24 @@ Overlay a built-in preset with `sanitize.ApplyPresets`, enforce a spelling diale
 profile's `Dialect` field, or fold in a personal `sanitize.Voice` with `profile.WithVoice`. The
 optional model rewrite lives in `github.com/dcadolph/slop-chop/rewrite`. The full reference is
 on [pkg.go.dev](https://pkg.go.dev/github.com/dcadolph/slop-chop/sanitize).
+
+## Everywhere else
+
+The same engine runs on many surfaces. All local and free unless noted.
+
+| Where | Get it |
+| --- | --- |
+| Web app | [slop-chop.com](https://slop-chop.com), nothing to install |
+| VS Code, Cursor, VSCodium | search **slop-chop** on [Open VSX](https://open-vsx.org/extension/dcadolph/slop-chop) |
+| JetBrains IDEs | the Marketplace plugin, or LSP4IJ with `slop-chop lsp`, see [docs/LSP.md](docs/LSP.md) |
+| Neovim, Helix, any LSP editor | `slop-chop lsp`, see [docs/LSP.md](docs/LSP.md) |
+| Obsidian | the desktop plugin, see [obsidian/](obsidian/) |
+| Node | `npm install slop-chop-wasm` |
+| Go programs | `import github.com/dcadolph/slop-chop/sanitize`, see [above](#use-it-as-a-go-library) |
+| HTTP API | `POST https://api.slop-chop.com/chop`, see [docs/API.md](docs/API.md) |
+| Slack | a `/chop` command and a message shortcut, see [docs/SLACK.md](docs/SLACK.md) |
+| Claude Desktop, Cursor, any MCP client | `slop-chop mcp`, see [docs/MCP.md](docs/MCP.md) |
+| CI, Raycast, macOS, pre-commit | the GitHub Action and [integrations/](integrations/) |
 
 ## Docs
 
