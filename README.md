@@ -13,6 +13,10 @@
 
 AI writing leaves fingerprints.
 
+<p align="center">
+  <img src="assets/demo.gif" alt="slop-chop turning padded AI prose back into the Inigo Montoya line" width="720">
+</p>
+
 Chop the slop. Paste in text and get back something that reads like a person wrote it.
 
 Try it without installing anything: [slop-chop.com](https://slop-chop.com/) runs the same
