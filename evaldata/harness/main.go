@@ -67,6 +67,7 @@ func main() {
 	seed := flag.Int("rate-seed", 1, "presentation order for this rater")
 	sheetOut := flag.String("rate-sheet", "", "export the corpus to this CSV for rating outside the repo")
 	sheetIn := flag.String("rate-import", "", "read a filled rating sheet back in")
+	flatten := flag.Bool("flatten", false, "put samples carrying markup or layout through the human half's prose filter")
 	corpus := flag.String("pre2022-file", "evaldata/pre2022.jsonl", "where the pre-2022 READMEs are read from and written to")
 	longHuman := flag.Int("collect-longform", 0, "collect N long human passages into the long-form development corpus")
 	longAI := flag.Int("generate-longform", 0, "generate N machine long-form passages per model, genre, and prompt style")
@@ -100,6 +101,8 @@ func main() {
 	case *longAI > 0:
 		err = generateLongform(ollamaBase, strings.Split(*longModels, ","),
 			strings.Split(*longGenres, ","), *longAI, *longFile, os.Stdout)
+	case *flatten:
+		err = flattenCorpus(defaultPaths().samples, defaultPaths().ratings, os.Stdout)
 	case *sheetOut != "":
 		err = exportSheet(defaultPaths().samples, *sheetOut, *seed)
 	case *sheetIn != "":

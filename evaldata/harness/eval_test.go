@@ -101,6 +101,10 @@ func TestCheckCorpus(t *testing.T) {
 		Samples:   []Sample{good},
 		Dev:       []string{"  " + strings.ToUpper(words(100)) + "\n"},
 		WantCount: 1,
+	}, { // Test 4: A paragraph break marks a sample on sight, since no human one has it.
+		Name:      "layout",
+		Samples:   []Sample{{ID: "a001", Source: "ai", Rules: "v0.36.0", Text: words(50) + "\n\n" + words(50)}},
+		WantCount: 1,
 	}}
 	for testNum, test := range tests {
 		t.Run(fmt.Sprintf("test %d %s", testNum, test.Name), func(t *testing.T) {

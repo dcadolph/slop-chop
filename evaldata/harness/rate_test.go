@@ -273,6 +273,10 @@ func TestProseOnly(t *testing.T) {
 		Name: "structure", WantHas: "",
 		In:       "# Title\n![badge](x)\n| a | b |\n- bullet point here\n> quoted line here",
 		WantGone: []string{"Title", "badge", "bullet", "quoted"},
+	}, { // Test 5: A link whose destination wrapped onto a dropped line keeps its words.
+		Name: "wrapped link", WantHas: "This crate started out in this video for the stream",
+		In:       "This crate started out in [this video](\nhttps://example.com/v)\nThis crate started out in [this video]( for the stream.",
+		WantGone: []string{"]("},
 	}}
 	for testNum, test := range tests {
 		t.Run(fmt.Sprintf("test %d %s", testNum, test.Name), func(t *testing.T) {

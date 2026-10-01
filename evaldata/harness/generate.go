@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -199,12 +200,7 @@ func generateAIFrom(
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
-	next := 1
-	for _, s := range existing {
-		if strings.HasPrefix(s.ID, "a") {
-			next++
-		}
-	}
+	next := nextID(existing, "a")
 
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
@@ -234,6 +230,11 @@ func generateAIFrom(
 						_, _ = fmt.Fprintf(w, "%s %s/%s: %v\n", model, genre.name, style.name, genErr)
 						continue
 					}
+					// The human half goes through proseOnly, which drops structure and joins
+					// paragraphs into one line. A reply kept as written carries headings,
+					// lists, and paragraph breaks no human sample can, so it takes the same
+					// filter before the band is checked.
+					text = proseOnly(text)
 					if n := len(strings.Fields(text)); n < genMinWords || n > genMaxWords {
 						skipped++
 						continue
@@ -311,12 +312,7 @@ func (c *client) collectHumanInto(want int, samplesPath, excludePath, rulesTag s
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
-	next := 1
-	for _, s := range existing {
-		if strings.HasPrefix(s.ID, "h") {
-			next++
-		}
-	}
+	next := nextID(existing, "h")
 
 	f, err := os.OpenFile(samplesPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
@@ -391,7 +387,9 @@ func proseOnly(text string) string {
 		if inFence || skipLine(trimmed) {
 			continue
 		}
-		clean := strings.TrimSpace(stripInline(trimmed))
+		// Stripping a span leaves its spaces behind, and a doubled space is a residue only
+		// a filtered sample carries.
+		clean := strings.Join(strings.Fields(stripInline(trimmed)), " ")
 		// Whatever is left has to read as a sentence rather than as the remains of one.
 		if len(strings.Fields(clean)) < 4 || strings.ContainsAny(clean, "|<>`") {
 			continue
@@ -427,6 +425,7 @@ func skipLine(trimmed string) bool {
 func stripInline(line string) string {
 	line = inlineImageRe.ReplaceAllString(line, "")
 	line = inlineLinkRe.ReplaceAllString(line, "$1")
+	line = danglingLinkRe.ReplaceAllString(line, "$1")
 	line = codeSpanRe.ReplaceAllString(line, "")
 	line = bareURLInline.ReplaceAllString(line, "")
 	return strings.NewReplacer("**", "", "__", "", "*", "", "_", "").Replace(line)
@@ -436,6 +435,24 @@ func stripInline(line string) string {
 var (
 	inlineImageRe = regexp.MustCompile(`!\[[^\]]*\]\([^)]*\)`)
 	inlineLinkRe  = regexp.MustCompile(`\[([^\]]*)\]\([^)]*\)`)
-	codeSpanRe    = regexp.MustCompile("`[^`]*`")
-	bareURLInline = regexp.MustCompile(`https?://\S+`)
+	// danglingLinkRe catches a link whose destination wrapped onto a line the filter
+	// dropped, which leaves the opening half behind.
+	danglingLinkRe = regexp.MustCompile(`\[([^\]]*)\]\(`)
+	codeSpanRe     = regexp.MustCompile("`[^`]*`")
+	bareURLInline  = regexp.MustCompile(`https?://\S+`)
 )
+
+// nextID returns one past the highest numbered id carrying the prefix, so a sample dropped
+// from the middle of the corpus never hands its number to a new one.
+func nextID(samples []Sample, prefix string) int {
+	next := 1
+	for _, s := range samples {
+		if !strings.HasPrefix(s.ID, prefix) {
+			continue
+		}
+		if n, err := strconv.Atoi(strings.TrimPrefix(s.ID, prefix)); err == nil && n >= next {
+			next = n + 1
+		}
+	}
+	return next
+}

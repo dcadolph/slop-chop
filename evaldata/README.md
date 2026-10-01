@@ -52,9 +52,9 @@ what they were, and `evaldata/samples.jsonl` now holds a corpus collected from s
 
 | | |
 | --- | --- |
-| Samples | 88 |
+| Samples | 84 |
 | Human | 50, READMEs from repositories with no push after 2021 |
-| Machine&nbsp; | 38, five local model families across three prompt styles |
+| Machine&nbsp; | 34, five local model families across three prompt styles |
 | Genre | README on both sides |
 | Ruleset frozen at | v0.41.0 |
 | Ratings | none yet |
@@ -74,7 +74,7 @@ register describes further down. The generator now takes a genre filter so the h
 be held to one register.
 
 One asymmetry remains and is not fixed: human samples run to a median of 107 words and
-machine samples to 150, inside a shared band of 60 to 400. Length is a weaker cue than
+machine samples to 132, inside a shared band of 60 to 400. Length is a weaker cue than
 genre and the ranges overlap almost completely, but it is there.
 
 ### Two faults in the rating instrument, found before any human saw it
@@ -94,6 +94,34 @@ corpus is stored as every human sample followed by every machine one. The result
 of seventeen human samples before the first machine one. A rater does not have to work
 that out consciously for it to wreck the instrument. It is a seeded shuffle now, and the
 longest run of one label is pinned by a test.
+
+### A third fault: the halves had different shapes, 2026-09-30
+
+The human half is collected through a filter that keeps prose paragraphs and joins them
+into one line. The machine half was stored as the model wrote it. So 26 of 38 machine
+samples carried paragraph breaks and none of the 50 human ones did, and six carried code
+spans, four headings, and five list items, where the human half carried none. A rater
+reading the sheet could sort most of the corpus by its shape without reading a sentence.
+Running the other way, 27 human samples carried a doubled space where the filter had cut
+out a code span, against one machine sample, and one still held the opening half of a
+link whose destination had wrapped onto a dropped line.
+
+Nothing had been rated or scored, so the fix could still be made in the corpus rather than
+around it. Every generated reply now goes through the same filter as the human half before
+the length band is checked, and the filter collapses the spaces it leaves behind.
+`-flatten` applied that to the stored corpus once: 49 samples changed, every human change
+was whitespace apart from the wrapped link, and four machine samples that were mostly
+lists fell under sixty words of prose and were dropped, which is the same treatment a
+human README gets at collection. Sample ids now continue from the highest one present, so
+a dropped sample never hands its number to a new one.
+
+The lock check now refuses a sample carrying a paragraph break, a code span, emphasis,
+link syntax, table or HTML characters, or a doubled space. The two faults above were found
+by reading an exported sheet. This one is found by the build.
+
+```sh
+go run ./evaldata/harness -flatten   # refuses to run once any rating exists
+```
 
 ### The cadence penalty replicated, on data collected afterward
 

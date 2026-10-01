@@ -103,8 +103,32 @@ func checkCorpus(samples []Sample, devTexts []string) []string {
 		if dev[normalize(s.Text)] {
 			problems = append(problems, at+": text appears in the development corpus, which breaks the lock")
 		}
+		if leak := markupLeak(s.Text); leak != "" {
+			problems = append(problems, at+": carries "+leak+", which tells a rater the label before they read it")
+		}
 	}
 	return problems
+}
+
+// markupLeak names the first trace of markup or layout in a sample, or returns empty. The
+// human half is collected as one flat line of prose, so any of these marks a sample as
+// machine-written on sight, and the rating would measure the formatting instead.
+func markupLeak(text string) string {
+	switch {
+	case strings.Contains(text, "\n"):
+		return "a paragraph break"
+	case strings.Contains(text, "`"):
+		return "a code span"
+	case strings.Contains(text, "**") || strings.Contains(text, "__"):
+		return "emphasis markup"
+	case strings.Contains(text, "]("):
+		return "link syntax"
+	case strings.ContainsAny(text, "|<>"):
+		return "table or HTML markup"
+	case strings.Contains(text, "  "):
+		return "a doubled space"
+	}
+	return ""
 }
 
 // checkRatings validates the ratings against the samples.
