@@ -163,8 +163,8 @@ length, in the same genres, scored by the same ruleset.
 
 Two things come out of it, and they point in opposite directions.
 
-**The engine separates full-length prose very well.** Machine passages mean 17.4 against
-3.1 for human, which is a Cohen's d of 2.20. As a ranking instrument on real documents it
+**The engine separates full-length prose very well.** Machine passages mean 25.8 against
+4.8 for human, which is a Cohen's d of 2.08. As a ranking instrument on real documents it
 works, and the gap is not an artifact of the adversarial prompt style: passages written
 under an instruction to avoid every cliche of AI writing score about the same as the plain
 ones.
@@ -234,8 +234,8 @@ authors, and there are no confidence intervals on 115 passages. It is a regressi
 guard with teeth, not a study.
 
 **A rate is not a verdict.** The score is tell density, so its headline numbers move with
-passage length. The exemplar corpus reports a machine mean of 78 on twenty-word passages
-and the long-form corpus reports 17 on three-hundred-word ones, from the same engine and
+passage length. The exemplar corpus reports a machine mean of 85 on twenty-word passages
+and the long-form corpus reports 26 on three-hundred-word ones, from the same engine and
 the same ruleset. Both are true and neither is the number. Any figure quoted off this page
 has a passage length attached to it, stated or not.
 

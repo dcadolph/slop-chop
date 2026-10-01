@@ -219,7 +219,7 @@ There is a second problem a model cannot solve for you. Every tell that gets fam
 
     ---
 
-    The engine ships with a labeled corpus of AI, human, and technical passages. AI text averages 78 of 100 on the slop score, human text 2, and technical prose raises no false flags. The benchmark runs with the tests, fails on any regression, and [its numbers, methods, and limits are documented](BENCHMARK.md). And the tool eats its own cooking: every guide on this site passes slop-chop's own check in CI. This front page is the one exception, since its demo text is slop on purpose.
+    The engine ships with a labeled corpus of AI, human, and technical passages. AI text averages 85 of 100 on the slop score, human text 2, and technical prose raises no false flags. The benchmark runs with the tests, fails on any regression, and [its numbers, methods, and limits are documented](BENCHMARK.md). And the tool eats its own cooking: every guide on this site passes slop-chop's own check in CI. This front page is the one exception, since its demo text is slop on purpose.
 
 </div>
 

@@ -388,8 +388,8 @@ can be checked rather than believed.
 ### What the result did not justify
 
 The rules that fire most on human prose are the lexical ones, and the attack command
-shows the lexical rules are also the evadable ones: 35 of 76 word tells and 8 of 12
-phrase tells fall to a thesaurus, against 2 of 66 structural tells. Two lines of evidence
+showed the lexical rules are also the evadable ones: when this was measured, 35 of 76 word
+tells and 8 of 12 phrase tells fell to a thesaurus, against 2 of 66 structural tells. Two lines of evidence
 pointing the same way made a case for weighing the lexical half less.
 
 Measuring it did not support the change. Dropping word and phrase weight to 0.75 removes
