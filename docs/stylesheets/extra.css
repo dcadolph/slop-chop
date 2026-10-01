@@ -416,3 +416,16 @@
   opacity: 0.85;
   margin-bottom: 1rem;
 }
+
+/* The rails line under the subtitle: the agent pitch, one step quieter than the tagline. */
+.sc-hero .sc-rails {
+  margin-top: -0.35rem;
+}
+.sc-hero .sc-rails strong {
+  color: var(--sc-lime-bright);
+}
+@media (max-width: 600px) {
+  .sc-hero .sc-rails {
+    display: none;
+  }
+}

@@ -16,7 +16,11 @@ hide:
 
 <p class="subtitle">Paste text that sounds like a bot, get back text that sounds like you. Em-dashes, buzzwords, stock phrases, and the newer tells models switched to once everyone learned the old ones: the spaced hyphen, the "The best part?" reveal, emoji bullets. All chopped in one pass, right in your browser. Plug in a model when you want a deeper rewrite.</p>
 
+**Paired with your AI, it is the rails.** It runs after the model to catch what drifted, gates a build on the score, and bosses the agent into cleaning its own work to your standard, not its whim.
+{ .subtitle .sc-rails }
+
 [Get started](quickstart.md){ .md-button .md-button--primary }
+[Put it in your agent](PLUGIN.md){ .md-button }
 
 </div>
 
@@ -151,7 +155,7 @@ slop-chop: 3 finding(s)</span>
 <div class="sc-install" markdown>
 
 ```sh
-go install github.com/dcadolph/slop-chop@latest
+brew install dcadolph/tap/slop-chop
 ```
 
 </div>
@@ -229,17 +233,35 @@ The same engine, wherever you write. Everything is local and free unless noted.
 
 <div class="grid cards sc-installs" markdown>
 
--   :material-console:{ .lg .middle } __Command line__
-
-    ---
-
-    `go install github.com/dcadolph/slop-chop@latest`
-
 -   :material-cursor-default-click:{ .lg .middle } __This page__
 
     ---
 
     The web app above. Nothing to install, nothing leaves the browser.
+
+-   :material-console:{ .lg .middle } __Command line__
+
+    ---
+
+    `brew install dcadolph/tap/slop-chop`, or `go install github.com/dcadolph/slop-chop@latest`.
+
+-   :material-robot-happy:{ .lg .middle } __Claude Code__
+
+    ---
+
+    `/plugin marketplace add dcadolph/slop-chop`, then `/plugin install slop-chop@slop-chop`. See [Claude plugin](PLUGIN.md).
+
+-   :material-robot-outline:{ .lg .middle } __Claude Desktop, Cursor, any MCP client__
+
+    ---
+
+    `slop-chop mcp` serves chop and check as tools, over stdio and local. See [MCP server](MCP.md).
+
+-   :material-cog-sync:{ .lg .middle } __CI and automation__
+
+    ---
+
+    The [GitHub Action](https://github.com/dcadolph/slop-chop), Raycast, macOS, and pre-commit. See [integrations](https://github.com/dcadolph/slop-chop/tree/main/integrations).
 
 -   :material-microsoft-visual-studio-code:{ .lg .middle } __VS Code, Cursor, VSCodium__
 
@@ -257,7 +279,7 @@ The same engine, wherever you write. Everything is local and free unless noted.
 
     ---
 
-    The desktop plugin under [obsidian/](https://github.com/dcadolph/slop-chop/tree/main/obsidian).
+    Search **slop-chop** in Settings, Community plugins.
 
 -   :material-nodejs:{ .lg .middle } __Node__
 
@@ -276,18 +298,6 @@ The same engine, wherever you write. Everything is local and free unless noted.
     ---
 
     A `/chop` command and a message shortcut, riding the API. See [Slack](SLACK.md).
-
--   :material-robot-outline:{ .lg .middle } __Claude Desktop, Cursor, any MCP client__
-
-    ---
-
-    `slop-chop mcp` serves chop and check as tools, over stdio and local. See [MCP server](MCP.md).
-
--   :material-cog-sync:{ .lg .middle } __CI and automation__
-
-    ---
-
-    The [GitHub Action](https://github.com/dcadolph/slop-chop), Raycast, macOS, and pre-commit. See [integrations](https://github.com/dcadolph/slop-chop/tree/main/integrations).
 
 </div>
 
