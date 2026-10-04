@@ -382,7 +382,7 @@ func TestExportSheetIsBlind(t *testing.T) {
 		t.Fatalf("write: %v", err)
 	}
 	out := dir + "/sheet.csv"
-	if err := exportSheet(samples, out, 1); err != nil {
+	if err := exportSheet(samples, out, 1, 0); err != nil {
 		t.Fatalf("exportSheet: %v", err)
 	}
 	raw, err := os.ReadFile(out)
@@ -462,6 +462,49 @@ func TestImportSheet(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "matches no sample") {
 		t.Errorf("a key belonging to no sample was taken quietly:\n%s", out.String())
+	}
+}
+
+// TestImportSheetSkipsAnswered checks that a rater who already answered a sample, say in
+// the pilot, keeps that first answer when a later sheet covers the same sample, so one
+// person never counts as two raters.
+func TestImportSheetSkipsAnswered(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	samples := dir + "/samples.jsonl"
+	body := `{"id":"h001","source":"human","rules":"v1","text":"one"}
+{"id":"a001","source":"ai","rules":"v1","text":"two"}`
+	if err := os.WriteFile(samples, []byte(body+"\n"), 0o600); err != nil {
+		t.Fatalf("write samples: %v", err)
+	}
+	ratings := dir + "/ratings.jsonl"
+	if err := os.WriteFile(ratings, []byte(`{"sample":"h001","rater":"volunteer","machine":2}`+"\n"), 0o600); err != nil {
+		t.Fatalf("write ratings: %v", err)
+	}
+	sheet := dir + "/filled.csv"
+	rows := "key,text,machine_1_to_7\n" +
+		sheetKey("h001") + ",some text,6\n" +
+		sheetKey("a001") + ",other text,5\n"
+	if err := os.WriteFile(sheet, []byte(rows), 0o600); err != nil {
+		t.Fatalf("write sheet: %v", err)
+	}
+	var out strings.Builder
+	if err := importSheet(sheet, samples, ratings, "volunteer", &out); err != nil {
+		t.Fatalf("importSheet: %v", err)
+	}
+	got, err := readLines[Rating](ratings)
+	if err != nil {
+		t.Fatalf("readLines: %v", err)
+	}
+	want := []Rating{
+		{Sample: "h001", Rater: "volunteer", Machine: 2},
+		{Sample: "a001", Rater: "volunteer", Machine: 5},
+	}
+	if diff := cmp.Diff(want, got, cmpopts.EquateEmpty()); diff != "" {
+		t.Errorf("ratings mismatch (-want +got):\n%s", diff)
+	}
+	if !strings.Contains(out.String(), "kept the first answer") {
+		t.Errorf("a repeat answer was skipped quietly:\n%s", out.String())
 	}
 }
 

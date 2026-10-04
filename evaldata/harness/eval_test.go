@@ -129,6 +129,18 @@ func TestCheckRatings(t *testing.T) {
 		Name: "clean", Ratings: []Rating{{Sample: "a001", Rater: "r01", Machine: 4}}, WantCount: 0,
 	}, { // Test 1: An unknown sample, a missing rater, and an out-of-range answer.
 		Name: "all wrong", Ratings: []Rating{{Sample: "zzz", Rater: "", Machine: 9}}, WantCount: 3,
+	}, { // Test 2: One rater answering one sample twice would count as two raters.
+		Name: "duplicate",
+		Ratings: []Rating{
+			{Sample: "a001", Rater: "r01", Machine: 4}, {Sample: "a001", Rater: "r01", Machine: 6},
+		},
+		WantCount: 1,
+	}, { // Test 3: Two raters on one sample is the normal case, not a duplicate.
+		Name: "two raters",
+		Ratings: []Rating{
+			{Sample: "a001", Rater: "r01", Machine: 4}, {Sample: "a001", Rater: "r02", Machine: 6},
+		},
+		WantCount: 0,
 	}}
 	for testNum, test := range tests {
 		t.Run(fmt.Sprintf("test %d %s", testNum, test.Name), func(t *testing.T) {
@@ -205,13 +217,20 @@ func TestReport(t *testing.T) {
 		t.Fatalf("scored rows = %d, want 3", len(rows))
 	}
 	var b strings.Builder
-	report(&b, rows, ratings)
+	report(&b, samples, rows, ratings)
 	out := b.String()
 	for _, want := range []string{
+		"pinned to ruleset v0.36.0",
 		"rated samples: 3 (1 ai, 2 human)",
 		"fewer than 3 raters",
 		"score vs human rating (Spearman):",
+		"95% interval",
+		"within machine samples:",
+		"within human samples:",
 		"ai/human separation by score:",
+		"score components vs human rating",
+		"density",
+		"drumbeat",
 		"h002",
 	} {
 		if !strings.Contains(out, want) {
@@ -286,13 +305,20 @@ func TestRun(t *testing.T) {
 		Rating{Sample: "a001", Rater: "r1", Machine: 5},
 		Rating{Sample: "a001", Rater: "r2", Machine: 6},
 	)
+	ready := writeJSONL(t, dir, "ready.jsonl",
+		Rating{Sample: "a001", Rater: "r1", Machine: 5},
+		Rating{Sample: "a001", Rater: "r2", Machine: 6},
+		Rating{Sample: "a001", Rater: "r3", Machine: 6},
+	)
 
 	tests := []struct {
-		Name    string
-		Check   bool
-		Paths   paths
-		Want    error
-		WantOut string
+		Name       string
+		Check      bool
+		Score      bool
+		Paths      paths
+		Want       error
+		WantOut    string
+		WantAbsent string
 	}{{ // Test 0: An empty corpus passes the lock and says so.
 		Name: "empty check", Check: true,
 		Paths:   paths{samples: empty, ratings: empty, dev: []string{dev}},
@@ -305,16 +331,25 @@ func TestRun(t *testing.T) {
 		Name:    "no samples",
 		Paths:   paths{samples: empty, ratings: empty, dev: []string{dev}},
 		WantOut: "no samples yet",
-	}, { // Test 3: Without ratings the labels still answer the narrower question, and the
-		// report has to say which question that is rather than let it pass for the other.
-		Name:    "unrated",
-		Paths:   paths{samples: good, ratings: empty, dev: []string{dev}},
-		WantOut: "separation, not agreement with a reader",
-	}, { // Test 4: A rated corpus produces the analysis.
-		Name:    "analysis",
-		Paths:   paths{samples: good, ratings: rated, dev: []string{dev}},
+	}, { // Test 3: Without ratings a plain run reports progress and reads no score.
+		Name:       "unrated",
+		Paths:      paths{samples: good, ratings: empty, dev: []string{dev}},
+		WantOut:    "No score has been read",
+		WantAbsent: "separation",
+	}, { // Test 4: A plain run on a fully rated corpus still reads no score.
+		Name:       "rated plain",
+		Paths:      paths{samples: good, ratings: ready, dev: []string{dev}},
+		WantOut:    "samples with 3 or more raters: 1 of 1",
+		WantAbsent: "score vs human rating",
+	}, { // Test 5: Scoring is refused while any sample is short of raters.
+		Name: "score too early", Score: true,
+		Paths: paths{samples: good, ratings: rated, dev: []string{dev}},
+		Want:  errNotReady,
+	}, { // Test 6: A fully rated corpus scores on request.
+		Name: "score ready", Score: true,
+		Paths:   paths{samples: good, ratings: ready, dev: []string{dev}},
 		WantOut: "rated samples: 1",
-	}, { // Test 5: An unreadable samples file is an error, not an empty corpus.
+	}, { // Test 7: An unreadable samples file is an error, not an empty corpus.
 		Name:  "bad json",
 		Paths: paths{samples: writeBad(t, dir), ratings: empty, dev: []string{dev}},
 		Want:  nil, // any error; checked below
@@ -323,7 +358,7 @@ func TestRun(t *testing.T) {
 		t.Run(fmt.Sprintf("test %d %s", testNum, test.Name), func(t *testing.T) {
 			t.Parallel()
 			var out strings.Builder
-			err := run(test.Check, test.Paths, &out)
+			err := run(test.Check, test.Score, test.Paths, &out)
 			switch {
 			case test.Name == "bad json":
 				if err == nil {
@@ -338,6 +373,9 @@ func TestRun(t *testing.T) {
 			}
 			if test.WantOut != "" && !strings.Contains(out.String(), test.WantOut) {
 				t.Errorf("output = %q, want it to hold %q", out.String(), test.WantOut)
+			}
+			if test.WantAbsent != "" && strings.Contains(out.String(), test.WantAbsent) {
+				t.Errorf("output = %q, want it to omit %q", out.String(), test.WantAbsent)
 			}
 		})
 	}
@@ -365,5 +403,158 @@ func TestClip(t *testing.T) {
 	got := clip(strings.Repeat("word ", 40), 10)
 	if len([]rune(got)) != 10 || !strings.HasSuffix(got, "…") {
 		t.Errorf("clip = %q, want 10 runes ending in an ellipsis", got)
+	}
+}
+
+// TestCorpusNote checks the note names the pinned ruleset and never calls the corpus
+// burned, since the burned samples live in their own file and are not read.
+func TestCorpusNote(t *testing.T) {
+	t.Parallel()
+	got := corpusNote([]Sample{
+		{ID: "a001", Rules: "v0.41.0"}, {ID: "h001", Rules: "v0.41.0"},
+	})
+	for _, want := range []string{"2 samples", "pinned to ruleset v0.41.0", "is not read here"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("note missing %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "were used to tune") {
+		t.Errorf("note calls a clean corpus burned:\n%s", got)
+	}
+}
+
+// TestCoverageOf checks rating progress is counted per sample against the rater floor.
+func TestCoverageOf(t *testing.T) {
+	t.Parallel()
+	samples := []Sample{{ID: "a001"}, {ID: "h001"}, {ID: "h002"}}
+	tests := []struct {
+		Name    string
+		In      []Rating
+		WantCov coverage
+	}{{ // Test 0: Nothing rated.
+		Name: "empty", WantCov: coverage{Total: 3},
+	}, { // Test 1: One sample at the floor, one under it, one untouched.
+		Name: "partial",
+		In: []Rating{
+			{Sample: "a001", Rater: "r1", Machine: 6}, {Sample: "a001", Rater: "r2", Machine: 5},
+			{Sample: "a001", Rater: "r3", Machine: 7}, {Sample: "h001", Rater: "r1", Machine: 2},
+		},
+		WantCov: coverage{Raters: 3, Ratings: 4, Rated: 2, Ready: 1, Total: 3},
+	}}
+	for testNum, test := range tests {
+		t.Run(fmt.Sprintf("test %d %s", testNum, test.Name), func(t *testing.T) {
+			t.Parallel()
+			if diff := cmp.Diff(test.WantCov, coverageOf(samples, test.In)); diff != "" {
+				t.Errorf("mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+// TestBootstrapSpearman checks the interval brackets the point estimate, collapses on a
+// perfect relation, widens on noise, is reproducible from its seed, and refuses too
+// little data.
+func TestBootstrapSpearman(t *testing.T) {
+	t.Parallel()
+	var line, noise, rating []float64
+	for i := range 40 {
+		line = append(line, float64(i))
+		noise = append(noise, float64((i*37)%40))
+		rating = append(rating, float64(i))
+	}
+
+	lo, hi := bootstrapSpearman(line, rating, 500, 1)
+	if lo < 0.999 || hi > 1.0001 {
+		t.Errorf("perfect relation interval = [%v, %v], want [1, 1]", lo, hi)
+	}
+
+	lo, hi = bootstrapSpearman(noise, rating, 500, 1)
+	rho := spearman(noise, rating)
+	if lo > rho || hi < rho {
+		t.Errorf("interval [%v, %v] does not bracket the estimate %v", lo, hi, rho)
+	}
+	if hi-lo < 0.2 {
+		t.Errorf("noisy interval [%v, %v] is implausibly narrow", lo, hi)
+	}
+
+	lo2, hi2 := bootstrapSpearman(noise, rating, 500, 1)
+	if lo != lo2 || hi != hi2 {
+		t.Errorf("same seed gave [%v, %v] then [%v, %v]", lo, hi, lo2, hi2)
+	}
+
+	lo, hi = bootstrapSpearman([]float64{1, 2}, []float64{1, 2}, 500, 1)
+	if !math.IsNaN(lo) || !math.IsNaN(hi) {
+		t.Errorf("two points gave [%v, %v], want NaN", lo, hi)
+	}
+}
+
+// TestPilotSubset checks the pilot is the requested size, split between the labels,
+// identical on every call, and blind to text, so a score cannot have chosen it.
+func TestPilotSubset(t *testing.T) {
+	t.Parallel()
+	var samples []Sample
+	for i := range 34 {
+		samples = append(samples, Sample{ID: fmt.Sprintf("a%03d", i), Source: "ai", Text: "x"})
+	}
+	for i := range 50 {
+		samples = append(samples, Sample{ID: fmt.Sprintf("h%03d", i), Source: "human", Text: "y"})
+	}
+	ids := func(list []Sample) []string {
+		var out []string
+		for _, s := range list {
+			out = append(out, s.ID)
+		}
+		return out
+	}
+
+	tests := []struct {
+		Name      string
+		N         int
+		WantCount int
+		WantAI    int
+	}{{ // Test 0: An even split.
+		Name: "twenty", N: 20, WantCount: 20, WantAI: 10,
+	}, { // Test 1: An odd size gives the extra one to the human half.
+		Name: "odd", N: 21, WantCount: 21, WantAI: 10,
+	}, { // Test 2: Zero means the whole corpus.
+		Name: "zero", N: 0, WantCount: 84, WantAI: 34,
+	}, { // Test 3: A size past the corpus means the whole corpus.
+		Name: "too big", N: 500, WantCount: 84, WantAI: 34,
+	}, { // Test 4: A short machine half is topped up from the human half.
+		Name: "short half", N: 80, WantCount: 80, WantAI: 34,
+	}}
+	for testNum, test := range tests {
+		t.Run(fmt.Sprintf("test %d %s", testNum, test.Name), func(t *testing.T) {
+			t.Parallel()
+			got := pilotSubset(samples, test.N)
+			ai := 0
+			for _, s := range got {
+				if s.Source == "ai" {
+					ai++
+				}
+			}
+			if diff := cmp.Diff(test.WantCount, len(got)); diff != "" {
+				t.Errorf("count mismatch (-want +got):\n%s", diff)
+			}
+			if diff := cmp.Diff(test.WantAI, ai); diff != "" {
+				t.Errorf("machine count mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+
+	first := ids(pilotSubset(samples, 20))
+	if diff := cmp.Diff(first, ids(pilotSubset(samples, 20))); diff != "" {
+		t.Errorf("pilot changed between calls (-first +second):\n%s", diff)
+	}
+
+	// Changing every text must not change the choice, since a choice that could see the
+	// text could see the score.
+	retexted := make([]Sample, len(samples))
+	for i, s := range samples {
+		s.Text = strings.Repeat("In summary, we leverage robust synergy. ", i+1)
+		retexted[i] = s
+	}
+	if diff := cmp.Diff(first, ids(pilotSubset(retexted, 20))); diff != "" {
+		t.Errorf("pilot depends on text (-before +after):\n%s", diff)
 	}
 }

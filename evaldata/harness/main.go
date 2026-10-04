@@ -51,6 +51,9 @@ func defaultPaths() paths {
 // already formatted one per line.
 var errCorpus = errors.New("corpus problems")
 
+// errNotReady means a scored run was asked for before every sample had enough raters.
+var errNotReady = errors.New("corpus not ready to score")
+
 func main() {
 	check := flag.Bool("check", false, "validate the corpus and the lock, then exit")
 	gather := flag.Int("collect-pre2022", 0, "collect N READMEs from repositories untouched since 2021")
@@ -67,6 +70,8 @@ func main() {
 	seed := flag.Int("rate-seed", 1, "presentation order for this rater")
 	sheetOut := flag.String("rate-sheet", "", "export the corpus to this CSV for rating outside the repo")
 	sheetIn := flag.String("rate-import", "", "read a filled rating sheet back in")
+	pilot := flag.Int("rate-pilot", 0, "export only this many samples, the fixed pilot subset, with -rate-sheet")
+	scoreRun := flag.Bool("score", false, "score the corpus once every sample has enough raters; this spends the corpus")
 	flatten := flag.Bool("flatten", false, "put samples carrying markup or layout through the human half's prose filter")
 	corpus := flag.String("pre2022-file", "evaldata/pre2022.jsonl", "where the pre-2022 READMEs are read from and written to")
 	longHuman := flag.Int("collect-longform", 0, "collect N long human passages into the long-form development corpus")
@@ -104,7 +109,7 @@ func main() {
 	case *flatten:
 		err = flattenCorpus(defaultPaths().samples, defaultPaths().ratings, os.Stdout)
 	case *sheetOut != "":
-		err = exportSheet(defaultPaths().samples, *sheetOut, *seed)
+		err = exportSheet(defaultPaths().samples, *sheetOut, *seed, *pilot)
 	case *sheetIn != "":
 		if strings.TrimSpace(*rater) == "" {
 			err = errors.New("-rate-import needs -rate to name the rater")
@@ -117,7 +122,7 @@ func main() {
 	case *falsePos:
 		err = runPre2022(*corpus, *manifest, os.Stdout)
 	default:
-		err = run(*check, defaultPaths(), os.Stdout)
+		err = run(*check, *scoreRun, defaultPaths(), os.Stdout)
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -147,9 +152,11 @@ func runPre2022(path, manifestPath string, w io.Writer) error {
 	return err
 }
 
-// run validates the corpora and, unless check is set, writes the analysis to w. Every
-// problem is reported at once rather than one per run, so a corpus is fixed in one pass.
-func run(check bool, p paths, w io.Writer) error {
+// run validates the corpora and, unless check is set, writes a report to w. Without score
+// the report covers rating progress and rater agreement and reads no scores. With score it
+// is the one scored analysis, refused until every sample has enough raters. Every problem
+// is reported at once rather than one per run, so a corpus is fixed in one pass.
+func run(check, score bool, p paths, w io.Writer) error {
 	samples, err := readLines[Sample](p.samples)
 	if err != nil {
 		return err
@@ -187,21 +194,23 @@ func run(check bool, p paths, w io.Writer) error {
 			"evaldata: no samples yet; see evaldata/README.md for the collection protocol")
 		return err
 	}
+	var b strings.Builder
+	if !score {
+		coverageReport(&b, samples, ratings)
+		_, err := io.WriteString(w, b.String())
+		return err
+	}
+	// Scoring is the act that spends the corpus, so it happens once over the whole of it.
+	// A partial run would read scores on the samples rated so far, and those samples could
+	// not be measured blind again.
+	if c := coverageOf(samples, ratings); c.Ready < c.Total {
+		return fmt.Errorf("%w: %d of %d samples have %d or more raters", errNotReady, c.Ready, c.Total, minRaters)
+	}
 	s, err := sanitize.New(sanitize.DefaultProfile())
 	if err != nil {
 		return err
 	}
-	rows := scoreSamples(s, samples, ratings)
-	if len(rows) == 0 {
-		// No ratings yet, but the labels alone answer a narrower question, so report
-		// that rather than nothing.
-		var b strings.Builder
-		labelReport(&b, s, samples)
-		_, err := io.WriteString(w, b.String())
-		return err
-	}
-	var b strings.Builder
-	report(&b, rows, ratings)
+	report(&b, samples, scoreSamples(s, samples, ratings), ratings)
 	_, err = io.WriteString(w, b.String())
 	return err
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"math/rand/v2"
 	"os"
 	"sort"
 	"strings"
@@ -138,8 +139,14 @@ func checkRatings(ratings []Rating, samples []Sample) []string {
 		ids[s.ID] = true
 	}
 	var problems []string
+	seen := map[[2]string]bool{}
 	for i, r := range ratings {
 		at := fmt.Sprintf("rating %d (%s by %s)", i+1, r.Sample, r.Rater)
+		key := [2]string{r.Rater, r.Sample}
+		if seen[key] {
+			problems = append(problems, at+": the rater already answered this sample, so it would count twice")
+		}
+		seen[key] = true
 		if !ids[r.Sample] {
 			problems = append(problems, at+": names a sample that does not exist")
 		}
@@ -301,6 +308,8 @@ type scored struct {
 	Sample Sample
 	// Score is the slop score of the text under the default profile.
 	Score float64
+	// Parts is the full score, so each component can be tested against the ratings.
+	Parts sanitize.Score
 	// Rating is the mean human rating, 1 to 7.
 	Rating float64
 	// Raters is how many raters answered.
@@ -316,9 +325,11 @@ func scoreSamples(s *sanitize.Sanitizer, samples []Sample, ratings []Rating) []s
 		if !ok {
 			continue
 		}
+		parts := s.Score(sample.Text)
 		out = append(out, scored{
 			Sample: sample,
-			Score:  float64(s.Score(sample.Text).Value),
+			Score:  float64(parts.Value),
+			Parts:  parts,
 			Rating: m.Mean,
 			Raters: m.Count,
 		})
@@ -326,94 +337,208 @@ func scoreSamples(s *sanitize.Sanitizer, samples []Sample, ratings []Rating) []s
 	return out
 }
 
-// burnNotice rides on every report this corpus produces. On 2026-09-21 these samples were
-// used to find and then tune the cadence penalty, which disqualifies them for measuring
-// the ruleset that came out of it. A caveat that lives only in a document is a caveat
-// somebody quotes a number without, so it is attached to the number instead.
-const burnNotice = "NOTE: these samples were used to tune the cadence penalty on 2026-09-21,\n" +
-	"so every separation figure below is a training number rather than held-out\n" +
-	"evidence. See the burn notice in evaldata/README.md.\n\n"
+// component names one part of the score whose relation to the ratings is reported.
+type component struct {
+	// Name is the label printed in the report.
+	Name string
+	// Of reads the component's points from a score.
+	Of func(sanitize.Score) int
+}
 
-// labelReport writes what the corpus can say before a single rater has seen it. The
-// separation between the machine and human halves needs only the ground truth labels, so
-// it is available the moment the corpus is collected, and it is the sharpest thing the
-// corpus tests: whether the score tells the halves apart on prose the rules never saw.
-// It is not the headline the protocol is after, which is agreement with human judgment,
-// and it cannot become that however good it looks.
-func labelReport(w *strings.Builder, s *sanitize.Sanitizer, samples []Sample) {
-	var ai, human []float64
-	byGenre := map[string][]float64{}
-	for _, sample := range samples {
-		v := float64(s.Score(sample.Text).Value)
-		if sample.Source == "ai" {
-			ai = append(ai, v)
+// components are the score's parts in the order the report lists them. They are fixed
+// here, before any scoring, so the list cannot be chosen after seeing which ones look good.
+//
+//nolint:gochecknoglobals // Immutable lookup.
+var components = []component{
+	{"density", func(s sanitize.Score) int { return s.Density }},
+	{"hedging", func(s sanitize.Score) int { return s.Hedging }},
+	{"cadence", func(s sanitize.Score) int { return s.Cadence }},
+	{"evidence", func(s sanitize.Score) int { return s.Evidence }},
+	{"drumbeat", func(s sanitize.Score) int { return s.Drumbeat }},
+}
+
+// minRaters is the fewest raters a sample needs before the corpus may be scored. The
+// scored report runs once over the whole corpus, so a sample short of this blocks it
+// rather than being reported thin.
+const minRaters = 3
+
+// The bootstrap behind the confidence interval on the headline correlation. The seed is
+// fixed so the interval is reproducible from the published ratings.
+const (
+	bootstrapRounds = 2000
+	bootstrapSeed   = 20261004
+)
+
+// corpusNote states which corpus a report covers and which ruleset its samples were pinned
+// to. A caveat that lives only in a document is a caveat somebody quotes a number without,
+// so it rides on the number instead. The corpus burned on 2026-09-21 lives in its own file
+// and is never read here, so the note says that rather than calling these samples burned.
+func corpusNote(samples []Sample) string {
+	tags := map[string]bool{}
+	for _, s := range samples {
+		tags[s.Rules] = true
+	}
+	var pinned []string
+	for t := range tags {
+		pinned = append(pinned, t)
+	}
+	sort.Strings(pinned)
+	return fmt.Sprintf("corpus: %d samples pinned to ruleset %s. The corpus burned on 2026-09-21\n"+
+		"is not read here. See evaldata/README.md and evaldata/ANALYSIS.md.\n\n",
+		len(samples), strings.Join(pinned, ", "))
+}
+
+// coverage is how far rating has progressed, read from the ratings alone.
+type coverage struct {
+	// Raters is how many distinct raters have answered.
+	Raters int
+	// Ratings is how many answers there are in total.
+	Ratings int
+	// Rated is how many samples have at least one answer.
+	Rated int
+	// Ready is how many samples have at least minRaters answers.
+	Ready int
+	// Total is how many samples the corpus holds.
+	Total int
+}
+
+// coverageOf counts rating progress without reading a single score.
+func coverageOf(samples []Sample, ratings []Rating) coverage {
+	means := meanRatings(ratings)
+	raters := map[string]bool{}
+	for _, r := range ratings {
+		raters[r.Rater] = true
+	}
+	c := coverage{Raters: len(raters), Ratings: len(ratings), Total: len(samples)}
+	for _, s := range samples {
+		m, ok := means[s.ID]
+		if !ok {
+			continue
+		}
+		c.Rated++
+		if m.Count >= minRaters {
+			c.Ready++
+		}
+	}
+	return c
+}
+
+// coverageReport writes what can be said before the corpus is scored: how far rating has
+// come and whether the raters agree with each other. It never loads the engine, which is
+// what lets a pilot measure rater agreement without spending the corpus.
+func coverageReport(w *strings.Builder, samples []Sample, ratings []Rating) {
+	w.WriteString(corpusNote(samples))
+	c := coverageOf(samples, ratings)
+	fmt.Fprintf(w, "raters: %d, ratings: %d\n", c.Raters, c.Ratings)
+	fmt.Fprintf(w, "samples rated at least once: %d of %d\n", c.Rated, c.Total)
+	fmt.Fprintf(w, "samples with %d or more raters: %d of %d\n", minRaters, c.Ready, c.Total)
+	fmt.Fprintf(w, "rater agreement (mean pairwise Spearman): %s\n", num(raterConsistency(ratings)))
+	w.WriteString("\nNo score has been read. Scoring is one run over the whole corpus, made with\n")
+	w.WriteString("-score once every sample has enough raters. See evaldata/ANALYSIS.md.\n")
+}
+
+// bootstrapSpearman returns a 95 percent percentile interval for the Spearman correlation
+// between a and b, resampling pairs with replacement. Resamples with no variance are
+// skipped. It returns NaN bounds when there is too little data to resample.
+func bootstrapSpearman(a, b []float64, rounds int, seed uint64) (lo, hi float64) {
+	n := len(a)
+	if n != len(b) || n < 3 {
+		return math.NaN(), math.NaN()
+	}
+	rng := rand.New(rand.NewPCG(seed, seed)) //nolint:gosec // Reproducible resampling, not security.
+	rhos := make([]float64, 0, rounds)
+	ra, rb := make([]float64, n), make([]float64, n)
+	for range rounds {
+		for i := range n {
+			k := rng.IntN(n)
+			ra[i], rb[i] = a[k], b[k]
+		}
+		if rho := spearman(ra, rb); !math.IsNaN(rho) {
+			rhos = append(rhos, rho)
+		}
+	}
+	if len(rhos) == 0 {
+		return math.NaN(), math.NaN()
+	}
+	sort.Float64s(rhos)
+	return rhos[int(0.025*float64(len(rhos)))], rhos[int(0.975*float64(len(rhos)-1))]
+}
+
+// pilotSubset returns n samples for a pilot, half machine and half human, chosen by a
+// hash of each id so the choice is fixed, reproducible, and blind to every score. Every
+// pilot rater gets the same subset, since agreement can only be measured on samples
+// raters share. When a half is short, the other half fills the gap.
+func pilotSubset(samples []Sample, n int) []Sample {
+	if n <= 0 || n >= len(samples) {
+		return samples
+	}
+	var ai, human []Sample
+	for _, s := range samples {
+		if s.Source == "ai" {
+			ai = append(ai, s)
 		} else {
-			human = append(human, v)
-		}
-		if g := sample.Meta["genre"]; g != "" {
-			byGenre[g] = append(byGenre[g], v)
+			human = append(human, s)
 		}
 	}
-	w.WriteString(burnNotice)
-	fmt.Fprintf(w, "unrated corpus: %d machine, %d human\n\n", len(ai), len(human))
-	fmt.Fprintf(w, "mean score, machine: %s\n", num(mean(ai)))
-	fmt.Fprintf(w, "mean score, human:   %s\n", num(mean(human)))
-	fmt.Fprintf(w, "separation by score: %s (0.5 chance, 1.0 perfect)\n", num(separation(ai, human)))
-	fmt.Fprintf(w, "machine at or above 25: %d of %d\n", atOrAbove(ai, 25), len(ai))
-	fmt.Fprintf(w, "human at or above 25:   %d of %d\n", atOrAbove(human, 25), len(human))
-	fmt.Fprintf(w, "\nThis is separation, not agreement with a reader. The protocol's question\n")
-	fmt.Fprintf(w, "needs blind human ratings and none have been collected.\n")
-}
-
-// mean returns the average of values, or zero when there are none.
-func mean(values []float64) float64 {
-	if len(values) == 0 {
-		return 0
+	byHash := func(list []Sample) {
+		sort.Slice(list, func(i, j int) bool {
+			return sheetKey("pilot:"+list[i].ID) < sheetKey("pilot:"+list[j].ID)
+		})
 	}
-	var sum float64
-	for _, v := range values {
-		sum += v
-	}
-	return sum / float64(len(values))
-}
-
-// atOrAbove counts the values at or above a threshold.
-func atOrAbove(values []float64, threshold float64) int {
-	n := 0
-	for _, v := range values {
-		if v >= threshold {
-			n++
-		}
-	}
-	return n
+	byHash(ai)
+	byHash(human)
+	takeAI := min(n/2, len(ai))
+	takeHuman := min(n-takeAI, len(human))
+	takeAI = min(n-takeHuman, len(ai))
+	out := append(append([]Sample{}, ai[:takeAI]...), human[:takeHuman]...)
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out
 }
 
 // report writes the full analysis. The disagreement lists are the finding whatever the
 // headline number says, so they print either way.
-func report(w *strings.Builder, rows []scored, ratings []Rating) {
+func report(w *strings.Builder, samples []Sample, rows []scored, ratings []Rating) {
 	var scores, rats, ai, human []float64
+	var aiScores, aiRats, humanScores, humanRats []float64
 	underRated := 0
 	for _, r := range rows {
 		scores = append(scores, r.Score)
 		rats = append(rats, r.Rating)
 		if r.Sample.Source == "ai" {
 			ai = append(ai, r.Score)
+			aiScores, aiRats = append(aiScores, r.Score), append(aiRats, r.Rating)
 		} else {
 			human = append(human, r.Score)
+			humanScores, humanRats = append(humanScores, r.Score), append(humanRats, r.Rating)
 		}
-		if r.Raters < 3 {
+		if r.Raters < minRaters {
 			underRated++
 		}
 	}
-	w.WriteString(burnNotice)
+	w.WriteString(corpusNote(samples))
 	fmt.Fprintf(w, "rated samples: %d (%d ai, %d human)\n", len(rows), len(ai), len(human))
 	if underRated > 0 {
-		fmt.Fprintf(w, "warning: %d sample(s) have fewer than 3 raters\n", underRated)
+		fmt.Fprintf(w, "warning: %d sample(s) have fewer than %d raters\n", underRated, minRaters)
 	}
-	fmt.Fprintf(w, "score vs human rating (Spearman): %s\n", num(spearman(scores, rats)))
+	lo, hi := bootstrapSpearman(scores, rats, bootstrapRounds, bootstrapSeed)
+	fmt.Fprintf(w, "score vs human rating (Spearman): %s, 95%% interval %s to %s\n",
+		num(spearman(scores, rats)), num(lo), num(hi))
+	// Within each label the true answer is held constant, so a correlation here is the
+	// score tracking perception rather than the score telling two populations apart.
+	fmt.Fprintf(w, "  within machine samples:          %s\n", num(spearman(aiScores, aiRats)))
+	fmt.Fprintf(w, "  within human samples:            %s\n", num(spearman(humanScores, humanRats)))
 	fmt.Fprintf(w, "ai/human separation by score:     %s (0.5 chance, 1.0 perfect)\n",
 		num(separation(ai, human)))
 	fmt.Fprintf(w, "rater consistency (mean pairwise): %s\n", num(raterConsistency(ratings)))
+
+	w.WriteString("\nscore components vs human rating (Spearman, exploratory):\n")
+	for _, c := range components {
+		var vals []float64
+		for _, r := range rows {
+			vals = append(vals, float64(c.Of(r.Parts)))
+		}
+		fmt.Fprintf(w, "  %-9s %s\n", c.Name, num(spearman(vals, rats)))
+	}
 
 	w.WriteString("\nscore says slop, people read it as human:\n")
 	printDisagreements(w, rows, func(r scored) bool { return r.Score >= 55 && r.Rating <= 3 })

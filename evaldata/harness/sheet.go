@@ -37,7 +37,8 @@ func sheetKey(id string) string {
 // exportSheet writes the samples to CSV in a shuffled order, one row each, with an empty
 // answer column. The source label is never written: a sheet that carries it is not a blind
 // instrument, and a spreadsheet is exactly the kind of file somebody scrolls sideways in.
-func exportSheet(samplesPath, out string, seed int) error {
+// A positive pilot limits the sheet to the fixed pilot subset of that size.
+func exportSheet(samplesPath, out string, seed, pilot int) error {
 	samples, err := readLines[Sample](samplesPath)
 	if err != nil {
 		return err
@@ -55,7 +56,7 @@ func exportSheet(samplesPath, out string, seed int) error {
 	if err := w.Write(sheetHeader); err != nil {
 		return fmt.Errorf("write %s: %w", out, err)
 	}
-	for _, s := range rateShuffle(samples, seed) {
+	for _, s := range rateShuffle(pilotSubset(samples, pilot), seed) {
 		if err := w.Write([]string{sheetKey(s.ID), strings.TrimSpace(s.Text), ""}); err != nil {
 			return fmt.Errorf("write %s: %w", out, err)
 		}
@@ -76,6 +77,13 @@ func importSheet(sheet, samplesPath, ratingsPath, rater string, w io.Writer) err
 	if err != nil {
 		return err
 	}
+	existing, err := readLines[Rating](ratingsPath)
+	if err != nil {
+		return err
+	}
+	// A rater who rated the pilot and then the full sheet answers the pilot samples twice.
+	// The first answer stands, so no sample counts one person as two raters.
+	already := rated(existing, rater)
 	bySheetKey := make(map[string]string, len(samples))
 	for _, s := range samples {
 		bySheetKey[sheetKey(s.ID)] = s.ID
@@ -126,6 +134,12 @@ func importSheet(sheet, samplesPath, ratingsPath, rater string, w io.Writer) err
 			skipped++
 			continue
 		}
+		if already[sample] {
+			_, _ = fmt.Fprintf(w, "row %d (%s): already rated by %q, kept the first answer\n", i+2, row[id], rater)
+			skipped++
+			continue
+		}
+		already[sample] = true
 		if err := enc.Encode(Rating{Sample: sample, Rater: rater, Machine: n}); err != nil {
 			return fmt.Errorf("write %s: %w", ratingsPath, err)
 		}

@@ -216,16 +216,35 @@ docs is a worse rater for this purpose, so recruit outside the project.
 
 ## Analysis
 
-Once ratings exist, the harness does the rest:
+The analysis is fixed in advance in [ANALYSIS.md](ANALYSIS.md), which was committed before
+any rating existed. It decides what is measured, what each result would mean, and what
+gets published. This section describes the mechanics.
+
+A plain run reads no scores. It reports how far rating has come and how well the raters
+agree with each other, which is all a pilot needs:
 
 ```
 go run ./evaldata/harness
 ```
 
+Scoring is a separate, deliberate run, because it is the act that spends the corpus. The
+harness refuses it until every sample has at least three raters, so it cannot happen
+partway through:
+
+```
+go run ./evaldata/harness -score
+```
+
 It scores every sample with the default profile and reports:
 
-- Spearman correlation between the slop score and the mean human rating. This is the
-  headline number: does the score order texts the way people do?
+- Spearman correlation between the slop score and the mean human rating, with a
+  bootstrap interval. This is the headline number: does the score order texts the way
+  people do?
+- The same correlation within the machine half and within the human half. A score that
+  only tells the halves apart correlates with ratings across the whole corpus without
+  tracking anything inside either half, so these say whether the headline is more than
+  that.
+- The correlation of each score component with the ratings, as an exploratory reading.
 - How well the score separates the `ai` and `human` labels, as the probability that a
   random machine sample outscores a random human one.
 - Rater consistency, as the mean pairwise correlation between raters, so a weak headline
@@ -263,6 +282,10 @@ there is a second path that asks nothing of them but reading and typing a number
 go run ./evaldata/harness -rate-sheet sheet.csv -rate-seed 42   # send this file out
 go run ./evaldata/harness -rate-import filled.csv -rate their-id
 ```
+
+For the pilot, `-rate-pilot 20` limits the sheet to a fixed twenty: half machine, half
+human, chosen by a hash of each id so every pilot rater gets the same set and no score
+had a hand in choosing it.
 
 The sheet is a CSV with an id, the text, and an empty answer column. It carries no label,
 no model name, and no origin, because a spreadsheet is exactly the kind of file somebody
