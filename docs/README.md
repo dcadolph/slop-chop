@@ -287,18 +287,6 @@ The same engine, wherever you write. Everything is local and free unless noted.
 
     `npm install slop-chop-wasm`.
 
--   :material-api:{ .lg .middle } __HTTP API__
-
-    ---
-
-    `POST https://api.slop-chop.com/chop`. See [API](API.md).
-
--   :material-slack:{ .lg .middle } __Slack__
-
-    ---
-
-    A `/chop` command and a message shortcut, riding the API. See [Slack](SLACK.md).
-
 </div>
 
 ## Start here

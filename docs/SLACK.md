@@ -1,5 +1,9 @@
 # Slack
 
+!!! warning "Experimental"
+    The Slack app runs on the [hosted API](API.md), which is not reliable right now, so
+    commands may fail with an error.
+
 Chop slop without leaving Slack: a `/chop` command for any text, and a **Chop this message**
 shortcut on messages already posted. Both run on the [hosted API](API.md), which runs the same
 deterministic engine as everything else. Replies are ephemeral, so only you see the result,

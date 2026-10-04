@@ -87,12 +87,9 @@ project:
 ## ChatGPT custom connectors
 
 ChatGPT connectors reach a server over HTTP at a URL, and this one speaks stdio on your own
-machine, so the two do not meet directly. Two ways around it:
-
-- Put a stdio-to-HTTP bridge in front of it, such as `mcp-remote`, and give ChatGPT the URL
-  the bridge serves. The text still gets chopped locally.
-- Or skip MCP and call the [hosted API](API.md), which runs the same engine over
-  `POST /chop`.
+machine, so the two do not meet directly. The way around it is a stdio-to-HTTP bridge in
+front of it, such as `mcp-remote`, with ChatGPT given the URL the bridge serves. The text
+still gets chopped locally.
 
 ## Your own rules
 
