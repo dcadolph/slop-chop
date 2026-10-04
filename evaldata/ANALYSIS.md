@@ -14,6 +14,12 @@ The corpus is `evaldata/samples.jsonl`: 84 samples, 50 human and 34 machine, pin
 the ruleset frozen at v0.41.0. Its composition and collection are described in
 [README.md](README.md).
 
+This plan covers those 84 samples and no others. Samples added later, such as machine
+samples from frontier models, are a separate measurement with a plan of their own. They do
+not join this scored run, and this run does not wait for them. They go in a file of their
+own rather than `samples.jsonl`, since the harness scores only once every sample in that
+file has enough raters.
+
 The question is whether the slop score orders texts the way blind readers do. The
 question is not whether the score detects machine authorship, and no result here will be
 described as if it were.
