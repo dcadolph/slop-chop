@@ -95,18 +95,32 @@ Run against all 68 AI passages, the attack tells the story the score weighting r
 | Class      | Evaded | Held | What that means                                                    |
 |------------|--------|------|---------------------------------------------------------------------|
 | Word       | 33     | 38   | A word list is a lookup, and a lookup loses to a thesaurus.&nbsp;    |
-| Structural | 1      | 88   | A sentence shape has to be rebuilt to escape, which no swap does.   |
+| Structural | 1      | 88   | No swap reaches a sentence shape, so this bounds the attacker.&nbsp; |
 
 64 of the 68 passages still carry a tell after the attack. That gap is why a structural
 tell counts two and a word counts one, and the test that measures it fails the build if
 the classes ever invert.
 
-The asymmetry is the most load-bearing number here. It says the durable half of the
-engine is the structural half, and that a published word list is a depreciating asset.
+The asymmetry is what the score weighting rests on. It says a published word list is a
+depreciating asset, and that the structural rules are worth more per finding.
 
-Read the word row as a floor rather than a measurement of rule strength. The evasion
-table covers a few dozen entries against a block list of 161, so a fuller thesaurus would
-evade more. The structural row is the real finding: substitution barely touches it.
+Read both rows as facts about this one attacker rather than about evasion in general.
+The word row is a floor: the evasion table covers a few dozen entries against a block
+list of 161, so a fuller thesaurus would evade more.
+
+The structural row carries a sharper limit, and it is the one to be careful with.
+`slop-chop attack` substitutes, and a substitution does not rebuild a sentence, so the
+structural rules are measured here against an attacker that cannot reach them. The row
+shows the attacker's reach rather than the rules' durability. Nothing in this run tried
+to escape a sentence shape, so nothing in this run says a sentence shape is hard to
+escape.
+
+Testing that needs an attacker that rewrites rather than swaps, which means a model told
+to keep the meaning and change the shape. The published paraphrase attacks on neural
+detectors do exactly that, with a separate control for reordering, and they report large
+drops in detection. Whether a fixed rule set holds up better than a classifier is a fair
+question and an open one. Until that run happens, treat the durability of the structural
+half as unmeasured.
 
 [slop-chop on slop-chop](ITSELF.md) turns the engine on its own documentation and output:
 whether the docs pass, whether chopping settles, and what one pass actually leaves behind.

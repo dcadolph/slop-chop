@@ -82,9 +82,10 @@ to tell.
 ## Can it evade itself?
 
 `slop-chop attack` rewrites text to dodge the rules without improving it, then reports what
-held. Word tells fall to a thesaurus: 33 of 71 slip past. Sentence shapes do not, because
-escaping one means rebuilding the sentence, so 1 of 89 gets through. After the attack 64 of
-68 machine passages still flag, and the mean score falls only from 85 to 79.
+held. Word tells fall to a thesaurus: 33 of 71 slip past. Only 1 of 89 structural tells
+gets through, since a swap never rebuilds a sentence, so that row bounds the attacker
+rather than the rules. After the attack 64 of 68 machine passages still flag, and the mean
+score falls only from 85 to 79.
 
 A structural tell counts twice what a word does in the score for that reason.
 [The benchmark page](BENCHMARK.md) has the full table along with the limits of what any of
