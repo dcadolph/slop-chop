@@ -10,6 +10,7 @@ import (
 	"errors"
 	"syscall/js"
 
+	"github.com/dcadolph/slop-chop/badge"
 	"github.com/dcadolph/slop-chop/internal/jsonutil"
 	"github.com/dcadolph/slop-chop/rewrite/prompt"
 	"github.com/dcadolph/slop-chop/sanitize"
@@ -54,6 +55,7 @@ func main() {
 	js.Global().Set("slopChop", js.FuncOf(chop))
 	js.Global().Set("slopDefaults", js.FuncOf(defaults))
 	js.Global().Set("slopPresets", js.FuncOf(presets))
+	js.Global().Set("slopBadge", js.FuncOf(scoreBadge))
 	js.Global().Set("slopRewritePrompt", js.FuncOf(rewritePrompt))
 	js.Global().Set("slopJudgePrompt", js.FuncOf(judgePrompt))
 	js.Global().Set("slopVersion", js.FuncOf(engineVersion))
@@ -90,6 +92,65 @@ func chop(_ js.Value, args []js.Value) any {
 		Score:      s.Score(req.Text),
 		ScoreAfter: s.Score(out),
 	})
+}
+
+// badgeRequest is the payload slopBadge accepts, decoded from its single JSON argument.
+type badgeRequest struct {
+	// Text is the text to score. Ignored when Unknown is set.
+	Text string `json:"text"`
+	// Presets names built-in presets to apply, matching slopChop. An empty list means
+	// the default profile.
+	Presets []string `json:"presets"`
+	// Unknown asks for the gray placeholder badge instead of a measurement, so a
+	// caller that could not retrieve the text still has a badge to serve.
+	Unknown bool `json:"unknown"`
+}
+
+// badgeResult is what slopBadge returns, encoded as JSON.
+type badgeResult struct {
+	// SVG is the rendered badge markup.
+	SVG string `json:"svg"`
+	// Score rates the text on the same scale slopChop reports. It is the zero value
+	// when the request asked for the unknown badge.
+	Score sanitize.Score `json:"score"`
+}
+
+// scoreBadge scores one text and renders it as an SVG badge. It takes one JSON string
+// argument shaped like badgeRequest and returns a JSON string shaped like badgeResult,
+// or {"error": "..."} when the request or the profile does not hold up.
+func scoreBadge(_ js.Value, args []js.Value) any {
+	if len(args) != 1 {
+		return errJSON(errors.Join(ErrRequest, errors.New("slopBadge takes one JSON argument")))
+	}
+	var req badgeRequest
+	if err := json.Unmarshal([]byte(args[0].String()), &req); err != nil {
+		return errJSON(errors.Join(ErrRequest, err))
+	}
+	if req.Unknown {
+		svg, err := badge.Unknown()
+		if err != nil {
+			return errJSON(err)
+		}
+		return marshal(badgeResult{SVG: svg})
+	}
+	profile := sanitize.DefaultProfile()
+	if len(req.Presets) > 0 {
+		merged, err := sanitize.ApplyPresets(profile, req.Presets...)
+		if err != nil {
+			return errJSON(err)
+		}
+		profile = merged
+	}
+	s, err := sanitize.New(profile)
+	if err != nil {
+		return errJSON(err)
+	}
+	score := s.Score(req.Text)
+	svg, err := badge.SVG(score)
+	if err != nil {
+		return errJSON(err)
+	}
+	return marshal(badgeResult{SVG: svg, Score: score})
 }
 
 // defaults returns the built-in default profile as JSON, so the page can render the

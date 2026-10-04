@@ -14,6 +14,31 @@ import { verifySignature, handleCommand, handleInteract } from "./slack.js";
 // maxTextBytes caps one request's text, so a giant paste cannot pin the isolate.
 const maxTextBytes = 1024 * 1024;
 
+// badgeCacheSeconds is how long a badge may be reused. GitHub serves README images
+// through its own image proxy, which honors this, so the value decides how often the
+// upstream file is fetched rather than how often a reader loads the page.
+const badgeCacheSeconds = 6 * 60 * 60;
+
+// badgeErrorCacheSeconds is the shorter reuse window for the gray badge, so a repo
+// that was briefly unreachable is not stuck showing a placeholder for hours.
+const badgeErrorCacheSeconds = 5 * 60;
+
+// maxBadgeBytes caps the file the badge endpoint will score. A README past this is
+// scored on the leading bytes rather than refused, since the density the score reports
+// is a rate and a truncated read still answers the question.
+const maxBadgeBytes = 256 * 1024;
+
+// repoPattern is the owner/name shape the badge endpoint accepts. Anchored and limited
+// to the characters GitHub allows, so the path cannot be steered anywhere else.
+const repoPattern = /^[A-Za-z0-9][A-Za-z0-9-]{0,38}\/[A-Za-z0-9_.-]{1,100}$/;
+
+// readmeNames are the README filenames tried in order, first hit winning. The raw host
+// is case-sensitive and GitHub itself is not, so a repo whose file is readme.md is
+// reachable on the web and a 404 on raw. The GitHub API resolves the real name in one
+// call but allows sixty requests an hour from a shared egress address, which a hosted
+// badge would exhaust, so the names are tried directly instead.
+const readmeNames = ["README.md", "readme.md", "Readme.md", "README.markdown", "README.txt", "README"];
+
 // corsHeaders lets browsers call the API from any page.
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -76,6 +101,80 @@ function json(body, status = 200) {
   });
 }
 
+// svg wraps badge markup as an image response. A badge is embedded as an image, so a
+// failure still answers 200 with the gray badge: a non-200 renders as a broken image
+// in someone's README, which is a worse outcome than an honest "n/a".
+function svg(markup, maxAge) {
+  return new Response(markup, {
+    status: 200,
+    headers: {
+      "Content-Type": "image/svg+xml; charset=utf-8",
+      "Cache-Control": `public, max-age=${maxAge}`,
+      ...corsHeaders,
+    },
+  });
+}
+
+// engineBadge renders a badge through the engine, with the same dead-engine handling
+// engineChop uses.
+function engineBadge(req) {
+  try {
+    return JSON.parse(globalThis.slopBadge(JSON.stringify(req)));
+  } catch (err) {
+    ready = null;
+    return { error: "engine error: " + (err && err.message ? err.message : String(err)), died: true };
+  }
+}
+
+// unknownBadge renders the gray placeholder, falling back to a bare literal if even
+// that fails, so the endpoint always answers with an image.
+function unknownBadge() {
+  const res = engineBadge({ unknown: true });
+  if (res && res.svg) return svg(res.svg, badgeErrorCacheSeconds);
+  return svg(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="103" height="20" role="img"' +
+      ' aria-label="slop score: unavailable"><rect width="103" height="20" rx="3"' +
+      ' fill="#9e9e9e"/></svg>',
+    badgeErrorCacheSeconds,
+  );
+}
+
+// readmeText fetches a public repository's README from GitHub's raw host and returns
+// its text, or null when there is nothing to score. HEAD resolves the default branch,
+// so the caller does not have to guess between main and master, and the candidate
+// names are tried in order because the raw host is case-sensitive.
+async function readmeText(repo) {
+  for (const name of readmeNames) {
+    const res = await fetch(`https://raw.githubusercontent.com/${repo}/HEAD/${name}`, {
+      headers: { "User-Agent": "slop-chop-badge" },
+      redirect: "follow",
+    });
+    if (!res.ok) continue;
+    const buf = await res.arrayBuffer();
+    const text = new TextDecoder().decode(buf.byteLength > maxBadgeBytes ? buf.slice(0, maxBadgeBytes) : buf);
+    if (text.trim()) return text;
+  }
+  return null;
+}
+
+// badge answers GET /badge?repo=owner/name with an SVG of that README's slop score.
+// Only the repository is taken from the query: the label is fixed in the engine, so
+// the endpoint cannot be used to render arbitrary text on this domain.
+async function badge(url) {
+  const repo = url.searchParams.get("repo");
+  if (!repo || !repoPattern.test(repo)) return unknownBadge();
+  let text;
+  try {
+    text = await readmeText(repo);
+  } catch {
+    return unknownBadge();
+  }
+  if (text === null) return unknownBadge();
+  const res = engineBadge({ text, presets: ["cleaver"] });
+  if (!res || res.error || !res.svg) return unknownBadge();
+  return svg(res.svg, badgeCacheSeconds);
+}
+
 // engineChop runs one text through the engine. A throw means the Go runtime died, which a
 // panic surfaces as "Go program has already exited", so the cached boot is dropped and the
 // result is marked died so callers can answer 500 rather than 400.
@@ -109,8 +208,9 @@ function chop(body, defaults) {
 }
 
 export default {
-  // fetch routes the API: POST /chop does the work, GET /presets lists the packs, and
-  // GET / describes the endpoints. The whole body runs under one guard so any unexpected
+  // fetch routes the API: POST /chop does the work, GET /badge scores a public
+  // README as an image, GET /presets lists the packs, and GET / describes the
+  // endpoints. The whole body runs under one guard so any unexpected
   // throw still answers with CORS headers, and a throw that means the engine died drops the
   // cached instance so the next request re-boots rather than serving a poisoned isolate.
   async fetch(request, env) {
@@ -139,6 +239,7 @@ async function route(request, env) {
       endpoints: {
         "POST /chop": "{text, presets?, voice?, profile?} -> {output, findings, score, scoreAfter}",
         "GET /presets": "built-in preset names",
+        "GET /badge": "?repo=owner/name -> an SVG badge of that README's slop score",
         "POST /slack/command": "the /chop slash command, signature-verified",
         "POST /slack/interact": "the Chop this message shortcut, signature-verified",
       },
@@ -149,6 +250,14 @@ async function route(request, env) {
   if (url.pathname === "/presets" && request.method === "GET") {
     await boot();
     return json({ presets: JSON.parse(globalThis.slopPresets()) });
+  }
+
+  if (url.pathname === "/badge") {
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      return json({ error: "use GET" }, 405);
+    }
+    await boot();
+    return badge(url);
   }
 
   if (url.pathname === "/chop") {

@@ -50,6 +50,34 @@ curl -s https://api.slop-chop.com/chop \
 
 Lists the built-in preset names.
 
+## GET /badge
+
+Scores a public repository's README and answers with an SVG badge, for embedding in that
+README.
+
+```markdown
+[![slop score](https://api.slop-chop.com/badge?repo=dcadolph/slop-chop)](https://slop-chop.com)
+```
+
+| Field  | What it does                                                        |
+|--------|---------------------------------------------------------------------|
+| `repo` | The repository as `owner/name`. Required. Public repositories only. |
+
+The README is read from GitHub's raw host, scored with the default profile, and discarded.
+Nothing is stored. The label is fixed, so the endpoint renders a score and nothing else.
+
+A repository that cannot be read, has no README, or is private answers the gray `n/a` badge
+with a 200, because a badge is loaded as an image and a non-200 renders as a broken image.
+Scored badges are cacheable for six hours and the gray one for five minutes, which GitHub's
+image proxy honors.
+
+What the number measures is worth being plain about: READMEs score low. Across a sample of
+widely used repositories the scores landed between 0 and 27 out of 100, because the score is
+a density over prose and a README is mostly headings, lists, links, and fenced code, which
+the engine skips. Treat the badge as a published commitment rather than a discriminating
+test, and use `slop-chop check` in CI on the prose files where the measurement has room to
+move.
+
 ## Notes
 
 - CORS is open, so a browser page can call it directly.
