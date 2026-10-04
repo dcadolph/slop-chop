@@ -64,7 +64,8 @@ README.
 | `repo` | The repository as `owner/name`. Required. Public repositories only. |
 
 The README is read from GitHub's raw host, scored with the default profile, and discarded.
-Nothing is stored. The label is fixed, so the endpoint renders a score and nothing else.
+Only the first 16KB is scored, to keep the request inside the compute a hosted Worker is
+allowed. Nothing is stored. The label is fixed, so the endpoint renders a score and nothing else.
 
 A repository that cannot be read, has no README, or is private answers the gray `n/a` badge
 with a 200, because a badge is loaded as an image and a non-200 renders as a broken image.

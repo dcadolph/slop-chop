@@ -10,7 +10,6 @@ import (
 	"errors"
 	"syscall/js"
 
-	"github.com/dcadolph/slop-chop/badge"
 	"github.com/dcadolph/slop-chop/internal/jsonutil"
 	"github.com/dcadolph/slop-chop/rewrite/prompt"
 	"github.com/dcadolph/slop-chop/sanitize"
@@ -47,6 +46,9 @@ type chopResult struct {
 	// ScoreAfter rates the cleaned output on the same scale, so the page can show how far
 	// the chop moved the needle.
 	ScoreAfter sanitize.Score `json:"scoreAfter"`
+	// Band is the published range the original score falls in, so a caller that colors or
+	// labels the score uses the engine's boundaries rather than its own copy of them.
+	Band sanitize.Band `json:"band"`
 }
 
 // main registers the engine functions on the JavaScript global object and blocks
@@ -55,7 +57,7 @@ func main() {
 	js.Global().Set("slopChop", js.FuncOf(chop))
 	js.Global().Set("slopDefaults", js.FuncOf(defaults))
 	js.Global().Set("slopPresets", js.FuncOf(presets))
-	js.Global().Set("slopBadge", js.FuncOf(scoreBadge))
+	js.Global().Set("slopScore", js.FuncOf(scoreOnly))
 	js.Global().Set("slopRewritePrompt", js.FuncOf(rewritePrompt))
 	js.Global().Set("slopJudgePrompt", js.FuncOf(judgePrompt))
 	js.Global().Set("slopVersion", js.FuncOf(engineVersion))
@@ -86,54 +88,36 @@ func chop(_ js.Value, args []js.Value) any {
 		return errJSON(err)
 	}
 	out, findings := s.Fix(req.Text)
+	score := s.Score(req.Text)
 	return marshal(chopResult{
 		Output:     out,
 		Findings:   jsonutil.OrEmpty(findings),
-		Score:      s.Score(req.Text),
+		Score:      score,
 		ScoreAfter: s.Score(out),
+		Band:       score.Band(),
 	})
 }
 
-// badgeRequest is the payload slopBadge accepts, decoded from its single JSON argument.
-type badgeRequest struct {
-	// Text is the text to score. Ignored when Unknown is set.
-	Text string `json:"text"`
-	// Presets names built-in presets to apply, matching slopChop. An empty list means
-	// the default profile.
-	Presets []string `json:"presets"`
-	// Unknown asks for the gray placeholder badge instead of a measurement, so a
-	// caller that could not retrieve the text still has a badge to serve.
-	Unknown bool `json:"unknown"`
-}
-
-// badgeResult is what slopBadge returns, encoded as JSON.
-type badgeResult struct {
-	// SVG is the rendered badge markup.
-	SVG string `json:"svg"`
-	// Score rates the text on the same scale slopChop reports. It is the zero value
-	// when the request asked for the unknown badge.
+// scoreResult is what slopScore returns, encoded as JSON.
+type scoreResult struct {
+	// Score rates the text on the same scale slopChop reports.
 	Score sanitize.Score `json:"score"`
+	// Band is the published range the score falls in.
+	Band sanitize.Band `json:"band"`
 }
 
-// scoreBadge scores one text and renders it as an SVG badge. It takes one JSON string
-// argument shaped like badgeRequest and returns a JSON string shaped like badgeResult,
-// or {"error": "..."} when the request or the profile does not hold up.
-func scoreBadge(_ js.Value, args []js.Value) any {
+// scoreOnly scores a text without fixing it. It takes the same JSON argument as slopChop
+// and skips the rewrite and the second scoring pass, which is most of the work, so a
+// caller that needs only the number pays for only the number.
+func scoreOnly(_ js.Value, args []js.Value) any {
 	if len(args) != 1 {
-		return errJSON(errors.Join(ErrRequest, errors.New("slopBadge takes one JSON argument")))
+		return errJSON(errors.Join(ErrRequest, errors.New("slopScore takes one JSON argument")))
 	}
-	var req badgeRequest
+	var req chopRequest
 	if err := json.Unmarshal([]byte(args[0].String()), &req); err != nil {
 		return errJSON(errors.Join(ErrRequest, err))
 	}
-	if req.Unknown {
-		svg, err := badge.Unknown()
-		if err != nil {
-			return errJSON(err)
-		}
-		return marshal(badgeResult{SVG: svg})
-	}
-	profile := sanitize.DefaultProfile()
+	profile := req.Profile
 	if len(req.Presets) > 0 {
 		merged, err := sanitize.ApplyPresets(profile, req.Presets...)
 		if err != nil {
@@ -146,11 +130,7 @@ func scoreBadge(_ js.Value, args []js.Value) any {
 		return errJSON(err)
 	}
 	score := s.Score(req.Text)
-	svg, err := badge.SVG(score)
-	if err != nil {
-		return errJSON(err)
-	}
-	return marshal(badgeResult{SVG: svg, Score: score})
+	return marshal(scoreResult{Score: score, Band: score.Band()})
 }
 
 // defaults returns the built-in default profile as JSON, so the page can render the

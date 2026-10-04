@@ -25,8 +25,9 @@ const badgeErrorCacheSeconds = 5 * 60;
 
 // maxBadgeBytes caps the file the badge endpoint will score. A README past this is
 // scored on the leading bytes rather than refused, since the density the score reports
-// is a rate and a truncated read still answers the question.
-const maxBadgeBytes = 256 * 1024;
+// is a rate and a truncated read still answers the question. The cap is set by CPU: a
+// Worker on the free plan gets 10ms per request, and a longer read runs out of it.
+const maxBadgeBytes = 16 * 1024;
 
 // repoPattern is the owner/name shape the badge endpoint accepts. Anchored and limited
 // to the characters GitHub allows, so the path cannot be steered anywhere else.
@@ -115,28 +116,46 @@ function svg(markup, maxAge) {
   });
 }
 
-// engineBadge renders a badge through the engine, with the same dead-engine handling
+// The badge colors, matching the score legend on slop-chop.com. The band itself comes
+// from the engine, so the boundaries live in one place.
+const badgeColors = { low: "#9bcf1a", mid: "#e8b93e", high: "#ff7b72" };
+const badgeUnknownColor = "#9e9e9e";
+
+// badgeMarkup draws the flat badge. The label is fixed and the value is a number or "n/a",
+// so nothing a caller sends reaches the markup and the endpoint cannot be used to render
+// arbitrary text on this domain. The value box carries dark text because all three band
+// colors are light.
+function badgeMarkup(value, fill, alt) {
+  const labelWidth = 70;
+  const valueWidth = 16 + 7 * value.length;
+  const width = labelWidth + valueWidth;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="20" role="img" aria-label="${alt}">
+<title>${alt}</title>
+<linearGradient id="sc-g" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient>
+<clipPath id="sc-r"><rect width="${width}" height="20" rx="3" fill="#fff"/></clipPath>
+<g clip-path="url(#sc-r)"><rect width="${labelWidth}" height="20" fill="#2b2b2b"/><rect x="${labelWidth}" width="${valueWidth}" height="20" fill="${fill}"/><rect width="${width}" height="20" fill="url(#sc-g)"/></g>
+<g text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11">
+<text x="${labelWidth / 2}" y="14" fill="#fff">slop score</text>
+<text x="${labelWidth + valueWidth / 2}" y="14" fill="#1a1a1a">${value}</text>
+</g>
+</svg>
+`;
+}
+
+// unknownBadge answers the gray placeholder, used whenever there is no score to show.
+function unknownBadge() {
+  return svg(badgeMarkup("n/a", badgeUnknownColor, "slop score: unavailable"), badgeErrorCacheSeconds);
+}
+
+// engineScore scores one text without fixing it, with the same dead-engine handling
 // engineChop uses.
-function engineBadge(req) {
+function engineScore(text, profile, presets) {
   try {
-    return JSON.parse(globalThis.slopBadge(JSON.stringify(req)));
+    return JSON.parse(globalThis.slopScore(JSON.stringify({ text, profile, presets })));
   } catch (err) {
     ready = null;
     return { error: "engine error: " + (err && err.message ? err.message : String(err)), died: true };
   }
-}
-
-// unknownBadge renders the gray placeholder, falling back to a bare literal if even
-// that fails, so the endpoint always answers with an image.
-function unknownBadge() {
-  const res = engineBadge({ unknown: true });
-  if (res && res.svg) return svg(res.svg, badgeErrorCacheSeconds);
-  return svg(
-    '<svg xmlns="http://www.w3.org/2000/svg" width="103" height="20" role="img"' +
-      ' aria-label="slop score: unavailable"><rect width="103" height="20" rx="3"' +
-      ' fill="#9e9e9e"/></svg>',
-    badgeErrorCacheSeconds,
-  );
 }
 
 // readmeText fetches a public repository's README from GitHub's raw host and returns
@@ -158,9 +177,7 @@ async function readmeText(repo) {
 }
 
 // badge answers GET /badge?repo=owner/name with an SVG of that README's slop score.
-// Only the repository is taken from the query: the label is fixed in the engine, so
-// the endpoint cannot be used to render arbitrary text on this domain.
-async function badge(url) {
+async function badge(url, defaults) {
   const repo = url.searchParams.get("repo");
   if (!repo || !repoPattern.test(repo)) return unknownBadge();
   let text;
@@ -170,9 +187,13 @@ async function badge(url) {
     return unknownBadge();
   }
   if (text === null) return unknownBadge();
-  const res = engineBadge({ text, presets: ["cleaver"] });
-  if (!res || res.error || !res.svg) return unknownBadge();
-  return svg(res.svg, badgeCacheSeconds);
+  const res = engineScore(text, defaults, ["cleaver"]);
+  if (!res || res.error || !res.score) return unknownBadge();
+  const value = res.score.value;
+  return svg(
+    badgeMarkup(String(value), badgeColors[res.band] || badgeUnknownColor, `slop score: ${value} of 100`),
+    badgeCacheSeconds,
+  );
 }
 
 // engineChop runs one text through the engine. A throw means the Go runtime died, which a
@@ -256,8 +277,8 @@ async function route(request, env) {
     if (request.method !== "GET" && request.method !== "HEAD") {
       return json({ error: "use GET" }, 405);
     }
-    await boot();
-    return badge(url);
+    const defaults = await boot();
+    return badge(url, defaults);
   }
 
   if (url.pathname === "/chop") {
