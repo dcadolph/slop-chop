@@ -49,6 +49,8 @@ type chopResult struct {
 	// Band is the published range the original score falls in, so a caller that colors or
 	// labels the score uses the engine's boundaries rather than its own copy of them.
 	Band sanitize.Band `json:"band"`
+	// BandAfter is the range the cleaned output's score falls in.
+	BandAfter sanitize.Band `json:"bandAfter"`
 }
 
 // main registers the engine functions on the JavaScript global object and blocks
@@ -88,13 +90,14 @@ func chop(_ js.Value, args []js.Value) any {
 		return errJSON(err)
 	}
 	out, findings := s.Fix(req.Text)
-	score := s.Score(req.Text)
+	score, after := s.Score(req.Text), s.Score(out)
 	return marshal(chopResult{
 		Output:     out,
 		Findings:   jsonutil.OrEmpty(findings),
 		Score:      score,
-		ScoreAfter: s.Score(out),
+		ScoreAfter: after,
 		Band:       score.Band(),
+		BandAfter:  after.Band(),
 	})
 }
 

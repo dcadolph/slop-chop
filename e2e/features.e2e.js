@@ -47,6 +47,23 @@ async function main() {
   }
   log("score breakdown:", pop.tells, "tells |", pop.density);
 
+  // Step 4b: each chip is colored by the band the engine reports. The thresholds below are
+  // the test's own copy, an outside check on the engine rather than a second source for it.
+  const chips = await page.evaluate(() => ({
+    before: document.getElementById("sc-score").className,
+    beforeValue: Number(document.getElementById("sc-score").textContent.replace(/\D+/g, "")),
+    after: document.getElementById("sc-score-after").className,
+    afterValue: Number(document.getElementById("sc-score-after").textContent.replace(/\D+/g, "")),
+  }));
+  const band = (v) => (v < 25 ? "low" : v < 55 ? "mid" : "high");
+  for (const [cls, v] of [[chips.before, chips.beforeValue], [chips.after, chips.afterValue]]) {
+    if (!cls.split(/\s+/).includes("sc-score-" + band(v))) {
+      throw new Error("chip " + v + " colored " + JSON.stringify(cls) + ", want sc-score-" + band(v));
+    }
+  }
+  log("score chips colored by engine band:", chips.beforeValue, band(chips.beforeValue), "->",
+    chips.afterValue, band(chips.afterValue));
+
   // Step 5: the main thread stays free during a giant chop.
   const big = "In summary, a robust—seamless—plan; it works. ".repeat(2000);
   await page.evaluate((t) => {

@@ -676,10 +676,12 @@
       status.hidden = !text;
     }
 
-    function scoreClass(v) {
-      if (v < 25) return "sc-score-low";
-      if (v < 55) return "sc-score-mid";
-      return "sc-score-high";
+    /* bandClass turns the engine's band into the chip's color class. The band comes from
+       the engine rather than from thresholds kept here, so the page and every other surface
+       draw the lines in one place. A result without a band, from an older cached engine,
+       renders uncolored rather than guessed. */
+    function bandClass(band) {
+      return band ? "sc-score-" + band : "";
     }
 
     const scorePop = $("sc-score-pop");
@@ -689,7 +691,7 @@
     function renderScore(res) {
       const s = res.score;
       score.textContent = "slop " + s.value;
-      score.className = "sc-score " + scoreClass(s.value);
+      score.className = "sc-score " + bandClass(res.band);
       score.hidden = false;
       $("sc-pop-value").textContent = s.value;
       $("sc-pop-tells").textContent = String(s.tells);
@@ -715,7 +717,7 @@
       const after = res.scoreAfter;
       if (after) {
         scoreAfter.textContent = "→ " + after.value;
-        scoreAfter.className = "sc-score sc-score-after " + scoreClass(after.value);
+        scoreAfter.className = "sc-score sc-score-after " + bandClass(res.bandAfter);
         scoreAfter.title =
           "Slop score after the chop: " + after.value + " of 100, down from " + s.value + ".";
         scoreAfter.hidden = false;

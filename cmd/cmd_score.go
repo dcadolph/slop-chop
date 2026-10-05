@@ -76,13 +76,14 @@ func runScore(cmd *cobra.Command, args []string) error {
 // rather than declaring what the text is: "heavy slop" was a verdict on the writing, and
 // the number behind it only ever measured pattern density against a profile.
 func scoreBand(v int) string {
-	switch {
-	case v < 25:
+	switch sanitize.BandOf(v) {
+	case sanitize.BandLow:
 		return "reads clean"
-	case v < 55:
+	case sanitize.BandMid:
 		return "mixed"
+	default:
+		return "dense with tells"
 	}
-	return "dense with tells"
 }
 
 // scoreOne scores one input and writes the result to stdout. It returns errFindings when
