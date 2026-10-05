@@ -14,7 +14,7 @@ hide:
 
 <p class="sc-artifacts">Emails. Resumes. Blog posts. Docs. LinkedIn. READMEs.</p>
 
-<p class="subtitle">Paste text that sounds like a bot, get back text that sounds like you. Em-dashes, buzzwords, stock phrases, and the newer tells models switched to once everyone learned the old ones: the spaced hyphen, the "The best part?" reveal, emoji bullets. All chopped in one pass, right in your browser. Plug in a model when you want a deeper rewrite.</p>
+<p class="subtitle">Paste text that sounds like a bot, get back text that sounds like you. Em-dashes, buzzwords, stock phrases, and the newer tells models switched to once everyone learned the old ones: the double hyphen, the "The best part?" reveal, emoji bullets. All chopped in one pass, right in your browser. Plug in a model when you want a deeper rewrite.</p>
 
 **Paired with your AI, it is the rails.** It runs after the model to catch what drifted, gates a build on the score, and bosses the agent into cleaning its own work to your standard, not its whim.
 { .subtitle .sc-rails }
@@ -180,7 +180,7 @@ A model has the brains for it. Point one at your draft and it will spot the buzz
 
 **slop-chop is a fixed list, not a mood.** The same text gives the same result every run, with or without a model in the loop. On its own it is a deterministic clean that costs nothing. Paired with your AI it becomes the rails: it runs after the model to catch what drifted, gates a build on the score, and bosses the agent into cleaning its own work to your standard, not its whim. You keep the model's brains and add the bumpers that hold it honest.
 
-There is a second problem a model cannot solve for you. Every tell that gets famous gets trained away, and the writing simply moves somewhere else. The em-dash gave way to a spaced hyphen. "Delve" gave way to "crucial" and "vibrant". The stock opener became the fragment reveal, "The best part?", and the bold-label bullet list. A list only works if someone keeps watching what changed. That is the work here, and the benchmark in the repo is the receipt.
+There is a second problem a model cannot solve for you. Every tell that gets famous gets trained away, and the writing simply moves somewhere else. The em-dash gave way to a double hyphen. "Delve" gave way to "crucial" and "vibrant". The stock opener became the fragment reveal, "The best part?", and the bold-label bullet list. A list only works if someone keeps watching what changed. That is the work here, and the benchmark in the repo is the receipt.
 
 </div>
 </div>
@@ -217,7 +217,7 @@ There is a second problem a model cannot solve for you. Every tell that gets fam
 
     ---
 
-    Models trained away "delve" and the em-dash, then picked up new habits: the spaced hyphen, the "The best part?" reveal, bold-label bullets, emoji headings. The default profile tracks what models write now, with 161 buzzwords, 46 stock phrases, and 61 sentence shapes.
+    Models trained away "delve" and the em-dash, then picked up new habits: the double hyphen, the "The best part?" reveal, bold-label bullets, emoji headings. The default profile tracks what models write now, with 161 buzzwords, 46 stock phrases, and 61 sentence shapes.
 
 -   :material-scale-balance:{ .lg .middle } __Measured, not guessed__
 

@@ -328,8 +328,8 @@ rewrites it. With `cleaver`, `we leverage robust workflows` comes back as `we us
 workflows`. The web app at [slop-chop.com](https://slop-chop.com/) ships with `cleaver` on.
 
 The dash presets are the two ends of one dial. The default already turns an em-dash into
-a comma and flags the spaced hyphen imitating one. `no-dashes` goes further and rewrites
-every imitation too. `typography` goes the other way for text whose dashes and curly
+a comma and flags a double hyphen imitating one. `no-dashes` goes further and rewrites
+every imitation too, the single spaced hyphen included. `typography` goes the other way for text whose dashes and curly
 quotes are deliberate typesetting, not model output. The same dial is available piecemeal:
 put a character in your profile's `allow` list to keep it, or add your own `regexReplace`
 to convert a form the presets do not cover.
