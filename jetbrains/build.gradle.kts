@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.slopchop"
-version = "0.42.1"
+version = "0.43.0"
 
 repositories {
     mavenCentral()
