@@ -23,8 +23,10 @@ Three of them, none of which is an opinion about positioning.
 
 **The word list is a depreciating asset.** `slop-chop attack` rewrites text to dodge the
 rules without improving it, then reports what survived. By class, at v0.42.1: 33 of 71 word
-tells and 9 of 13 phrase tells fall to a thesaurus. 1 of 89 structural tells does. A lookup
-loses to a lookup. A sentence shape has to be rebuilt.
+tells and 9 of 13 phrase tells fall to a thesaurus. 1 of 89 structural tells does, but that
+row bounds the attacker rather than the rules: a swap never rebuilds a sentence, so it never
+reaches a shape. A lookup loses to a lookup. How shapes fare against a model told to rewrite
+is unmeasured.
 
 **The engine is quiet on writing it has never seen.** 886 README files from repositories
 with no push after 2021, across seven language ecosystems: seven reach the reads-clean
