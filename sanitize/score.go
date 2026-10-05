@@ -68,6 +68,10 @@ type Score struct {
 	// rather than a tell, so it is scored by rate and not by the single instance, which
 	// every writer is entitled to.
 	Drumbeat int `json:"drumbeat"`
+	// Tails is the points the participle tail habit added to Value: sentence after sentence
+	// closing on a comma and an -ing clause. Like hedging it is a register, scored by rate,
+	// and the first tail is free.
+	Tails int `json:"tails"`
 }
 
 // sentenceSplit breaks text on sentence-ending punctuation to measure cadence.
@@ -178,6 +182,10 @@ func (s *Sanitizer) Score(text string) Score {
 		drumbeat = math.Min(12, rate*2.5)
 	}
 
+	// Sentence after sentence closing on a comma and an -ing clause is the model register's
+	// way of adding a consequence. One is ordinary writing. The habit adds up to ten points.
+	tails := tailPoints(text)
+
 	// A rhythm that never varies is the one signal here a thesaurus cannot touch. The
 	// penalty scales with how flat the cadence is rather than switching on at a line, so
 	// prose near the boundary is nudged rather than condemned, and it is capped low enough
@@ -206,7 +214,7 @@ func (s *Sanitizer) Score(text string) Score {
 		density *= float64(words) / 25
 	}
 
-	value := int(math.Round(math.Min(100, density+hedging+weighing+drumbeat+cadence+evidence)))
+	value := int(math.Round(math.Min(100, density+hedging+weighing+drumbeat+tails+cadence+evidence)))
 	return Score{
 		Value:       value,
 		Tells:       tells,
@@ -218,6 +226,7 @@ func (s *Sanitizer) Score(text string) Score {
 		Density:     int(math.Round(density)),
 		Hedging:     int(math.Round(hedging)),
 		Drumbeat:    int(math.Round(drumbeat)),
+		Tails:       int(math.Round(tails)),
 		Cadence:     int(math.Round(cadence)),
 		Evidence:    int(math.Round(evidence)),
 	}

@@ -231,6 +231,7 @@ func TestReport(t *testing.T) {
 		"score components vs human rating",
 		"density",
 		"drumbeat",
+		"tails",
 		"h002",
 	} {
 		if !strings.Contains(out, want) {

@@ -14,7 +14,8 @@ go test ./sanitize/ -run TestBenchmark -v
 ## What the score claims, and what it does not
 
 The slop score measures the density of patterns from the engine's ruleset: buzzwords,
-stock phrases, sentence shapes, hedging, and the characters models type. A high score
+stock phrases, sentence shapes, hedging, sentences that keep closing on an -ing clause, and
+the characters models type. A high score
 means the text carries many machine-writing patterns. It does not determine who wrote
 the text. A person can write in the polished-assistant register, and a machine can be
 prompted away from every pattern the rules know. The score is a lint result, not an
@@ -177,8 +178,8 @@ length, in the same genres, scored by the same ruleset.
 
 Two things come out of it, and they point in opposite directions.
 
-**The engine separates full-length prose very well.** Machine passages mean 25.8 against
-4.8 for human, which is a Cohen's d of 2.08. As a ranking instrument on real documents it
+**The engine separates full-length prose very well.** Machine passages mean 30.1 against
+5.1 for human, which is a Cohen's d of 2.16. As a ranking instrument on real documents it
 works, and the gap is not an artifact of the adversarial prompt style: passages written
 under an instruction to avoid every cliche of AI writing score about the same as the plain
 ones.
@@ -231,6 +232,22 @@ penalty. The 2 percent is real rather than zero: an evasion that swaps one word 
 changes a sentence length. But escaping a rhythm means rewriting sentences, and no lookup
 table does that.
 
+**Participle tails catch more without flagging more.** A sentence closing on a comma and
+an -ing clause, "the fleet sat offshore, deploying its guns", is ordinary writing once and
+the model register when it keeps happening. On this corpus 85 percent of machine passages
+carry one against 36 percent of human passages, and machine prose runs at about eight times
+the human rate. The score treats it like hedging: the rate counts and the instance never
+does, the first tail is free, and the habit adds at most ten points.
+
+Its settings were chosen while the whole corpus was in view, before the split was noticed.
+Choosing again on the development half alone lands on the same settings, so the holdout did
+not pick them, but it was seen, and these figures carry that. On the holdout half, machine
+passages reaching the line went from 15 of 24 to 17 of 24, with human documents staying at
+0 of 38. Separation on that half did not improve: 0.959 before and 0.957 after. So the tail
+moves borderline machine prose over the line without ranking documents any better. Scored
+against the 618 abandoned-repository READMEs of the false positive corpus, which nothing here
+was tuned on, the change moves no document at all.
+
 ## Limitations, plainly
 
 **The corpus grades the engine on its own homework.** The passages were written during
@@ -249,7 +266,7 @@ guard with teeth, not a study.
 
 **A rate is not a verdict.** The score is tell density, so its headline numbers move with
 passage length. The exemplar corpus reports a machine mean of 85 on twenty-word passages
-and the long-form corpus reports 26 on three-hundred-word ones, from the same engine and
+and the long-form corpus reports 30 on three-hundred-word ones, from the same engine and
 the same ruleset. Both are true and neither is the number. Any figure quoted off this page
 has a passage length attached to it, stated or not.
 

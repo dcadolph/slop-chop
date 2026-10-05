@@ -355,6 +355,7 @@ var components = []component{
 	{"cadence", func(s sanitize.Score) int { return s.Cadence }},
 	{"evidence", func(s sanitize.Score) int { return s.Evidence }},
 	{"drumbeat", func(s sanitize.Score) int { return s.Drumbeat }},
+	{"tails", func(s sanitize.Score) int { return s.Tails }},
 }
 
 // minRaters is the fewest raters a sample needs before the corpus may be scored. The

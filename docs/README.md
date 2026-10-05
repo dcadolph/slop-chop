@@ -33,7 +33,7 @@ hide:
 <button id="sc-settings-btn" class="sc-iconbtn" type="button" aria-label="Settings" aria-expanded="false" aria-controls="sc-drawer"><span class="sc-bars" aria-hidden="true"></span><span class="sc-iconbtn-text">Settings</span></button>
 <div id="sc-score-pop" class="sc-score-pop" hidden>
 <div class="sc-score-pop-head"><strong>Slop score: <span id="sc-pop-value"></span> of 100</strong></div>
-<p class="sc-score-pop-what">The density of AI-writing tells, with sentence shapes counted double, plus hedging, the on-the-one-hand register, a sentence rhythm that never varies, and the evidence a long document accumulates that a rate on its own would dilute. High means many machine-writing patterns, not proof of authorship.</p>
+<p class="sc-score-pop-what">The density of AI-writing tells, with sentence shapes counted double, plus hedging, the on-the-one-hand register, sentences that keep closing on an -ing clause, a sentence rhythm that never varies, and the evidence a long document accumulates that a rate on its own would dilute. High means many machine-writing patterns, not proof of authorship.</p>
 <div class="sc-score-legend">
 <span><i class="dot low"></i>under 25 reads clean</span>
 <span><i class="dot mid"></i>25 to 54 mixed</span>

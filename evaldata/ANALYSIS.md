@@ -95,7 +95,7 @@ answer is held constant, so a correlation there is the score following perceptio
 machine sample outscores a random human one. Rater agreement across the whole corpus.
 
 **Exploratory.** The correlation of each score component (density, hedging, cadence,
-evidence, drumbeat) with the mean rating. No claim rests on these. Several components are
+evidence, drumbeat, tails) with the mean rating. No claim rests on these. Several components are
 zero on most samples, and the list was fixed before scoring so it cannot be trimmed to
 the ones that look good.
 
@@ -137,6 +137,11 @@ output, and the report names the commit it measured.
 
 When this plan was written, the only change under `sanitize/` since v0.41.0 was
 `band.go`, which adds a lookup for the score bands and changes no score.
+
+Amended 2026-10-05, before any rating existed: the participle tail signal joined the score,
+developed on the long-form corpus and never on this one, and `tails` joined the exploratory
+component list above. No rating, score, or text from this corpus was read in making either
+change.
 
 ## Limits, stated before the result
 
