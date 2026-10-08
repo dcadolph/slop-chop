@@ -9,7 +9,21 @@ import "../engine/wasm_exec.js";
 // The CompiledWasm rule turns this import into a WebAssembly.Module.
 import engineModule from "../engine/slop-chop.wasm";
 
-import { verifySignature, handleCommand, handleInteract } from "./slack.js";
+import { verifySignature, handleCommand, handleInteract, notice } from "./slack.js";
+
+// apiDisabled turns off every engine-backed route. The Go wasm boot costs about 362ms of
+// CPU, and this account is on Cloudflare's free plan, which caps a request at 10ms, so
+// booting the engine fails roughly half the time with an exceededCpu error, and a failed
+// boot leaves the next request to find a dead instance. Rather than let callers hit that
+// coin flip, every route below refuses with an honest message instead of trying to boot.
+// Flip this back to false after moving the account to Workers Paid (30s CPU per request).
+const apiDisabled = true;
+
+// disabledMessage is the explanation every disabled route gives.
+const disabledMessage =
+  "The hosted slop-chop API is temporarily disabled: the Cloudflare free plan's CPU limit " +
+  "cannot reliably boot the engine. Run it locally instead: npm install -g slop-chop, or " +
+  "brew install dcadolph/tap/slop-chop. See https://slop-chop.com for every install path.";
 
 // maxTextBytes caps one request's text, so a giant paste cannot pin the isolate.
 const maxTextBytes = 1024 * 1024;
@@ -253,6 +267,9 @@ async function route(request, env) {
   }
 
   if (url.pathname === "/" && request.method === "GET") {
+    if (apiDisabled) {
+      return json({ name: "slop-chop", status: "disabled", message: disabledMessage, docs: "https://slop-chop.com/API.html" });
+    }
     await boot();
     return json({
       name: "slop-chop",
@@ -269,6 +286,7 @@ async function route(request, env) {
   }
 
   if (url.pathname === "/presets" && request.method === "GET") {
+    if (apiDisabled) return json({ error: disabledMessage }, 503);
     await boot();
     return json({ presets: JSON.parse(globalThis.slopPresets()) });
   }
@@ -277,6 +295,11 @@ async function route(request, env) {
     if (request.method !== "GET" && request.method !== "HEAD") {
       return json({ error: "use GET" }, 405);
     }
+    // Disabled still answers 200 with the gray badge rather than skipping straight to the
+    // generic error path: a non-image response renders as a broken image in someone's
+    // README, which is worse than the honest "n/a" the badge already uses for every other
+    // kind of miss.
+    if (apiDisabled) return unknownBadge();
     const defaults = await boot();
     return badge(url, defaults);
   }
@@ -285,6 +308,7 @@ async function route(request, env) {
     if (request.method !== "POST") {
       return json({ error: "use POST" }, 405);
     }
+    if (apiDisabled) return json({ error: disabledMessage }, 503);
     const raw = await request.arrayBuffer();
     if (raw.byteLength > maxTextBytes) {
       return json({ error: "text too large: the cap is 1MB" }, 413);
@@ -302,6 +326,14 @@ async function route(request, env) {
   if (url.pathname === "/slack/command" || url.pathname === "/slack/interact") {
     if (request.method !== "POST") {
       return json({ error: "use POST" }, 405);
+    }
+    // Disabled answers in Slack's own shape rather than a bare error, so the message
+    // renders in the channel instead of Slack showing its generic "something went wrong."
+    if (apiDisabled) {
+      if (url.pathname === "/slack/command") {
+        return Response.json(notice(disabledMessage));
+      }
+      return new Response(null, { status: 200 });
     }
     const secret = env && env.SLACK_SIGNING_SECRET;
     if (!secret) {

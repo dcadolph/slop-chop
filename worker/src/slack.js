@@ -61,7 +61,7 @@ function ephemeral(output, before, after) {
 }
 
 // notice builds a short ephemeral text-only reply for usage hints and errors.
-function notice(text) {
+export function notice(text) {
   return { response_type: "ephemeral", text };
 }
 
