@@ -5,47 +5,47 @@
   "description": "Find and remove the writing patterns a profile lists. Deterministic rules, model rewrite opt-in.",
   "repository": { "url": "https://github.com/dcadolph/slop-chop", "source": "github" },
   "websiteUrl": "https://slop-chop.com",
-  "version": "0.43.0",
+  "version": "0.44.0",
   "packages": [
     {
       "registryType": "mcpb",
-      "identifier": "https://github.com/dcadolph/slop-chop/releases/download/v0.43.0/slop-chop-mcp_0.43.0_darwin_amd64.mcpb",
-      "version": "0.43.0",
+      "identifier": "https://github.com/dcadolph/slop-chop/releases/download/v0.44.0/slop-chop-mcp_0.44.0_darwin_amd64.mcpb",
+      "version": "0.44.0",
       "fileSha256": "96a3c7fef417d9a8100184970704b00986d32608121b42ad3eb57133d368d86a",
       "transport": { "type": "stdio" }
     },
     {
       "registryType": "mcpb",
-      "identifier": "https://github.com/dcadolph/slop-chop/releases/download/v0.43.0/slop-chop-mcp_0.43.0_darwin_arm64.mcpb",
-      "version": "0.43.0",
+      "identifier": "https://github.com/dcadolph/slop-chop/releases/download/v0.44.0/slop-chop-mcp_0.44.0_darwin_arm64.mcpb",
+      "version": "0.44.0",
       "fileSha256": "b4c990f4596c79489bd6f834df1ae56d67e125bdf50ee3f013d4a53fbde4994c",
       "transport": { "type": "stdio" }
     },
     {
       "registryType": "mcpb",
-      "identifier": "https://github.com/dcadolph/slop-chop/releases/download/v0.43.0/slop-chop-mcp_0.43.0_linux_amd64.mcpb",
-      "version": "0.43.0",
+      "identifier": "https://github.com/dcadolph/slop-chop/releases/download/v0.44.0/slop-chop-mcp_0.44.0_linux_amd64.mcpb",
+      "version": "0.44.0",
       "fileSha256": "afd9789aa799619bab6d061b6c781ebae6cca9c5b0ceef2af281e1e5f8b4ffb0",
       "transport": { "type": "stdio" }
     },
     {
       "registryType": "mcpb",
-      "identifier": "https://github.com/dcadolph/slop-chop/releases/download/v0.43.0/slop-chop-mcp_0.43.0_linux_arm64.mcpb",
-      "version": "0.43.0",
+      "identifier": "https://github.com/dcadolph/slop-chop/releases/download/v0.44.0/slop-chop-mcp_0.44.0_linux_arm64.mcpb",
+      "version": "0.44.0",
       "fileSha256": "069033d78eb15ecc2e8d23f6a51a7e60c1d8fd7623bbe3960849f6f72177f4a1",
       "transport": { "type": "stdio" }
     },
     {
       "registryType": "mcpb",
-      "identifier": "https://github.com/dcadolph/slop-chop/releases/download/v0.43.0/slop-chop-mcp_0.43.0_windows_amd64.mcpb",
-      "version": "0.43.0",
+      "identifier": "https://github.com/dcadolph/slop-chop/releases/download/v0.44.0/slop-chop-mcp_0.44.0_windows_amd64.mcpb",
+      "version": "0.44.0",
       "fileSha256": "e7f127a10f3eab2f46c8488255cf8e9ea062bedf3e9651e7f778eb0eb0920807",
       "transport": { "type": "stdio" }
     },
     {
       "registryType": "mcpb",
-      "identifier": "https://github.com/dcadolph/slop-chop/releases/download/v0.43.0/slop-chop-mcp_0.43.0_windows_arm64.mcpb",
-      "version": "0.43.0",
+      "identifier": "https://github.com/dcadolph/slop-chop/releases/download/v0.44.0/slop-chop-mcp_0.44.0_windows_arm64.mcpb",
+      "version": "0.44.0",
       "fileSha256": "0b11066bb920dbba65a24584c5eb89a9861bc9acd8a90681fba3a6eebd1d9afd",
       "transport": { "type": "stdio" }
     }
