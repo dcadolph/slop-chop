@@ -1,11 +1,14 @@
 # Hosted API
 
-!!! warning "Experimental"
-    The hosted API is not reliable right now. It runs on a hosting plan that allows less
-    compute per request than the engine needs to start, so many requests fail with an
-    error. Everything else runs the engine on your own machine and is unaffected: the
-    [web app](https://slop-chop.com), the command line tool, the editor integrations, the
-    Obsidian plugin, the MCP server, and the `slop-chop-wasm` package for Node.
+!!! warning "Switched off"
+    The hosted API is disabled. It runs on a hosting plan that allows less compute per
+    request than the engine needs to start, so about half of all requests failed, and a
+    coin flip is worse than a plain refusal. Every route now answers with a message that
+    says so, and the badge answers the gray `n/a`. The reference below describes what the
+    API does when it is on. Everything else runs the engine on your own machine and is
+    unaffected: the [web app](https://slop-chop.com), the command line tool, the editor
+    integrations, the Obsidian plugin, the MCP server, and the `slop-chop-wasm` package for
+    Node.
 
 Chop text over HTTP. The API runs the same deterministic rules engine as everything else,
 compiled to WebAssembly on Cloudflare Workers. No model, no account, no storage: the text is
