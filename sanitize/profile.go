@@ -173,6 +173,11 @@ func DefaultProfile() Profile {
 			"delve", "delved", "delves", "delving", "dive deeper",
 			"effortless", "effortlessly", "elegant", "elevate", "elevates", "elevating",
 			"embark", "embarked", "embarking", "embarks", "empower", "empowering", "empowers",
+			// On the long-form corpus two thirds of machine passages carry a form of
+			// "ensure" against one human passage in twenty, the widest gap of any single
+			// word measured there, and it fires on six percent of pre-2022 READMEs,
+			// level with "powerful" at the top of the human range.
+			"ensure", "ensured", "ensures", "ensuring",
 			"ever-changing", "ever-evolving", "facilitate", "facilitates", "facilitating",
 			"fascinating", "fast-paced", "foster", "fostering", "fosters", "frictionless",
 			"future-proof", "future-proofing", "future-proofs",
@@ -292,10 +297,17 @@ func DefaultProfile() Profile {
 			"reader-mind-reading": `(?i)\b(?:you (?:might|may|could) be (?:wondering|asking|thinking)|you'?re probably (?:wondering|thinking)|so,? what does this mean for you)\b`,
 			// "But here's where it gets interesting", the manufactured turn.
 			"manufactured-turn": `(?i)\b(?:here'?s where it gets (?:interesting|good|tricky|fun)|but here'?s the (?:twist|thing))\b`,
-			// Sign-offs that close a chat reply rather than a piece of writing.
-			"chat-signoff": `(?i)\b(?:happy (?:coding|building|shipping|writing)!|thanks for reading|until next time|let me know if you have any questions|if you have any questions,? (?:just )?ask|hopefully this (?:gives|helps))`,
+			// Sign-offs that close a chat reply rather than a piece of writing. The "happy
+			// X-ing!" form takes any verb: "Happy automating!" and "Happy syncing!" are the
+			// same sign-off as "Happy coding!", and two READMEs in 852 written before 2022
+			// close that way.
+			"chat-signoff": `(?i)\b(?:happy \p{L}+ing!|thanks for reading|until next time|let me know if you have any questions|if you have any questions,? (?:just )?ask|hopefully this (?:gives|helps))`,
 			// The before-and-after pitch, "say goodbye to X" and "gone are the days".
 			"marketing-reveal": `(?i)\b(?:say (?:goodbye|hello) to|gone are the days|no more (?:wrestling|fighting|struggling) with|imagine a world where|picture this:)`,
+			// The release-note fanfare, "We are thrilled to announce". No README in 852
+			// written before 2022 opens a release this way, and the one machine release
+			// note in the long-form corpus that scored zero did.
+			"announce-flourish": `(?i)\b(?:thrilled|excited|proud|pleased|delighted) to (?:announce|share|introduce|unveil|present)\b`,
 			// "Enter Foo, the tool that", the product introduced as the answer to a setup. The
 			// appositive article is required, so the ordinary imperative "Enter Berlin, then
 			// pick a date" is left alone.

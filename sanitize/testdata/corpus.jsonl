@@ -147,3 +147,5 @@
 {"label":"ai","note":"cadence: landing drumbeat, spelled-out copula","text":"The migration finished early. That is the headline. Nobody worked the weekend. That is the real win. It is rare. That is why it matters."}
 {"label":"human","note":"cadence trap: terse human voice, three landings under the floor","text":"That's the thing about him. He never says sorry. That's fine. I stopped needing it years ago. It's easier that way."}
 {"label":"human","note":"cadence trap: household griping with landings below the run","text":"The dishwasher died again. That's the second time. It's out of warranty. That's my luck. We wash by hand until Thursday."}
+{"label":"ai","note":"announce flourish: the release-note fanfare opener","text":"We are thrilled to announce the release of version 3.1.0, with a new storage format that compresses backups and restores them faster."}
+{"label":"ai","note":"word: ensure, the assistant's verb for making sure","text":"Before you begin, ensure that Node.js is installed and ensure the credentials have write access to the bucket."}
