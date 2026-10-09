@@ -14,8 +14,8 @@ go test ./sanitize/ -run TestBenchmark -v
 ## What the score claims, and what it does not
 
 The slop score measures the density of patterns from the engine's ruleset: buzzwords,
-stock phrases, sentence shapes, hedging, sentences that keep closing on an -ing clause, and
-the characters models type. A high score
+stock phrases, sentence shapes, hedging, sentences that keep closing on an -ing clause, a
+comma in nearly every sentence, and the characters models type. A high score
 means the text carries many machine-writing patterns. It does not determine who wrote
 the text. A person can write in the polished-assistant register, and a machine can be
 prompted away from every pattern the rules know. The score is a lint result, not an
@@ -29,8 +29,8 @@ tell or the trap it exercises.
 
 | Label       | Passages | What it holds                                                          |
 |-------------|----------|------------------------------------------------------------------------|
-| `ai`        | 68       | Machine-register prose: each passage exercises specific tells, from buzzword density to the polished 2026 register with no lexical tells at all.&nbsp; |
-| `human`     | 45       | Human prose chosen to trip a careless detector: poetry heavy with em-dashes, ornate academic writing, plain conversational notes, a graduation speech. |
+| `ai`        | 71       | Machine-register prose: each passage exercises specific tells, from buzzword density to the polished 2026 register with no lexical tells at all.&nbsp; |
+| `human`     | 46       | Human prose chosen to trip a careless detector: poetry heavy with em-dashes, ornate academic writing, plain conversational notes, a graduation speech. |
 | `technical` | 36       | Precision traps: RFC normative language, legal parallel structure, reference docs that repeat their subject, prose that has every right to sound formal. |
 
 The passages were written and curated during adversarial audit rounds, on purpose, to
@@ -54,21 +54,21 @@ The benchmark reports these on every run and fails below the floors.
 | Technical precision (no false tell)   | 1.00    | 0.98  |
 | Score recall (AI at 25 or higher)     | 0.99    | 0.95  |
 | Score precision (at 25 or higher)     | 0.99    | 0.98  |
-| Mean score, AI passages               | 84.6    |       |
-| Mean score, human passages            | 2.0     |       |
-| Score margin (AI mean minus human)    | 82.7    | 70    |
+| Mean score, AI passages               | 83.4    |       |
+| Mean score, human passages            | 2.5     |       |
+| Score margin (AI mean minus human)    | 80.9    | 70    |
 
 The floors sit below the current numbers so ordinary changes pass while a real
 regression fails. They ratchet up as the engine and the corpus improve.
 
 ## What fires on what
 
-119 distinct rules fire across the 68 AI passages. By class:
+122 distinct rules fire across the 71 AI passages. By class:
 
 | Class      | Findings | Score weight                     |
 |------------|----------|-----------------------------------|
-| Structural | 89       | 2 per finding                     |
-| Word       | 71       | 1                                 |
+| Structural | 90       | 2 per finding                     |
+| Word       | 74       | 1                                 |
 | Phrase     | 13       | 1                                 |
 | Character  | 5        | 1 for the em-dash and invisibles&nbsp; |
 | Tidy       | 2        | 0                                 |
@@ -77,7 +77,7 @@ Sentence shapes, not word lists, carry the most weight. That is deliberate: a st
 sentence shape is stronger evidence than one word, and word lists are the first thing a
 model gets trained away from.
 
-On the 45 human passages the engine finds typography almost exclusively: nineteen curly
+On the 46 human passages the engine finds typography almost exclusively: nineteen curly
 quotes, en-dashes, and ellipses. Those carry zero score weight, which is why a
 professionally typeset human page averages 1.5 rather than getting flagged for its
 punctuation. One `that said,` and one semicolon round out the human findings. The 36
@@ -91,14 +91,14 @@ em-dash becomes punctuation no rule reads. Then it reports what survived. Every
 replacement it reaches for is itself checked against the default profile by a test, so an
 evasion that stops evading fails the build.
 
-Run against all 68 AI passages, the attack tells the story the score weighting rests on:
+Run against all 71 AI passages, the attack tells the story the score weighting rests on:
 
 | Class      | Evaded | Held | What that means                                                    |
 |------------|--------|------|---------------------------------------------------------------------|
-| Word       | 33     | 38   | A word list is a lookup, and a lookup loses to a thesaurus.&nbsp;    |
-| Structural | 1      | 88   | No swap reaches a sentence shape, so this bounds the attacker.&nbsp; |
+| Word       | 33     | 41   | A word list is a lookup, and a lookup loses to a thesaurus.&nbsp;    |
+| Structural | 1      | 89   | No swap reaches a sentence shape, so this bounds the attacker.&nbsp; |
 
-64 of the 68 passages still carry a tell after the attack. That gap is why a structural
+67 of the 71 passages still carry a tell after the attack. That gap is why a structural
 tell counts two and a word counts one, and the test that measures it fails the build if
 the classes ever invert.
 
@@ -139,13 +139,17 @@ was written before a general writing model existed.
 | READMEs scored | 618 | 268 |
 | Ecosystems | 7 | 7 |
 | Median prose | 369 words | 573 words |
-| Median score | 1 | 3 |
-| p90 / p99 | 12 / 22 | 14 / 26 |
+| Median score | 1 | 4 |
+| p90 / p99 | 13 / 22 | 15 / 26 |
 | Worst sample | 35 | 36 |
-| **Scoring 25 or higher** | **4** | **3** |
+| **Scoring 25 or higher** | **4** | **4** |
 
-886 documents across Go, Python, Rust, JavaScript, Java, Ruby, and C++, of which seven
-reach the reads-clean line: 0.79 percent. The second column is the check on the first: a
+886 documents across Go, Python, Rust, JavaScript, Java, Ruby, and C++, of which eight
+reach the reads-clean line: 0.9 percent. The maintained column read three until the
+participle tail signal of 2026-10-05 moved one document from 24 to 25, which the recheck
+that day missed because it ran the abandoned column only. The clause habit and the three
+rules added beside it on 2026-10-08 moved no document in either column, measured on the
+engine before and after. The second column is the check on the first: a
 repository untouched since 2021 is an abandoned one, and abandoned projects might write
 differently. They do, in the direction that makes the test harder rather than easier, since
 maintained projects carry half again as much prose per README for the engine to trip on.
@@ -178,8 +182,8 @@ length, in the same genres, scored by the same ruleset.
 
 Two things come out of it, and they point in opposite directions.
 
-**The engine separates full-length prose very well.** Machine passages mean 30.1 against
-5.1 for human, which is a Cohen's d of 2.16. As a ranking instrument on real documents it
+**The engine separates full-length prose very well.** Machine passages mean 38.1 against
+5.4 for human, which is a Cohen's d of 2.66. As a ranking instrument on real documents it
 works, and the gap is not an artifact of the adversarial prompt style: passages written
 under an instruction to avoid every cliche of AI writing score about the same as the plain
 ones.
@@ -248,6 +252,42 @@ moves borderline machine prose over the line without ranking documents any bette
 against the 618 abandoned-repository READMEs of the false positive corpus, which nothing here
 was tuned on, the change moves no document at all.
 
+**The clause habit is the signal the attack cannot reach at all.** Half of human prose
+sentences carry a comma. Three quarters of machine sentences do: a qualifier, an aside, a
+consequence clause, on every sentence, so that nothing is ever stated flat. On the
+development half the comma-bearing share runs 0.75 for machine prose against 0.49 for
+human, a Cohen's d of 1.74, and on the holdout half 0.81 against 0.44, a d of 2.26. The
+score charges it the way it charges cadence: nothing until the share clears 0.70, the human
+ninetieth percentile on the development half, then a gradient to eight points at a comma in
+every sentence, and nothing at all under six prose sentences. It touches three human
+passages in each half and ten of the 618 abandoned-repository READMEs, moves none of them
+to the line, and the substitution attack removes one percent of it, against two percent of
+the cadence penalty and thirty-five percent of the tells.
+
+Three lexical rules came out of the same measurement, and they are the evadable kind.
+`ensure` appears in two thirds of machine long-form passages and one human passage in
+twenty, the widest gap of any single word measured. It now fires on five percent of
+abandoned-repository READMEs and thirteen percent of maintained-project ones, the highest
+rate of any rule on human prose, and that cost is stated here rather than hidden. The
+release-note fanfare, `we are thrilled to announce`, appears in no README of 852 written
+before 2022 and in the one machine release note that scored zero. The chat sign-off now
+takes any verb, since `Happy automating!` is the same sign-off as `Happy coding!`.
+
+Together, on the holdout half, machine passages reaching the line went from 17 of 24 to 20
+of 24 and on the development half from 24 of 41 to 28 of 41, with human documents staying
+at 0 of 38 and 1 of 42. The probability that a random machine passage outscores a random
+human one went from 0.878 to 0.924 on the development half and from 0.957 to 0.992 on the
+holdout. In the simulation that chose these, the clause habit alone moved two holdout
+passages and `ensure` alone moved three. The word did more of the verdict work and the
+habit did the durable part.
+
+One candidate was measured and left out. Nominalization density, the share of words ending
+in -tion, -ment, -ness, and the like, separates the halves about as well on the holdout (d
+2.12) and runs at 0.58 correlation with the clause habit, so it moved the same passages and
+no others, and it touches eighteen percent of human READMEs, since technical prose is built
+from those nouns. The record of the whole measurement, with every feature tried, is
+`INVESTIGATION-clause-habit.md` in the repository.
+
 ## Limitations, plainly
 
 **The corpus grades the engine on its own homework.** The passages were written during
@@ -261,7 +301,7 @@ score low and may still read machine-made to a person. The score measures compli
 with the ruleset. The ruleset chases the current registers, and the registers move.
 
 **No stratification.** The corpus is not sampled across models, prompts, genres, or
-authors, and there are no confidence intervals on 115 passages. It is a regression
+authors, and there are no confidence intervals on 153 passages. It is a regression
 guard with teeth, not a study.
 
 **A rate is not a verdict.** The score is tell density, so its headline numbers move with

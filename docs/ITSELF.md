@@ -31,7 +31,7 @@ narrowed because they fired on this documentation and were wrong to.
 
 ## Does chopping settle?
 
-Running the engine on its own output changes nothing. Across all 115 labeled corpus
+Running the engine on its own output changes nothing. Across all 153 corpus
 passages, `fix(fix(text))` equals `fix(text)`, and a test fails the build if that ever
 stops holding.
 
@@ -40,7 +40,7 @@ chopped the file, a pipeline can chop twice, and a CI job can re-run, and none o
 produce drift. Text that has been chopped is a stable point, not a step in a sequence that
 keeps moving.
 
-Of the 115 passages, 101 are already at rest before the first pass and 14 change once and
+Of the 153 passages, 139 are already at rest before the first pass and 14 change once and
 then hold. None needs a third pass.
 
 ## What one pass actually does
@@ -82,10 +82,10 @@ to tell.
 ## Can it evade itself?
 
 `slop-chop attack` rewrites text to dodge the rules without improving it, then reports what
-held. Word tells fall to a thesaurus: 33 of 71 slip past. Only 1 of 89 structural tells
+held. Word tells fall to a thesaurus: 33 of 74 slip past. Only 1 of 90 structural tells
 gets through, since a swap never rebuilds a sentence, so that row bounds the attacker
-rather than the rules. After the attack 64 of 68 machine passages still flag, and the mean
-score falls only from 85 to 79.
+rather than the rules. After the attack 67 of 71 machine passages still flag, and the mean
+score falls only from 83 to 78.
 
 A structural tell counts twice what a word does in the score for that reason.
 [The benchmark page](BENCHMARK.md) has the full table along with the limits of what any of

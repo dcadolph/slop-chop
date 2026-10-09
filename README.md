@@ -80,11 +80,11 @@ Three measurements, all reproducible from this repository. [docs/BENCHMARK.md](d
 has the method and the caveats.
 
 It stays quiet on human writing. Scored against 886 open-source READMEs across seven
-language ecosystems, most from projects with no push since 2021, seven reach the line where
-text stops reading clean. That is 0.79 percent.
+language ecosystems, most from projects with no push since 2021, eight reach the line where
+text stops reading clean. That is 0.9 percent.
 
 Word lists lose to a thesaurus. `slop-chop attack` swaps text to dodge the rules without
-improving it, and 33 of 71 word tells slip past. Only 1 of 89 structural tells does, which
+improving it, and 33 of 74 word tells slip past. Only 1 of 90 structural tells does, which
 is why a sentence shape counts double in the score. That number bounds the attacker rather
 than the rules: a swap never rebuilds a sentence, so it was never going to reach a shape.
 How those rules fare against a model told to rewrite is unmeasured.
@@ -327,10 +327,10 @@ slop-chop attack draft.md
 `attack` tries to beat your own rules. It rewrites text to dodge as many as it can while
 leaving it no better written, then reports which tells held.
 
-Buzzwords fall to a thesaurus: 33 of 71 word tells slip past. Only 1 of 89 structural
+Buzzwords fall to a thesaurus: 33 of 74 word tells slip past. Only 1 of 90 structural
 tells gets through, since a swap never rebuilds a sentence, so that row measures how far
-the attacker reaches and not how durable a shape is. After the attack 64 of the 68
-passages still carry a tell, and the mean score falls only from 85 to 79. A structural
+the attacker reaches and not how durable a shape is. After the attack 67 of the 71
+passages still carry a tell, and the mean score falls only from 83 to 78. A structural
 tell counts double in the score for that reason.
 
 Run it on your own profile to find which rules a thesaurus can defeat. `-w` saves the
