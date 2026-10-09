@@ -143,6 +143,12 @@ developed on the long-form corpus and never on this one, and `tails` joined the 
 component list above. No rating, score, or text from this corpus was read in making either
 change.
 
+Amended 2026-10-08, before any rating existed: the clause habit joined the score, developed
+on the long-form corpus and checked against the pre-2022 false positive corpus, never on
+this one, and `clauses` joined the exploratory component list above. Three rules came out of
+the same measurement: `ensure` as a block word, the `announce-flourish` pattern, and a wider
+`chat-signoff`. No rating, score, or text from this corpus was read in making any of them.
+
 ## Limits, stated before the result
 
 - The raters are volunteers known to the author. They are not a sample of anyone in

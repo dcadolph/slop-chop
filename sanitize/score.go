@@ -72,6 +72,11 @@ type Score struct {
 	// closing on a comma and an -ing clause. Like hedging it is a register, scored by rate,
 	// and the first tail is free.
 	Tails int `json:"tails"`
+	// Clauses is the points the clause habit added to Value: a comma in nearly every
+	// sentence, the register that qualifies everything and states nothing flat. It is
+	// scored by share rather than by the sentence, since any one qualified sentence is
+	// ordinary writing, and it needs six prose sentences before it counts.
+	Clauses int `json:"clauses"`
 }
 
 // sentenceSplit breaks text on sentence-ending punctuation to measure cadence.
@@ -186,7 +191,13 @@ func (s *Sanitizer) Score(text string) Score {
 	// way of adding a consequence. One is ordinary writing. The habit adds up to ten points.
 	tails := tailPoints(text)
 
-	// A rhythm that never varies is the one signal here a thesaurus cannot touch. The
+	// A comma in nearly every sentence is the register that never states anything flat.
+	// Half of human sentences carry one; three quarters of machine sentences do. The share
+	// adds up to eight points once it clears the human ninetieth percentile, and like the
+	// rhythm penalty it is out of a thesaurus's reach, since it reads punctuation.
+	clauses := clausePoints(text)
+
+	// A rhythm that never varies is one signal here a thesaurus cannot touch. The
 	// penalty scales with how flat the cadence is rather than switching on at a line, so
 	// prose near the boundary is nudged rather than condemned, and it is capped low enough
 	// that it can move a verdict only for text already carrying other evidence. Measured
@@ -214,7 +225,7 @@ func (s *Sanitizer) Score(text string) Score {
 		density *= float64(words) / 25
 	}
 
-	value := int(math.Round(math.Min(100, density+hedging+weighing+drumbeat+tails+cadence+evidence)))
+	value := int(math.Round(math.Min(100, density+hedging+weighing+drumbeat+tails+clauses+cadence+evidence)))
 	return Score{
 		Value:       value,
 		Tells:       tells,
@@ -227,6 +238,7 @@ func (s *Sanitizer) Score(text string) Score {
 		Hedging:     int(math.Round(hedging)),
 		Drumbeat:    int(math.Round(drumbeat)),
 		Tails:       int(math.Round(tails)),
+		Clauses:     int(math.Round(clauses)),
 		Cadence:     int(math.Round(cadence)),
 		Evidence:    int(math.Round(evidence)),
 	}

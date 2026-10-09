@@ -232,6 +232,7 @@ func TestReport(t *testing.T) {
 		"density",
 		"drumbeat",
 		"tails",
+		"clauses",
 		"h002",
 	} {
 		if !strings.Contains(out, want) {

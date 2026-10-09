@@ -335,3 +335,83 @@ func TestLongformEvidenceHoldout(t *testing.T) {
 			"is allowed to cost", afterFP, len(human))
 	}
 }
+
+// TestLongformClauseSeparation reports what the clause habit does on full-length prose, on
+// each half of the corpus, and gates two things: machine prose has to be the clause-heavier
+// half, or the signal is charging human writing for a habit it does not have and should
+// come out, and the habit may touch at most one human passage in ten, since precision is
+// the claim this engine is carried on.
+func TestLongformClauseSeparation(t *testing.T) {
+	t.Parallel()
+	s, err := New(DefaultProfile())
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	for _, fold := range []string{"dev", "holdout"} {
+		ai, human := longformSplit(t, fold)
+		collect := func(ps []benchPassage) (shares []float64, fired, over int) {
+			for _, p := range ps {
+				share, n := clauseShare(p.Text)
+				if n >= clauseMinSentences {
+					shares = append(shares, share)
+				}
+				sc := s.Score(p.Text)
+				if sc.Clauses > 0 {
+					fired++
+				}
+				if sc.Value >= 25 {
+					over++
+				}
+			}
+			return shares, fired, over
+		}
+		aiShare, aiFired, aiOver := collect(ai)
+		huShare, huFired, huOver := collect(human)
+		t.Logf("%s half: %d machine, %d human", fold, len(ai), len(human))
+		t.Logf("  comma-bearing share: machine %.3f, human %.3f, cohen's d %.2f",
+			meanOf(aiShare), meanOf(huShare), cohensD(aiShare, huShare))
+		t.Logf("  habit charged on:    machine %d/%d, human %d/%d", aiFired, len(ai), huFired, len(human))
+		t.Logf("  reach the 25 line:   machine %d/%d, human %d/%d", aiOver, len(ai), huOver, len(human))
+		if meanOf(aiShare) <= meanOf(huShare) {
+			t.Errorf("%s half: machine share %.3f is not above human %.3f: the habit is pointed the "+
+				"wrong way and should be removed rather than adjusted", fold, meanOf(aiShare), meanOf(huShare))
+		}
+		if huFired > len(human)/10 {
+			t.Errorf("%s half: the habit charged %d of %d human passages, past the one in ten it is "+
+				"allowed to touch", fold, huFired, len(human))
+		}
+	}
+}
+
+// TestLongformClauseSurvivesAttack measures how much of the clause habit a substitution
+// attack can strip. It reads punctuation, so a lookup that swaps words should barely reach
+// it, and if it ever starts going at the rate the tells go, it is not the durable signal
+// it is carried for.
+func TestLongformClauseSurvivesAttack(t *testing.T) {
+	t.Parallel()
+	s, err := New(DefaultProfile())
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ai, _ := longformByLabel(t)
+	var tellsBefore, tellsAfter, before, after float64
+	for _, p := range ai {
+		res := s.Attack(p.Text)
+		b, a := s.Score(p.Text), s.Score(res.Text)
+		tellsBefore += float64(b.Tells)
+		tellsAfter += float64(a.Tells)
+		before += float64(b.Clauses)
+		after += float64(a.Clauses)
+	}
+	if tellsBefore == 0 || before == 0 {
+		t.Skip("the corpus carries no tells or no clause points, so there is nothing to attack")
+	}
+	tellLoss := 100 * (tellsBefore - tellsAfter) / tellsBefore
+	loss := 100 * (before - after) / before
+	t.Logf("tells the attack removed:         %.0f%% (%.0f of %.0f)", tellLoss, tellsBefore-tellsAfter, tellsBefore)
+	t.Logf("clause points the attack removed: %.0f%% (%.0f of %.0f)", loss, before-after, before)
+	if loss >= tellLoss/2 {
+		t.Errorf("the attack removed %.0f%% of the clause points against %.0f%% of the tells: "+
+			"punctuation should not be this reachable by substitution", loss, tellLoss)
+	}
+}
