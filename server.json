@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.dcadolph/slop-chop",
   "title": "slop-chop",
-  "description": "Find and remove the writing patterns a profile lists. Deterministic, local, no model and no network.",
+  "description": "Find and remove the writing patterns a profile lists. Deterministic rules, model rewrite opt-in.",
   "repository": { "url": "https://github.com/dcadolph/slop-chop", "source": "github" },
   "websiteUrl": "https://slop-chop.com",
   "version": "0.43.0",

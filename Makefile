@@ -115,7 +115,7 @@ mcpb:
 			'  "name": "slop-chop",' \
 			'  "display_name": "slop-chop",' \
 			'  "version": "$(MCPB_VERSION)",' \
-			'  "description": "Find and remove the writing patterns a profile lists. Deterministic, local, no model and no network.",' \
+			'  "description": "Find and remove the writing patterns a profile lists. Deterministic rules, model rewrite opt-in.",' \
 			'  "author": { "name": "dcadolph", "url": "https://github.com/dcadolph" },' \
 			'  "homepage": "https://slop-chop.com",' \
 			'  "documentation": "https://github.com/dcadolph/slop-chop/blob/main/docs/MCP.md",' \
@@ -152,7 +152,7 @@ server-json:
 		printf '  "$$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",\n'; \
 		printf '  "name": "io.github.dcadolph/slop-chop",\n'; \
 		printf '  "title": "slop-chop",\n'; \
-		printf '  "description": "Find and remove the writing patterns a profile lists. Deterministic, local, no model and no network.",\n'; \
+		printf '  "description": "Find and remove the writing patterns a profile lists. Deterministic rules, model rewrite opt-in.",\n'; \
 		printf '  "repository": { "url": "https://github.com/dcadolph/slop-chop", "source": "github" },\n'; \
 		printf '  "websiteUrl": "https://slop-chop.com",\n'; \
 		printf '  "version": "%s",\n' "$$ver"; \
