@@ -25,6 +25,7 @@ profile, see [Your voice](VOICE.md).
 - [collapseSpaces and splitSemicolons](#collapsespaces-and-splitsemicolons)
 - [tone](#tone)
 - [sentenceLength](#sentencelength)
+- [stepVoice](#stepvoice)
 - [Presets](#presets)
 - [Ignore directives](#ignore-directives)
 - [A full example](#a-full-example)
@@ -80,6 +81,7 @@ unset value. Turning a default cleanup off takes a standalone profile.
 | `splitSemicolons` | boolean             | yes      | Turn a joining semicolon into two sentences.  |
 | `tone`            | array of strings    | n/a      | Notes the rewrite pass feeds to the model.    |
 | `sentenceLength`  | object              | no       | Flag a sentence over a word limit.            |
+| `stepVoice`       | boolean             | no       | Flag a list item written in the passive.      |
 | `standalone`      | boolean             | n/a      | Replace the default profile instead of extending it. |
 
 ## charReplace
@@ -328,6 +330,28 @@ The `length` class weighs 0, so these findings never move the score and do not f
 `check` unless you pass `--strict`. To make them fail `check`, give the class a weight:
 `"scoreWeights": {"length": 1}`. The `procedure` preset sets the limits above.
 
+## stepVoice
+
+Flags a Markdown list item whose first sentence is in the passive voice, since a step
+reads best as an instruction that says who does what. Off by default.
+
+```json
+{
+  "stepVoice": true
+}
+```
+
+A passive step is flagged as `voice:step` with the verb phrase as the match, such as
+`is copied` in "The file is copied to /etc." The rule looks for a form of "be" or "get"
+followed, with at most one word between, by a word ending in "ed" or a common irregular
+participle like `written` or `done`. It never rewrites, since turning a passive step
+around needs to know who acts. A step is a list item, as for `sentenceLength`, and only
+its first sentence counts. Words on the `allow` list silence the match.
+
+The `voice` class weighs 0, so these findings never move the score. To make them fail
+`check`, give the class a weight: `"scoreWeights": {"voice": 1}`. The `procedure` preset
+turns this rule on.
+
 ## Presets
 
 A preset is a built-in profile you overlay with `--preset`. It adds a curated pack of rules
@@ -351,7 +375,7 @@ The packs that ship:
 | `marketing`  | Swaps for launch-copy words like `bespoke` and `curated`.                     |
 | `no-dashes`  | Converts every dash standing in for an em-dash to a comma: ` - `, ` -- `, and the typed `word--word`. Compound words keep their hyphens. |
 | `plain`      | A general jargon-to-plain map for everyday prose.                             |
-| `procedure`  | Flags a sentence over 20 words in a list item and over 25 words anywhere else, the limits Simplified Technical English sets for procedures and descriptions. No rewrites and no score weight. See [sentenceLength](#sentencelength). |
+| `procedure`  | Flags a sentence over 20 words in a list item and over 25 words anywhere else, the limits Simplified Technical English sets for procedures and descriptions. Also flags a step in the passive voice. No rewrites and no score weight. See [sentenceLength](#sentencelength) and [stepVoice](#stepvoice). |
 | `typography` | Keeps typeset characters as they are: em- and en-dashes, curly quotes, and ellipses stay while the word, phrase, and structure rules still run. For published or professionally typeset text. |
 
 The default profile flags words like `leverage` and `robust` but leaves them in place,

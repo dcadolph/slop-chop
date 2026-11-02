@@ -300,6 +300,10 @@ any conflict. The web app ships with the cleaver preset switched on.
 			fmt.Fprintf(b, "Allows %d words: %s\n\n", len(sorted), strings.Join(quoted, " "))
 		}
 		writeMarkdownLength(b, pack.SentenceLength)
+		if pack.StepVoice {
+			b.WriteString("Flags a list item whose first sentence is in the passive voice. " +
+				"The flag carries no score weight.\n\n")
+		}
 	}
 }
 
