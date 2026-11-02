@@ -61,7 +61,8 @@ func PresetNames() []string {
 // slices take the union, so p always wins on a conflict. Booleans, tone, and dialect stay
 // as p has them, since a preset adds rules rather than forcing settings. Flag patterns
 // merge like any other map, so a preset can carry a structural rule of its own. A sentence
-// length limit fills only a limit p leaves at zero.
+// length limit fills only a limit p leaves at zero, and a preset can switch the step voice
+// rule on, since that adds a rule rather than forcing a setting.
 func (p Profile) withPreset(pack Profile) Profile {
 	p.CharReplace = mergeMap(p.CharReplace, pack.CharReplace)
 	p.PhraseReplace = mergeMap(p.PhraseReplace, pack.PhraseReplace)
@@ -74,6 +75,7 @@ func (p Profile) withPreset(pack Profile) Profile {
 	limit, add := &p.SentenceLength, pack.SentenceLength
 	limit.Step = cmp.Or(limit.Step, add.Step)
 	limit.Description = cmp.Or(limit.Description, add.Description)
+	p.StepVoice = p.StepVoice || pack.StepVoice
 	return p
 }
 

@@ -125,6 +125,7 @@ func (p Profile) Overlay(top Profile) Profile {
 	p.SplitSemicolons = p.SplitSemicolons || top.SplitSemicolons
 	p.FixArticles = p.FixArticles || top.FixArticles
 	p.ProtectQuotes = p.ProtectQuotes || top.ProtectQuotes
+	p.StepVoice = p.StepVoice || top.StepVoice
 	p.CharReplace = mergeMapTopWins(p.CharReplace, top.CharReplace)
 	p.PhraseReplace = mergeMapTopWins(p.PhraseReplace, top.PhraseReplace)
 	p.WordReplace = mergeMapTopWins(p.WordReplace, top.WordReplace)

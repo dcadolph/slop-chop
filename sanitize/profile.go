@@ -50,6 +50,9 @@ type Profile struct {
 	// SentenceLength sets the longest sentence, in words, the profile accepts before it
 	// flags one. A zero limit is off, which is the default.
 	SentenceLength SentenceLength `json:"sentenceLength"`
+	// StepVoice flags a list item whose first sentence is in the passive voice, as
+	// "voice:step". Off by default, and the finding carries no score weight.
+	StepVoice bool `json:"stepVoice"`
 	// CollapseSpaces collapses runs of two or more spaces into one and removes spaces
 	// and stray commas left before closing punctuation, like the debris an em-dash swap
 	// or a dropped word leaves behind. Runs at the start of a line are indentation and

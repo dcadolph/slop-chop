@@ -819,6 +819,7 @@
           regex: "One of your own regex rules.",
           spelling: "The dialect setting enforces this spelling.",
           length: "A sentence longer than the profile's sentence length limit. It carries no score weight.",
+          voice: "A step in the passive voice. Procedures read best as an instruction: say who does what.",
         }[cls] || "House-style cleanup. It carries no score weight.";
       const action =
         f.replacement === undefined || f.replacement === null

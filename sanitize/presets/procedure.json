@@ -2,5 +2,6 @@
   "sentenceLength": {
     "step": 20,
     "description": 25
-  }
+  },
+  "stepVoice": true
 }
