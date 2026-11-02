@@ -48,6 +48,18 @@ jobs:
           python-version: '3.x'
       - run: pip install mkdocs-material
       - run: mkdocs build --strict
+      # Material writes the homepage canonical, og:url, and sitemap entry as /index.html, which
+      # tells search engines the root URL is a duplicate of a file path. Rewriting them to the
+      # site root keeps one canonical address, and the guard fails the build if mkdocs ever
+      # emits a form the rewrite misses.
+      - name: Point the homepage canonical at the site root
+        run: |
+          set -euo pipefail
+          sed -i 's#https://slop-chop.com/index.html#https://slop-chop.com/#g' site/index.html site/sitemap.xml
+          if grep -q 'slop-chop.com/index.html' site/index.html site/sitemap.xml; then
+            echo "::error::The homepage still references slop-chop.com/index.html."
+            exit 1
+          fi
       # slop-chop.com and www.slop-chop.com are custom domains on the slop-chop-site
       # Worker, so the Worker is what visitors reach. This used to publish to GitHub Pages
       # instead, which nothing points at, and the live site sat frozen at whatever someone
