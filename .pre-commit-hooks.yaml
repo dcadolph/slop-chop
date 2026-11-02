@@ -2,7 +2,7 @@
 # .pre-commit-config.yaml:
 #
 #   - repo: https://github.com/dcadolph/slop-chop
-#     rev: v0.55.0
+#     rev: v0.55.1
 #     hooks:
 #       - id: slop-chop
 #

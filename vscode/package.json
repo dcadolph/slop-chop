@@ -2,7 +2,7 @@
   "name": "slop-chop",
   "displayName": "slop-chop",
   "description": "Flag and chop AI writing tells in Markdown, text, commit messages, and code comments as you write. The engine runs inside the extension; your text never leaves your machine.",
-  "version": "0.55.0",
+  "version": "0.55.1",
   "publisher": "dcadolph",
   "license": "MIT",
   "icon": "icon.png",
