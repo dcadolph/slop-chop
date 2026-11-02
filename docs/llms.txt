@@ -18,28 +18,28 @@ sends no text anywhere.
 ## Start here
 
 - [Web app](https://slop-chop.com): paste text, chop the slop, in-browser, nothing uploaded
-- [Quickstart](https://slop-chop.com/quickstart.html): the fastest path to a first chop
-- [The AI tells it catches](https://slop-chop.com/TELLS.html): em-dash splices, hedging,
+- [Quickstart](https://slop-chop.com/quickstart): the fastest path to a first chop
+- [The AI tells it catches](https://slop-chop.com/TELLS): em-dash splices, hedging,
   filler transitions, "delve/leverage/robust," padding, and the rest of the slop vocabulary
 
 ## Make it sound like you, not like a model
 
-- [Your voice](https://slop-chop.com/VOICE.html): teach it your style from your own writing
-- [Profiles and presets](https://slop-chop.com/PROFILE.html): saved rule sets per context
-- [The engine](https://slop-chop.com/ENGINE.html): the deterministic rule pass, plus the
+- [Your voice](https://slop-chop.com/VOICE): teach it your style from your own writing
+- [Profiles and presets](https://slop-chop.com/PROFILE): saved rule sets per context
+- [The engine](https://slop-chop.com/ENGINE): the deterministic rule pass, plus the
   optional model rewrite for a deeper humanizing pass
 
 ## Everywhere you write
 
-- [Web app](https://slop-chop.com/WEB.html): the full in-browser editor
-- [Claude plugin](https://slop-chop.com/PLUGIN.html): chop text from inside Claude
-- [Browser extension](https://slop-chop.com/EXTENSION.html): chop text in any web field
-- [Editor plugin and LSP](https://slop-chop.com/LSP.html): chop as you write in your IDE
-- [Slack app](https://slop-chop.com/SLACK.html): /chop a message or a shortcut
-- [MCP server](https://slop-chop.com/MCP.html): chop, check, and preset tools for Claude
+- [Web app](https://slop-chop.com/WEB): the full in-browser editor
+- [Claude plugin](https://slop-chop.com/PLUGIN): chop text from inside Claude
+- [Browser extension](https://slop-chop.com/EXTENSION): chop text in any web field
+- [Editor plugin and LSP](https://slop-chop.com/LSP): chop as you write in your IDE
+- [Slack app](https://slop-chop.com/SLACK): /chop a message or a shortcut
+- [MCP server](https://slop-chop.com/MCP): chop, check, and preset tools for Claude
   Desktop, Claude Code, Cursor, and any other MCP client, over stdio and local
-- [API](https://slop-chop.com/API.html): call slop-chop from anything, including agents
-- [Privacy](https://slop-chop.com/PRIVACY.html): local by default, nothing uploaded
+- [API](https://slop-chop.com/API): call slop-chop from anything, including agents
+- [Privacy](https://slop-chop.com/PRIVACY): local by default, nothing uploaded
 
 ## Source
 

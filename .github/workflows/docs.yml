@@ -54,18 +54,54 @@ jobs:
       - name: Measure test coverage for the badge
         run: go test -coverprofile=coverage.out ./...
       - run: mkdocs build --strict
-      # Material writes the homepage canonical, og:url, and sitemap entry as /index.html, which
-      # tells search engines the root URL is a duplicate of a file path. Rewriting them to the
-      # site root keeps one canonical address, and the guard fails the build if mkdocs ever
-      # emits a form the rewrite misses.
-      - name: Point the homepage canonical at the site root
+      # The Worker serves each page at /PAGE and answers /PAGE.html with a redirect, but mkdocs
+      # writes every canonical, og:url, sitemap entry, nav link, and search result as PAGE.html.
+      # Search engines then see a canonical that redirects, and every click costs a round trip.
+      # The rewrite strips .html from those URLs and maps index.html to the site root. It only
+      # touches href and content values, sitemap entries, and search index locations that name
+      # a slop-chop page, so external links and code samples that mention a .html file keep
+      # their text. The guard fails the build if mkdocs ever emits a form the rewrite misses.
+      - name: Point every page URL at the address the Worker serves
         run: |
           set -euo pipefail
-          sed -i 's#https://slop-chop.com/index.html#https://slop-chop.com/#g' site/index.html site/sitemap.xml
-          if grep -q 'slop-chop.com/index.html' site/index.html site/sitemap.xml; then
-            echo "::error::The homepage still references slop-chop.com/index.html."
-            exit 1
+          locs_before="$(grep -c '<loc>' site/sitemap.xml)"
+          find site -name '*.html' -print0 | xargs -0 sed -i -E \
+            -e 's#https://slop-chop\.com/index\.html#https://slop-chop.com/#g' \
+            -e 's#https://slop-chop\.com/([A-Za-z0-9_-]+)\.html#https://slop-chop.com/\1#g' \
+            -e 's#href="index\.html#href="./#g' \
+            -e 's#href="/index\.html#href="/#g' \
+            -e 's#href="(/?)([A-Za-z0-9_-]+)\.html#href="\1\2#g'
+          sed -i -E \
+            -e 's#https://slop-chop\.com/index\.html#https://slop-chop.com/#g' \
+            -e 's#https://slop-chop\.com/([A-Za-z0-9_-]+)\.html#https://slop-chop.com/\1#g' \
+            site/sitemap.xml
+          sed -i -E \
+            -e 's#"location":"index\.html#"location":"./#g' \
+            -e 's#"location":"([A-Za-z0-9_-]+)\.html#"location":"\1#g' \
+            site/search/search_index.json
+          fail=0
+          if grep -rEq 'slop-chop\.com/[A-Za-z0-9_-]+\.html' site/; then
+            echo "::error::A page still advertises a slop-chop.com URL ending in .html."
+            fail=1
           fi
+          if grep -rEq 'href="/?[A-Za-z0-9_-]+\.html' site/; then
+            echo "::error::A page still links to a slop-chop page by its .html file name."
+            fail=1
+          fi
+          if grep -Eq '"location":"[A-Za-z0-9_-]+\.html' site/search/search_index.json; then
+            echo "::error::The search index still points results at .html file names."
+            fail=1
+          fi
+          locs_after="$(grep -c '<loc>' site/sitemap.xml)"
+          if [ "$locs_after" != "$locs_before" ]; then
+            echo "::error::The sitemap went from ${locs_before} pages to ${locs_after}."
+            fail=1
+          fi
+          if ! grep -q '<link rel="canonical" href="https://slop-chop.com/">' site/index.html; then
+            echo "::error::The homepage canonical is not https://slop-chop.com/."
+            fail=1
+          fi
+          exit "$fail"
       # A missing, malformed, or zero total must fail the build, because go tool cover reports
       # 0.0% for an empty profile and a badge that quietly shows that is worse than a stale one.
       - name: Write the coverage badge endpoint
