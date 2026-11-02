@@ -29,6 +29,9 @@ func TestPresetBehavior(t *testing.T) {
 		},
 		{Preset: "cleaver", In: "In today's digital-first landscape, delve deeper.", Want: "Dig deeper."},
 		{Preset: "cleaver", In: "Leveraging it unlocks the full potential of the team.", Want: "Using it gets the most from the team."},
+		{Preset: "plain", In: "Add an additional step.", Want: "Add an extra step."},
+		{Preset: "plain", In: "This is a sufficient condition.", Want: "This is a sufficient condition."},
+		{Preset: "plain", In: "The additional fields are optional.", Want: "The extra fields are optional."},
 	}
 
 	for testNum, test := range tests {

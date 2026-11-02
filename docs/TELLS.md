@@ -557,11 +557,11 @@ Adds 16 buzzwords: `effortless` `game-changer` `guru` `hassle-free` `hidden gem`
 
 ### plain
 
-#### Word swaps (24)
+#### Word swaps (23)
 
 | From | To |
 | ---- | -- |
-| `additional` | `more` |
+| `additional` | `extra` |
 | `approximately` | `about` |
 | `ascertain` | `find out` |
 | `assistance` | `help` |
@@ -580,7 +580,6 @@ Adds 16 buzzwords: `effortless` `game-changer` `guru` `hassle-free` `hidden gem`
 | `purchase` | `buy` |
 | `regarding` | `about` |
 | `require` | `need` |
-| `sufficient` | `enough` |
 | `terminate` | `end` |
 | `utilise` | `use` |
 | `utilization` | `use` |
